@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+:root {
+  --background: #090a0d;
+  --foreground: #f3f4f6;
+  --card-bg: #111216;
+  --card-border: #23262f;
+  --accent: #f59e0b;
+  --accent-muted: rgba(245, 158, 11, 0.15);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow-x: hidden;
+  selection-background-color: #f59e0b;
+  selection-color: #000000;
+}
+
+::selection {
+  background-color: #f59e0b;
+  color: #000000;
+}
+
+/* Custom subtle scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #090a0d;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #23262f;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+/* Editorial badge styling */
+.badge-subtle {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
