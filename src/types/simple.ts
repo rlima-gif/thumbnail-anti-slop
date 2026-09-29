@@ -16,7 +16,7 @@ export interface SimpleReference {
 
 export type TargetModel = 'GERAL' | 'OPENAI' | 'GEMINI' | 'MIDJOURNEY' | 'FLUX';
 
-export type TextTreatment = 'AUTO' | 'USAR_REFERENCIA' | 'SEM_TEXTO';
+export type TextTreatment = 'AUTO' | 'USAR_REFERENCIA' | 'RENDER_IN_IMAGE' | 'SEM_TEXTO';
 export type ReservedSpacePosition = 'ESQUERDA' | 'DIREITA' | 'SUPERIOR' | 'INFERIOR';
 
 export interface CreateThumbnailInput {
@@ -51,6 +51,7 @@ export interface CreateThumbnailResult {
   finalPrompt: string;
   approachTitle: string;
   approachIndex: number;
+  typographyPlan?: string;
 }
 
 export interface ImprovePromptInput {

@@ -41,11 +41,11 @@ const ALL_ROLES: SimpleReferenceRole[] = [
 ];
 
 const ROLE_MICROCOPY: Record<SimpleReferenceRole, string> = {
-  PESSOA: 'Envie uma foto com o rosto bem visível.',
-  PRODUTO: 'Uma foto real ajuda a manter formato e detalhes.',
-  CENÁRIO: 'Use se o ambiente real fizer parte da história.',
-  ESTILO: 'Serve para aparência, luz e acabamento.',
-  COMPOSIÇÃO: 'Serve para mostrar onde cada elemento deve ficar.',
+  PESSOA: 'Use para preservar seu rosto, cabelo, barba, idade e aparência.',
+  PRODUTO: 'Use para preservar formato, proporções, botões, portas e detalhes reais.',
+  CENÁRIO: 'Use quando o ambiente fizer parte importante da história.',
+  ESTILO: 'Use apenas para cores, luz, textura e linguagem visual.',
+  COMPOSIÇÃO: 'Use apenas para enquadramento e posição dos elementos.',
   TIPOGRAFIA: 'Serve apenas como referência de fonte e tratamento do texto.',
   OUTRA: 'Referência geral de apoio.'
 };
@@ -87,6 +87,23 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
   // Helper for word count on thumbnail text
   const textWords = thumbnailText.trim() ? thumbnailText.trim().split(/\s+/).length : 0;
 
+  // Title vs. Thumbnail Text Repetition check
+  const isTitleRepeatedInThumbnailText = useMemo(() => {
+    if (!videoTitle.trim() || !thumbnailText.trim() || textTreatment === 'SEM_TEXTO') return false;
+    const cleanTitle = videoTitle.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').trim();
+    const cleanThumb = thumbnailText.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, '').trim();
+    if (!cleanTitle || !cleanThumb) return false;
+
+    if (cleanTitle.includes(cleanThumb) || cleanThumb.includes(cleanTitle)) return true;
+
+    const titleTokens = new Set(cleanTitle.split(/\s+/).filter(w => w.length > 2));
+    const thumbTokens = cleanThumb.split(/\s+/).filter(w => w.length > 2);
+    if (thumbTokens.length === 0) return false;
+
+    const overlap = thumbTokens.filter(t => titleTokens.has(t)).length;
+    return overlap >= Math.ceil(thumbTokens.length * 0.7);
+  }, [videoTitle, thumbnailText, textTreatment]);
+
   // Contextual suggestions based on user description (Rule 4)
   const contextualSuggestions = useMemo(() => {
     const combined = `${videoTitle} ${ideaDescription}`.toLowerCase();
@@ -95,7 +112,7 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
     const hasPersonInText = /(eu|meu\s*rosto|minha\s*cara|minha\s*rea[çc][ãa]o|pessoa|homem|mulher|criador|cara)(\b|$)/i.test(combined);
     const hasPersonRef = references.some(r => r.role === 'PESSOA');
     if (hasPersonInText && !hasPersonRef) {
-      suggestions.push('Uma foto sua ajuda a preservar seu rosto.');
+      suggestions.push('Tem uma foto sua? Adicionar uma referência ajuda a preservar seu rosto.');
     }
 
     const hasProductInText = /(legion|console|notebook|laptop|celular|smartphone|mouse|teclado|fone|headset|hardware|pe[çc]a|produto|aparelho|switch|steam\s*deck)/i.test(combined);
@@ -103,13 +120,13 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
     if (hasProductInText && !hasProductRef) {
       const match = combined.match(/(legion\s*go|legion|steam\s*deck|switch|notebook|laptop|console|celular)/i);
       const name = match ? match[0] : 'produto';
-      suggestions.push(`Uma foto do ${name} ajuda a preservar o hardware.`);
+      suggestions.push(`Tem uma foto do ${name}? Ela ajuda a evitar botões e proporções inventadas.`);
     }
 
     const hasSceneInText = /(sof[aá]|quarto|sala|mesa|bancada|escrit[oó]rio|est[uú]dio|oficina|cen[aá]rio)/i.test(combined);
     const hasSceneRef = references.some(r => r.role === 'CENÁRIO');
     if (hasSceneInText && !hasSceneRef) {
-      suggestions.push('Se esse sofá ou ambiente for importante, envie uma foto do cenário.');
+      suggestions.push('Se o ambiente for importante, você pode adicionar uma foto do cenário.');
     }
 
     return suggestions;
@@ -210,7 +227,8 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
           direction: data.direction,
           finalPrompt: data.finalPrompt,
           approachTitle: data.approachTitle || 'Direção Visual Gerada',
-          approachIndex: currentApproach
+          approachIndex: currentApproach,
+          typographyPlan: data.typographyPlan
         };
       } else {
         // Fallback to local engine directly
@@ -394,6 +412,12 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
                 <p className="text-[10px] text-zinc-500 mt-1 font-mono">
                   O texto digitado é tratado como exato (sem traduções ou palavras adicionais inventadas pela IA).
                 </p>
+                {isTitleRepeatedInThumbnailText && (
+                  <div className="flex items-center gap-2 text-xs text-amber-300 font-mono bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2 mt-2">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>Seu texto está repetindo o título. Talvez a imagem possa entregar essa informação sozinha.</span>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -449,14 +473,42 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
           </div>
         </div>
 
-        {/* References Drag & Drop Area (Rules 3, 5, 23) */}
-        <div>
-          <label className="block text-xs font-mono font-bold uppercase tracking-wider text-zinc-300 mb-1">
-            Referências <span className="text-zinc-500 font-normal lowercase">(adicione imagens se quiser)</span>
-          </label>
-          <p className="text-[11px] text-zinc-400 mb-3">
-            Referências ajudam muito na fidelidade. Se tiver, envie fotos da pessoa, produto ou cenário que realmente devem aparecer.
-          </p>
+        {/* References Area */}
+        <div className="space-y-4">
+          {/* Guided References Box */}
+          <div className="bg-zinc-950/40 border border-zinc-800/60 rounded-2xl p-4 sm:p-5 space-y-3">
+            <div>
+              <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400">
+                REFERÊNCIAS — OPCIONAL, MAS RECOMENDADO
+              </h4>
+              <p className="text-xs text-zinc-300 italic mt-0.5">
+                &ldquo;Quanto melhor a referência, menos a IA precisa inventar.&rdquo;
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono">
+              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-2.5">
+                <span className="text-zinc-200 font-bold block mb-0.5">Se você aparece na thumbnail</span>
+                <span className="text-amber-400/90">→ Traga uma foto sua de referência.</span>
+              </div>
+              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-2.5">
+                <span className="text-zinc-200 font-bold block mb-0.5">Se existe um produto específico</span>
+                <span className="text-amber-400/90">→ Traga uma foto real do produto.</span>
+              </div>
+              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-2.5">
+                <span className="text-zinc-200 font-bold block mb-0.5">Se existe um cenário importante</span>
+                <span className="text-amber-400/90">→ Traga uma foto do ambiente ou de um cenário parecido.</span>
+              </div>
+              <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-2.5">
+                <span className="text-zinc-200 font-bold block mb-0.5">Se você gostou de uma composição</span>
+                <span className="text-amber-400/90">→ Traga a imagem apenas como referência de enquadramento.</span>
+              </div>
+              <div className="sm:col-span-2 bg-zinc-900/50 border border-zinc-800/60 rounded-xl p-2.5">
+                <span className="text-zinc-200 font-bold block mb-0.5">Se existe uma estética específica</span>
+                <span className="text-amber-400/90">→ Traga uma referência de estilo.</span>
+              </div>
+            </div>
+          </div>
 
           <input
             type="file"
@@ -758,6 +810,28 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
               </div>
             </div>
           </div>
+
+          {/* PLANO DE TIPOGRAFIA (Apenas se houver texto) */}
+          {result.typographyPlan && (
+            <div className="bg-zinc-900/80 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-3">
+              <div className="flex items-center justify-between border-b border-zinc-800/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-500">
+                    PLANO DE TIPOGRAFIA
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-950 text-amber-400/90 border border-amber-500/30">
+                  RECOMENDAÇÃO DE DESIGN
+                </span>
+              </div>
+              <p className="text-xs text-zinc-200 leading-relaxed font-mono">
+                {result.typographyPlan}
+              </p>
+              <p className="text-[11px] text-zinc-400 font-mono">
+                Para texto perfeitamente legível, é melhor adicionar a tipografia depois da geração.
+              </p>
+            </div>
+          )}
 
           {/* FINAL PROMPT */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 sm:p-8 space-y-4">

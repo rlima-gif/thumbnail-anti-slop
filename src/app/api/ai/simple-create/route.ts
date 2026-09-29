@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAIProvider } from '@/lib/ai/provider';
-import { generateSimpleThumbnail } from '@/lib/simpleEngine/engine';
+import { generateSimpleThumbnail, buildTypographyPlan, detectTechHardware } from '@/lib/simpleEngine/engine';
 import { CreateThumbnailInput } from '@/types/simple';
 
 export async function POST(req: NextRequest) {
@@ -77,12 +77,20 @@ Reference Roles: ${(body.references || []).map(r => `${r.name}: ${r.role}`).join
         if (response.ok) {
           const data = await response.json();
           const parsed = JSON.parse(data.choices[0].message.content);
+          const isTech = detectTechHardware(`${body.videoTitle} ${body.ideaDescription}`);
+          const typographyPlan = buildTypographyPlan(
+            body.thumbnailText,
+            isTech,
+            body.fontName,
+            body.reservedSpacePosition
+          );
           return NextResponse.json({
             isLocal: false,
             direction: parsed.direction,
             finalPrompt: parsed.finalPrompt,
             approachTitle: body.approachIndex === 1 ? 'Foco no Objeto / Hardware' : body.approachIndex === 2 ? 'Tensão Documental' : 'Equilíbrio Narrativo',
-            approachIndex: body.approachIndex || 0
+            approachIndex: body.approachIndex || 0,
+            typographyPlan
           });
         }
       } catch (err) {

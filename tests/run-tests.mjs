@@ -767,7 +767,28 @@ console.log('\n19. Testando Novos Tipos de Referência, Isolamento de Atributos 
 
   // Mãos com oclusão natural
   assert.ok(resTrio.finalPrompt.includes('Anatomically plausible hands'), 'Trio com pessoa e produto deve usar mãos com oclusão natural');
-  console.log('  ✓ PESSOA + PRODUTO + CENÁRIO juntos: Coexistência harmoniosa com isolamento de atributos comprovado.');
+  // Test 19H: Preservação Estrutural de Cenário e Veto a Quarto Gamer Genérico / RGB
+  assert.ok(resCenario.finalPrompt.includes('Strictly preserve structural elements (couch/furniture position, desk, windows, TV, shelves, walls, and authentic existing room lighting)'), 'CENÁRIO deve preservar elementos estruturais');
+  assert.ok(resCenario.finalPrompt.includes('Never replace an authentic domestic room or bedroom with a generic gaming room, futuristic studio, or RGB streamer setup'), 'CENÁRIO deve vetar quarto gamer genérico e RGB');
+  console.log('  ✓ CENÁRIO: Preservação de layout estrutural (sofá, mesa, janela, TV, paredes) e veto a setups RGB genéricos.');
+
+  // Test 19I: buildTypographyPlan (Recomendação de design pós-geração com fontes seguras)
+  const { buildTypographyPlan } = await import('../src/lib/simpleEngine/engine.ts');
+  const planGeneric = buildTypographyPlan('AGORA FUNCIONA', false, undefined, 'DIREITA');
+  assert.ok(planGeneric.includes('Anton ou Bebas Neue'), 'Deve sugerir fontes seguras e reais como Anton ou Bebas Neue');
+  assert.ok(planGeneric.includes('à direita'), 'Deve respeitar a posição reservada');
+
+  const planTech = buildTypographyPlan('RTX 5090 TESTE', true, undefined, 'ESQUERDA');
+  assert.ok(planTech.includes('Archivo Black ou Inter'), 'Para tech deve sugerir grotesk limpa como Archivo Black ou Inter');
+  assert.ok(planTech.includes('à esquerda'), 'Deve respeitar a posição à esquerda');
+
+  const planCustom = buildTypographyPlan('IMPORTANTE', false, 'Montserrat', 'SUPERIOR');
+  assert.ok(planCustom.includes('Montserrat'), 'Deve respeitar fonte informada pelo usuário');
+  assert.ok(planCustom.includes('no topo'), 'Deve mapear SUPERIOR para no topo');
+
+  const planEmpty = buildTypographyPlan('', false);
+  assert.strictEqual(planEmpty, undefined, 'Deve retornar undefined se não houver texto');
+  console.log('  ✓ PLANO DE TIPOGRAFIA: Recomendações pós-geração, fontes reais seguras e mapeamento espacial validados.');
 }
 
 console.log('\n✅ TODOS OS TESTES PASSARAM COM SUCESSO! VALIDAÇÃO CONCLUÍDA.');

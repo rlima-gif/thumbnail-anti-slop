@@ -440,11 +440,11 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
     }
   }
 
-  // 3. CENÁRIO (Regra 8: Ambiente, arquitetura, posição geral de móveis, layout, elementos espaciais. Não copiar pessoas, objetos irrelevantes, filtros)
+  // 3. CENÁRIO (Cenário não é decoração: preservar elementos estruturais do ambiente para servir à história)
   const sceneRefs = (references || []).filter(r => r.role === 'CENÁRIO');
   if (sceneRefs.length > 0) {
     locks.push(
-      `ENVIRONMENT / SCENERY REFERENCE (${sceneRefs.map(s => s.name).join(', ')}): Use exclusively as reference for environment, room architecture, general position of furniture, layout, spatial depth, and important spatial elements. Do NOT copy people who might appear in this photo, do NOT copy irrelevant stray objects, and do NOT copy photographic filters/treatment from this photo.`
+      `ENVIRONMENT / SCENERY REFERENCE (${sceneRefs.map(s => s.name).join(', ')}): Use exclusively as reference for environment, room architecture, general position of furniture, layout, spatial depth, and important spatial elements. Strictly preserve structural elements (couch/furniture position, desk, windows, TV, shelves, walls, and authentic existing room lighting). Do NOT copy people who might appear in this photo, do NOT copy irrelevant stray objects, and do NOT copy photographic filters/treatment from this photo. Never replace an authentic domestic room or bedroom with a generic gaming room, futuristic studio, or RGB streamer setup.`
     );
   }
 
@@ -493,13 +493,27 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
   }
 
   // Handle thumbnail text, typography treatment and spatial reservation (Rules 12-22)
-  if (textTreatment === 'SEM_TEXTO') {
+  const posMap: Record<ReservedSpacePosition, string> = {
+    ESQUERDA: 'left side',
+    DIREITA: 'right side',
+    SUPERIOR: 'upper top area',
+    INFERIOR: 'lower bottom area'
+  };
+  const chosenPos = reservedSpacePosition ? posMap[reservedSpacePosition] : 'right side';
+
+  if (textTreatment === 'SEM_TEXTO' || !thumbnailText || !thumbnailText.trim()) {
     // Regra 16: Gerar sem texto
     promptBody += `\nTYPOGRAPHY: Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.`;
-  } else if (thumbnailText && thumbnailText.trim().length > 0) {
+  } else {
     // Regra 14: Texto exato - nunca traduzir, reescrever, corrigir ou adicionar palavras
     const exactText = thumbnailText.trim();
     let typeLine = `The only visible text must read exactly: "${exactText}". No extra words. No pseudo-text. No invented letters.`;
+
+    if (textTreatment === 'RENDER_IN_IMAGE') {
+      typeLine += ` Render with high contrast on a calm area, never placing text over faces, hands, or main product.`;
+    } else {
+      typeLine += ` Leave clean negative space on the ${chosenPos} for later typography. Do not generate random letters, words, logos, symbols, pseudo-text or decorative glyphs inside the image.`;
+    }
 
     // Regra 18 & 20: Fonte real vs características tipográficas
     if (fontName && fontName.trim().length > 0) {
@@ -521,14 +535,7 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
   }
 
   // Regra 17: Reservar espaço para texto
-  if (reserveSpaceForText) {
-    const posMap: Record<ReservedSpacePosition, string> = {
-      ESQUERDA: 'left side',
-      DIREITA: 'right side',
-      SUPERIOR: 'upper top area',
-      INFERIOR: 'lower bottom area'
-    };
-    const chosenPos = reservedSpacePosition ? posMap[reservedSpacePosition] : 'right side';
+  if (reserveSpaceForText && textTreatment !== 'SEM_TEXTO') {
     promptBody += `\nCOMPOSITION RESERVATION: Leave clean negative space on the ${chosenPos} for later typography. Do not place important subjects or visual clutter in this region.`;
   }
 
@@ -559,12 +566,46 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
     finalPrompt = `DALL-E 3 / GPT-4o Prompt:\n${promptBody}\nRule: Photo style, realistic camera shutter capture, natural skin texture, authentic human facial asymmetry, and accurate hardware geometry.`;
   }
 
+  const typographyPlan = buildTypographyPlan(thumbnailText, isTech, fontName, reservedSpacePosition);
+
   return {
     direction: directionPt,
     finalPrompt,
     approachTitle,
-    approachIndex
+    approachIndex,
+    typographyPlan
   };
+}
+
+// Builds structured typography recommendation for post-generation design (Section 8)
+export function buildTypographyPlan(
+  thumbnailText?: string,
+  isTech = false,
+  fontName?: string,
+  position: ReservedSpacePosition = 'DIREITA'
+): string | undefined {
+  if (!thumbnailText || !thumbnailText.trim()) return undefined;
+
+  const posMap: Record<ReservedSpacePosition, string> = {
+    ESQUERDA: 'à esquerda',
+    DIREITA: 'à direita',
+    SUPERIOR: 'no topo',
+    INFERIOR: 'na base'
+  };
+  const posPt = posMap[position] || 'à direita';
+  const clean = thumbnailText.trim();
+  const wordCount = clean.split(/\s+/).length;
+  const lineCount = wordCount > 2 ? '2 linhas no máximo' : '1 a 2 linhas';
+
+  if (fontName && fontName.trim().length > 0) {
+    return `${fontName.trim()} / sans-serif com peso bold, ${lineCount}, adicionada posteriormente sobre o espaço negativo ${posPt}, alto contraste sem efeitos 3D.`;
+  }
+
+  if (isTech) {
+    return `Archivo Black ou Inter / heavy grotesk limpa, ${lineCount}, adicionada posteriormente sobre o espaço negativo ${posPt}, sem efeitos 3D.`;
+  }
+
+  return `Anton ou Bebas Neue / sans-serif condensada pesada, ${lineCount}, adicionada posteriormente sobre o espaço negativo ${posPt}, sem sombras pesadas ou extrusão 3D.`;
 }
 
 // Slop remover & prompt purifier (Understands intent first, strips cliches, reconstructs grounded prompt)
