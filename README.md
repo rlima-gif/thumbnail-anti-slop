@@ -1,164 +1,124 @@
-# THUMBNAIL ANTI-SLOP — V2 HYBRID LOCAL-FIRST & MULTIMODAL AI
+# THUMBNAIL ANTI-SLOP — RADICAL SIMPLICITY
 
-> Direção visual para thumbnails que parecem dirigidas por uma pessoa — não montadas automaticamente por IA. Menos efeitos, mais decisões.
-
----
-
-## 🌟 O Que Há de Novo na Versão 2
-
-O **Thumbnail Anti-Slop V2** evolui de uma ferramenta estritamente client-side para uma **arquitetura híbrida de alto nível**:
-1. **Totalmente Funcional Offline**: Continua operando 100% no navegador via localStorage sem qualquer dependência de chaves de API.
-2. **Visão Multimodal Real no Servidor**: Quando configurado com `OPENAI_API_KEY`, adiciona visão computacional profunda com detecção de evidências físicas visíveis, interpretações artísticas e níveis explícitos de incerteza (`CONFIDENT`, `LIKELY`, `UNCERTAIN`).
-3. **Sem Simulações Fake**: Quando a IA não estiver configurada, o sistema **NUNCA** gera dados ou palpites inventados. O usuário é informado de forma transparente sobre como configurar suas chaves no servidor.
-4. **Mandato Ético Rigoroso**: O sistema **NUNCA gera previsões artificiais de CTR** ou notas milagrosas de algoritmo. Correlação não é causalidade.
-5. **Travas de Preservação (11 Reference Locks)**: Bloqueio estrito de geometria industrial, fisionomia real, proporções e acabamentos nos prompts de geração.
-6. **Simulador de Feed em Contexto**: Visualização em 4 contextos reais do YouTube (Mobile Home, Desktop Home, Busca e Barra Lateral) com alternância entre temas Claro e Escuro.
-7. **Diário de Experimentos & DNA do Canal**: Registro científico de hipóteses isoladas com variáveis primárias e secundárias, pronto para correlação com o YouTube Studio.
+> Crie prompts de thumbnail que parecem dirigidos por uma pessoa — não por uma IA genérica.
+> Menos efeitos, mais decisões. Subtrair antes de decorar.
 
 ---
 
-## 📦 Módulos do Sistema
+## 💡 A Ideia do Produto
 
-1. **00 — Ideia**: Manifesto de direção e comparativo visual interativo (Slop vs Clicável vs Excelente).
-2. **01 — Clique**: 4 perguntas fundamentais de planejamento e heurística *Title × Thumbnail Delta* (Redundante, Complementar, Desconectado).
-3. **02 — Referências & Preservation Locks**: Atribuição de papéis específicos às referências (`SUJEITO`, `PALETA`, `ILUMINAÇÃO`, `COMPOSIÇÃO`, `LENTE / DISTORÇÃO`, `TEXTURA`, `PRODUTO / HARDWARE`, `ESTILO DO CANAL`) e painel com 11 travas físicas de preservação não-negociáveis.
-4. **03 — Direção Fotográfica**: Formulário fotográfico estruturado (lente, luz motivada, paleta, profundidade, enquadramento), slider de Presença do Protagonista (10%–90%), salvaguardas de Fidelidade de Hardware e Rosto Real, além de assistente "Sugerir Direção com IA" com revisão de proposta diff antes da aplicação.
-5. **04 — Anti-Slop**: Catálogo pesquisável com 29 vícios visuais de IA/Photoshop com ação "Adicionar ao EVITAR", além de guia educativo dos 16 artefatos de IA.
-6. **05 — Anatomia**: Gramática de atenção, ordem de leitura humana (Assunto 0-250ms → Conflito 250-600ms → Contexto 600-1000ms) e visualizador de camadas em 16:9.
-7. **06 — Laboratório Óptico**:
-   - **Diagnóstico Local**: Escala 10% Mobile, Desfoque progressivo (Squint Test a `blur(16px)`), Mapa de Ênfase Estimada, Silhueta P&B, Escala de cinza, Teste de 1 Segundo de Exposição e Safe Zones 16:9.
-   - **Simulador de Feed**: Mobile Home, Desktop Home, Resultados de Busca e Vídeos Relacionados (Dark/Light Mode) cercado por concorrentes neutros.
-   - **Visão Multimodal com IA**: Análise estruturada de hierarquia, leitura mobile, separação sujeito-fundo, naturalidade facial, coerência de iluminação, e regiões com bounding boxes interativos, distinguindo evidência física visível de interpretação.
-   - **Comparativo A × B Multimodal**: Upload e análise comparativa de 2 miniaturas frente a frente revelando hipóteses implícitas e riscos competitivos.
-   - **Patch Prompt Generator**: Aplicação de correções de alto impacto ("Uma alteração de maior impacto") com cópia de prompt corretivo para Midjourney/FLUX/Imagen.
-8. **07 — Checklist Anti-Slop**: 21 critérios de direção de arte persistentes avaliados em 4 estados: *Ainda Confusa*, *Funciona*, *Forte* e *Direção Consistente*.
-9. **08 — Gerador de Prompts Art-Directed**: Construtor estruturado em 17 blocos em inglês com travas de preservação, salvaguardas de consistência, assistente "Refinar com IA" com visualizador de diff antes/depois, e histórico com restauração de versões.
-10. **09 — Teste A/B Hipóteses Conceituais**: Gerador de 3 hipóteses conceituais estruturalmente distintas (**A — Personagem**, **B — Objeto**, **C — Situação**) com detector de diversidade para evitar variações estéticas superficiais da mesma ideia.
-11. **10 — YouTube Channel DNA & Diário de Experimentos**: Registro de hipóteses científicas, documentação de variáveis isoladas, logs de desempenho e arquitetura OAuth 2.0 (`youtube.readonly`, `yt-analytics.readonly`, `youtube.force-ssl`).
-12. **Glossário**: 33 termos essenciais de direção visual com impacto prático em thumbnails.
+A complexidade existe **por trás**, no motor. Ela **não aparece** para o usuário.
+
+Em aproximadamente 30 segundos, qualquer criador sem conhecimento técnico de fotografia consegue:
+1. Colocar o título do vídeo.
+2. Explicar a ideia como falaria com uma pessoa.
+3. Jogar uma ou duas fotos de referência.
+4. Clicar em **GERAR THUMBNAIL PROMPT**.
+5. Copiar um prompt fotográfico pronto e de altíssimo nível.
 
 ---
 
-## 🛠️ Instalação e Execução
+## ⚡ Os 3 Modos da Interface
+
+### 1. CRIAR (Modo Principal)
+- **Título do Vídeo**: Âncora temática da miniatura.
+- **O Que Você Imagina?**: Textarea conversacional. O criador fala naturalmente ("Eu no sofá segurando o Legion Go mostrando o novo sistema..."). O motor traduz a intenção em direção visual cinematográfica.
+- **Texto na Thumbnail (Opcional)**: Preserva exatamente o texto sem poluir a imagem, alertando discretamente se passar de 4 palavras.
+- **Referências Drag & Drop**: Suporte a múltiplas imagens com atribuição rápida de papéis:
+  - `PESSOA`: Preserva identidade, proporções faciais, barba e textura real da pele (sem efeito de boneco de cera).
+  - `PRODUTO`: Preserva geometria física real, botões, saídas de ar, portas e acabamento fosco (sem distorções de IA).
+  - `ESTILO`: Extrai apenas iluminação e paleta de cores.
+  - `COMPOSIÇÃO`: Extrai enquadramento e organização espacial.
+- **Configurações Avançadas (Opcional & Fechado por Padrão)**:
+  - Formato: 16:9 (YouTube) ou 9:16 (Shorts/Reels)
+  - Estilo Visual: Cinematográfico, Editorial, Fotojornalismo, Natural
+  - Nível de Realismo: Alto / Fotográfico Real ou Estilizado
+  - Modelo Alvo: `GERAL`, `MIDJOURNEY`, `FLUX`, `GEMINI`, `OPENAI`
+- **Resultado Direto**:
+  - **DIREÇÃO (5 Decisões Concisas)**: Ideia, Foco, Composição, Expressão, Visual & Luz.
+  - **PROMPT FINAL (English)**: Formatado para o modelo alvo, livre de clichês e com travas de preservação.
+  - **GERAR OUTRA ABORDAGEM**: Cicla entre diferentes mecanismos visuais (Objeto Hero vs. Equilíbrio Narrativo vs. Tensão Documental).
+
+---
+
+### 2. MELHORAR PROMPT (Purificador Anti-Slop)
+- O usuário cola um prompt poluído com clichês de IA (ex: *"Make an epic gaming thumbnail with neon lighting, dramatic glow, particles, excited man with open mouth holding controller..."*).
+- O botão **REMOVER O SLOP** identifica e subtrai os exageros, substituindo-os por iluminação motivada crível, foco autêntico e texturas reais.
+- Retorna:
+  - **O QUE MUDEI**: Lista curta de 3 a 5 correções pedagógicas.
+  - **PROMPT MELHORADO**: Prompt refinado pronto para copiar.
+
+---
+
+### 3. ANALISAR THUMBNAIL (Auditoria Óptica Ética)
+- Upload de 1 miniatura (com título opcional).
+- **Sem Notas Fictícias**: O sistema recusa formalmente dar pontuações numéricas, "CTR scores" ou "probabilidades de viralização".
+- Retorna:
+  - **O QUE ESTÁ FUNCIONANDO** (máx. 3 itens)
+  - **O QUE ESTÁ DEIXANDO COM CARA DE IA** (máx. 3 itens)
+  - **MAIOR PROBLEMA** (1 recomendação prioritária única)
+  - **GERAR PROMPT PARA CORRIGIR**: Prompt corretivo de inpainting ou re-renderização focado em subtrair os artefatos.
+
+---
+
+## 🛡️ Salvaguardas Anti-Slop Integradas no Motor
+
+O motor proíbe automaticamente em todos os prompts gerados:
+- Expressões genéricas de choque, boca aberta em "O" e gritos caricatos de YouTube antigo.
+- Iluminação neon azul e roxa sem motivação narrativa em cenas casuais ou de tecnologia.
+- Efeito de pele plástica alisada (boneco de cera).
+- Brilho difuso em excesso (*outer glow*) e *rim lights* impossíveis.
+- Partículas, fagulhas e fogo gratuitos.
+- Setas e círculos vermelhos sem função narrativa.
+- Mãos deformadas e controles de videogame distorcidos.
+
+---
+
+## 🚀 Instalação e Execução
 
 ### Pré-requisitos
 - Node.js >= 18 (testado e validado em Node v26)
 - npm ou pnpm
 
-### Instalação das Dependências
+### Instalação
 ```bash
 npm install
 ```
 
-### Configuração de Variáveis de Ambiente (Opcional)
-
-Copie o arquivo `.env.example` para `.env.local`:
-```bash
-cp .env.example .env.local
-```
-
-Configurações disponíveis:
+### Variáveis de Ambiente (Opcional)
+Se desejar habilitar a visão multimodal do OpenAI GPT-4o no servidor, configure em `.env.local`:
 ```env
-# Provedor de Visão Multimodal e Refinamento de Texto (Opcional)
 OPENAI_API_KEY=sua_chave_aqui
 OPENAI_VISION_MODEL=gpt-4o
 OPENAI_TEXT_MODEL=gpt-4o-mini
-
-# Google / YouTube Data API (Opcional - para sincronização com canal)
-GOOGLE_CLIENT_ID=seu_client_id_aqui
-GOOGLE_CLIENT_SECRET=seu_client_secret_aqui
-NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
+> **Nota**: Se `OPENAI_API_KEY` não for configurada, o motor local determinístico assume 100% da operação silenciosamente, sem falhas nem erros na interface.
 
-> **Nota de Segurança**: Chaves de API ficam estritamente no servidor (Node.js API routes em `src/app/api/`). Nenhuma credencial é exposta no bundle client-side. Se nenhuma chave for fornecida, o aplicativo funcionará perfeitamente em modo local sem gerar erros.
-
-### Modo de Desenvolvimento
+### Execução Local
 ```bash
+# Modo de desenvolvimento
 npm run dev
-```
-Acesse [http://localhost:3000](http://localhost:3000) no seu navegador.
 
-### Compilação de Produção
-```bash
+# Compilação e execução de produção
 npm run build
-npm run start
+npm start
 ```
+Acesse [http://localhost:3000](http://localhost:3000).
 
-### Testes e Verificação de Qualidade
+### Testes e Verificação
 ```bash
-# Executar bateria de 11 suítes de testes unitários e heurísticos
-node tests/run-tests.mjs
-
-# Verificação estática de tipos TypeScript (Zero erros tolerados)
-npx tsc --noEmit
-
-# Verificação de linting ESLint
-npm run lint
+npm test            # 13 suítes de teste unitários e heurísticos
+npx tsc --noEmit    # Verificação estática TypeScript (Zero erros)
+npm run lint        # Verificação ESLint 9 (Zero avisos)
 ```
 
 ---
 
-## 🏛️ Arquitetura de Software
+## 🔒 Armazenamento e Privacidade
 
-```
-src/
-├── app/
-│   ├── api/
-│   │   ├── ai/
-│   │   │   ├── analyze-thumbnail/route.ts  # Endpoint de visão multimodal
-│   │   │   ├── compare-thumbnails/route.ts # Endpoint de comparação A/B multimodal
-│   │   │   ├── refine-prompt/route.ts      # Endpoint de refinamento de prompt
-│   │   │   ├── status/route.ts             # Status de configuração de IA
-│   │   │   └── suggest-direction/route.ts  # Endpoint de sugestão de direção
-│   │   └── youtube/
-│   │       └── status/route.ts             # Status da conexão OAuth YouTube
-│   ├── globals.css                         # Tema editorial dark e regras utilitárias
-│   ├── layout.tsx                          # Metadados e fontes
-│   └── page.tsx                            # Composição da experiência SPA unificada
-├── components/
-│   ├── layout/
-│   │   ├── Header.tsx                      # Gestão de projetos, export/import JSON
-│   │   ├── ChapterNav.tsx                  # Navegação com scroll-spy para os 11 módulos
-│   │   └── WorkflowLoop.tsx                # Visualizador do loop redutivo
-│   └── modules/                            # Módulos isolados 00 a 10 + Glossário
-│       ├── 06_Laboratorio/
-│       │   ├── ABCompareModal.tsx          # Comparativo multimodal A/B
-│       │   ├── AIAnalysisPanel.tsx         # Análise de visão, regiões e incerteza
-│       │   ├── FeedSimulator.tsx           # Simulador de feed em 4 contextos
-│       │   └── TextDensityWidget.tsx       # Classificador de densidade de texto
-│       └── 10_ChannelDNA/
-│           └── ChannelDNAModule.tsx        # Diário de experimentos e YouTube DNA
-├── context/
-│   └── ProjectContext.tsx                  # Estado global, histórico de prompts e migração V2
-├── data/                                   # Catálogo anti-slop, anatomia, checklist, glossário
-├── lib/
-│   ├── ai/                                 # Abstração de provedor, prompts de sistema e OpenAI
-│   ├── image-gen/                          # Provedor de imagem abstrato
-│   ├── heuristics.ts                       # Heurísticas de complexidade, delta e risco
-│   ├── promptGenerator.ts                  # Construtor de 17 blocos + preservation locks
-│   ├── abGenerator.ts                      # 3 hipóteses conceituais + teste de diversidade
-│   ├── storage.ts                          # Persistência local e migração de schema (V1 -> V2)
-│   └── youtube/                            # Abstração de serviço YouTube Data API
-└── types/
-    └── index.ts                            # Tipagem canônica TypeScript do ecossistema V2
-```
-
----
-
-## 🔒 Princípios de Privacidade e Armazenamento
-
-- **Persistência Local-First**: Todos os projetos, referências e experimentos residem no `localStorage` do seu navegador.
-- **Migração Não-Destrutiva**: Projetos salvos na versão 1 são automaticamente migrados para a versão 2 sem perda de nenhum dado histórico (`schemaVersion: 2`).
-- **Privacidade de Imagens**: O upload para testes ópticos locais processa dados no próprio navegador do usuário (`data:image/*`). Chamadas de IA multimodal só ocorrem se o usuário clicar deliberadamente no botão de análise após configurar sua chave no servidor.
-
----
-
-## ⚖️ Mandato Ético e Científico
-
-Este software recusa a estética do clique descartável e a promessa ilusória de "adivinhar o algoritmo".
-
-1. **Anti-Predição**: Nenhuma IA pode prever com precisão o CTR antes da publicação porque o algoritmo do YouTube avalia o comportamento humano em tempo real em função do contexto cultural, relevância do tema e retenção do vídeo.
-2. **Direção Humana com Ferramentas Claras**: O papel da inteligência artificial no *Thumbnail Anti-Slop* é atuar como um auditor técnico implacável de contraste, luz, legibilidade e naturalidade, devolvendo o controle criativo ao diretor de arte.
+- **100% Privado**: Imagens e ideias residem no navegador do usuário (`localStorage`).
+- **Histórico Rápido**: O botão **Histórico** permite resgatar e copiar prompts recentes em 1 clique.
+- **Zero Rastreamento**: Nenhuma telemetria ou envio de dados sem ação explícita do usuário.
 
 ---
 

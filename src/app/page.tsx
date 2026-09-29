@@ -1,110 +1,107 @@
 'use client';
 
-import React from 'react';
-import { ProjectProvider } from '@/context/ProjectContext';
-import { Header } from '@/components/layout/Header';
-import { ChapterNav } from '@/components/layout/ChapterNav';
-import { WorkflowLoop } from '@/components/layout/WorkflowLoop';
-import { IdeiaModule } from '@/components/modules/00_Ideia/IdeiaModule';
-import { CliqueModule } from '@/components/modules/01_Clique/CliqueModule';
-import { ReferenciasModule } from '@/components/modules/02_Referencias/ReferenciasModule';
-import { DirecaoModule } from '@/components/modules/03_Direcao/DirecaoModule';
-import { AntiSlopModule } from '@/components/modules/04_AntiSlop/AntiSlopModule';
-import { AnatomiaModule } from '@/components/modules/05_Anatomia/AnatomiaModule';
-import { LaboratorioModule } from '@/components/modules/06_Laboratorio/LaboratorioModule';
-import { ChecklistModule } from '@/components/modules/07_Checklist/ChecklistModule';
-import { GeradorModule } from '@/components/modules/08_Gerador/GeradorModule';
-import { ABTestModule } from '@/components/modules/09_ABTest/ABTestModule';
-import { ChannelDNAModule } from '@/components/modules/10_ChannelDNA/ChannelDNAModule';
-import { GlossarioModule } from '@/components/modules/Glossario/GlossarioModule';
+import React, { useState, useEffect } from 'react';
+import { SimpleHeader } from '@/components/simple/Header';
+import { ModeCreate } from '@/components/simple/ModeCreate';
+import { ModeImprove } from '@/components/simple/ModeImprove';
+import { ModeAnalyze } from '@/components/simple/ModeAnalyze';
+import { HistoryModal } from '@/components/simple/HistoryModal';
+import { getSimpleHistory } from '@/lib/simpleEngine/history';
+import { SimpleHistoryItem } from '@/types/simple';
 
 export default function Home() {
+  const [currentMode, setCurrentMode] = useState<'CRIAR' | 'MELHORAR' | 'ANALISAR'>('CRIAR');
+  const [historyItems, setHistoryItems] = useState<SimpleHistoryItem[]>(() => {
+    return typeof window !== 'undefined' ? getSimpleHistory() : [];
+  });
+  const [showHistory, setShowHistory] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [aiConfigured, setAiConfigured] = useState(false);
+
+  // Check server AI status on mount
+  useEffect(() => {
+    fetch('/api/ai/status')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.configured) {
+          setAiConfigured(true);
+        }
+      })
+      .catch(() => {
+        setAiConfigured(false);
+      });
+  }, []);
+
+  const refreshHistory = () => {
+    setHistoryItems(getSimpleHistory());
+  };
+
+  const handleNotify = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 3200);
+  };
+
   return (
-    <ProjectProvider>
-      <div className="min-h-screen flex flex-col bg-[#090a0d] text-zinc-100">
-        {/* Global Persistent Header */}
-        <Header />
+    <div className="min-h-screen flex flex-col bg-[#090a0d] text-zinc-100 selection:bg-amber-500 selection:text-zinc-950">
+      {/* 1. Header with 3 Modes and History */}
+      <SimpleHeader
+        currentMode={currentMode}
+        onSelectMode={setCurrentMode}
+        onOpenHistory={() => setShowHistory(true)}
+        historyCount={historyItems.length}
+        aiConfigured={aiConfigured}
+      />
 
-        {/* Sticky Chapter Navigation Bar */}
-        <ChapterNav />
+      {/* 2. Main Work Area (Pure & Simple) */}
+      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6">
+        {currentMode === 'CRIAR' && (
+          <ModeCreate
+            onNotify={handleNotify}
+            onRefreshHistoryCount={refreshHistory}
+          />
+        )}
 
-        {/* Main Content Area */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Visual Product Workflow Loop (Module 31) */}
-          <WorkflowLoop />
+        {currentMode === 'MELHORAR' && (
+          <ModeImprove
+            onNotify={handleNotify}
+            onRefreshHistoryCount={refreshHistory}
+          />
+        )}
 
-          {/* Module 00 — Ideia */}
-          <IdeiaModule />
+        {currentMode === 'ANALISAR' && (
+          <ModeAnalyze
+            onNotify={handleNotify}
+            onRefreshHistoryCount={refreshHistory}
+          />
+        )}
+      </main>
 
-          {/* Module 01 — Clique */}
-          <CliqueModule />
+      {/* 3. Subtle Editorial Footer */}
+      <footer className="border-t border-zinc-900 bg-zinc-950/60 py-8 mt-12 text-center text-xs font-mono text-zinc-500">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span>THUMBNAIL ANTI-SLOP</span>
+          <span className="text-zinc-600">Subtrair antes de decorar • Menos efeitos, mais decisões</span>
+          <span>100% Privado & Local</span>
+        </div>
+      </footer>
 
-          {/* Module 02 — Referências */}
-          <ReferenciasModule />
+      {/* 4. History Modal */}
+      <HistoryModal
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        items={historyItems}
+        onUpdateItems={setHistoryItems}
+        onNotify={handleNotify}
+      />
 
-          {/* Module 03 — Direção */}
-          <DirecaoModule />
-
-          {/* Module 04 — Anti-Slop */}
-          <AntiSlopModule />
-
-          {/* Module 05 — Anatomia */}
-          <AnatomiaModule />
-
-          {/* Module 06 — Laboratório */}
-          <LaboratorioModule />
-
-          {/* Module 07 — Checklist */}
-          <ChecklistModule />
-
-          {/* Module 08 — Gerador */}
-          <GeradorModule />
-
-          {/* Module 09 — A/B Test */}
-          <ABTestModule />
-
-          {/* Module 10 — YouTube Channel DNA & Diário de Experimentos */}
-          <ChannelDNAModule />
-
-          {/* Technical Reference — Glossário */}
-          <GlossarioModule />
-        </main>
-
-        {/* Editorial Footer */}
-        <footer className="border-t border-zinc-800 bg-zinc-950 py-12 mt-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center justify-between">
-              <div className="md:col-span-6 space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-500 font-mono font-bold text-xs">
-                    TAS
-                  </div>
-                  <span className="text-sm font-black tracking-tight uppercase text-zinc-100">
-                    Thumbnail Anti-Slop
-                  </span>
-                </div>
-                <p className="text-xs text-zinc-400 font-serif italic max-w-md">
-                  &ldquo;A IA executa o que você direciona. O objetivo não é parecer uma thumbnail genérica, mas uma cena que merece ser clicada.&rdquo;
-                </p>
-                <p className="text-[11px] text-zinc-500 font-mono">
-                  100% Client-Side • Armazenamento Local Privado • Zero Telemetria
-                </p>
-              </div>
-
-              <div className="md:col-span-6 flex flex-col md:items-end space-y-2 text-xs text-zinc-400 font-mono">
-                <div className="flex items-center gap-4">
-                  <span>Subtrair antes de decorar</span>
-                  <span>•</span>
-                  <span>Menos efeitos, mais decisões</span>
-                </div>
-                <div className="text-[10px] text-zinc-400">
-                  Direção visual para criadores que respeitam a inteligência do espectador.
-                </div>
-              </div>
-            </div>
-          </div>
-        </footer>
-      </div>
-    </ProjectProvider>
+      {/* 5. Minimalist Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-zinc-900/95 border border-amber-500/40 text-amber-300 px-5 py-2.5 rounded-2xl shadow-2xl text-xs font-mono font-medium backdrop-blur-md animate-in fade-in slide-in-from-bottom-2 duration-200">
+          {toastMessage}
+        </div>
+      )}
+    </div>
   );
 }
