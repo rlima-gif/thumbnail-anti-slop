@@ -358,4 +358,223 @@ console.log('\n13. Testando Purificador de Prompt (Remover o Slop)...');
   console.log('  ✓ Purificação de prompt e geração de mudanças pedagógicas validadas.');
 }
 
+// 14. Real Simple Engine: Bias Elimination (No Cinematic, No f/2.0, No Pores, No MJ v6.1)
+console.log('\n14. Testando Ausência de Viés Cinematográfico, Abertura Forçada (f/2.0), Poros e Midjourney v6.1...');
+{
+  const {
+    generateSimpleThumbnail
+  } = await import('../src/lib/simpleEngine/engine.ts');
+
+  // Test neutral generation
+  const resNeutral = generateSimpleThumbnail({
+    videoTitle: 'Review do Microfone Shure SM7B',
+    ideaDescription: 'Microfone em cima da mesa de podcast com iluminação suave',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+
+  const promptLower = resNeutral.finalPrompt.toLowerCase();
+  assert.ok(!promptLower.includes('cinematic'), 'Prompt padrão NÃO deve conter "cinematic"');
+  assert.ok(!promptLower.includes('cinematogr'), 'Prompt padrão NÃO deve conter "cinematográfico"');
+  assert.ok(!/f\/\d/i.test(resNeutral.finalPrompt), 'Prompt padrão NÃO deve conter abertura forçada (ex: f/2.0)');
+  assert.ok(!/pores|poros/i.test(promptLower), 'Prompt padrão NÃO deve usar "pores" como muleta de realismo');
+  console.log('  ✓ Ausência de viés "cinematic", f/2.0 e "pores" validada no preset padrão Natural.');
+
+  // Test Midjourney target model flags
+  const resMJ = generateSimpleThumbnail({
+    videoTitle: 'Setup de Gravação',
+    ideaDescription: 'Mesa de trabalho com notebook e luz natural da janela',
+    references: [],
+    targetModel: 'MIDJOURNEY',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+
+  assert.ok(!resMJ.finalPrompt.includes('--v 6'), 'Prompt Midjourney NÃO deve fixar versão volátil como --v 6.1');
+  assert.ok(resMJ.finalPrompt.includes('--style raw'), 'Prompt Midjourney DEVE incluir --style raw');
+  assert.ok(resMJ.finalPrompt.includes('--ar 16:9'), 'Prompt Midjourney DEVE incluir proporção --ar 16:9');
+  console.log('  ✓ Parâmetros Midjourney limpos (--style raw e --ar 16:9 sem --v 6.1 fixo) validados.');
+
+  // Test explicit Cinematic request
+  const resCinematic = generateSimpleThumbnail({
+    videoTitle: 'Curta Metragem de Ficção',
+    ideaDescription: 'Cena noturna na chuva com estilo de filme noir',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Cinematográfico',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  assert.ok(resCinematic.finalPrompt.includes('Cinematográfico'), 'Deve incluir Cinematográfico SOMENTE quando explicitamente escolhido.');
+  console.log('  ✓ Presença de "Cinematográfico" estritamente restrita a pedidos explícitos do usuário.');
+}
+
+// 15. Real Simple Engine: 4 Diverse Mode CRIAR Cases (Gaming, Tech, Rosto/Story, Sem Pessoa)
+console.log('\n15. Testando 4 Casos Diversos do Modo CRIAR (Gaming, Tech, Rosto/Story, Sem Pessoa)...');
+{
+  const { generateSimpleThumbnail } = await import('../src/lib/simpleEngine/engine.ts');
+
+  // Case 1: Gaming (Handheld / Setup / Context)
+  const caseGaming = generateSimpleThumbnail({
+    videoTitle: 'Troquei o Windows do meu Legion Go',
+    ideaDescription: 'Eu sentado no sofá da sala segurando o Legion Go ligado jogando',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: true
+  });
+
+  assert.ok(caseGaming.finalPrompt.includes('HARDWARE & PRODUCT FIDELITY'), 'Caso Gaming deve conter trava de hardware');
+  assert.ok(caseGaming.finalPrompt.includes('HAND & OBJECT INTERACTION'), 'Caso Gaming deve conter trava de anatomia de mãos no controle');
+  assert.ok(caseGaming.finalPrompt.includes('unmotivated purple-blue gaming neon by default'), 'Caso Gaming deve bloquear neon clichê');
+  assert.ok(caseGaming.finalPrompt.includes('preserves the lived-in environmental context'), 'Caso Gaming com sofá/sala deve preservar legibilidade do ambiente');
+  console.log('  ✓ Caso 1 (Gaming): Travas de hardware, interação manual e preservação de ambiente validadas.');
+
+  // Case 2: Tech Teardown (Hardware / Mesa / Circuito)
+  const caseTech = generateSimpleThumbnail({
+    videoTitle: 'Abri o iPhone 16 Pro Max para ver o novo chip',
+    ideaDescription: 'Mesa de bancada limpa com ferramentas de precisão e o aparelho aberto revelando o circuito interno',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: true
+  });
+
+  assert.ok(caseTech.direction.foco.includes('dispositivo aberto') || caseTech.direction.foco.includes('hardware') || caseTech.direction.foco.includes('circuito'), 'Caso Tech deve focar no hardware desmontado');
+  assert.ok(caseTech.finalPrompt.includes('HARDWARE & PRODUCT FIDELITY'), 'Caso Tech deve conter trava de integridade industrial');
+  console.log('  ✓ Caso 2 (Tech Teardown): Foco técnico e integridade de circuitos validados.');
+
+  // Case 3: Rosto / Story (Tensão Humana Autêntica)
+  const caseStory = generateSimpleThumbnail({
+    videoTitle: 'O dia em que perdi meu canal com 1 milhão de inscritos',
+    ideaDescription: 'Eu olhando pensativo para a tela do computador no escuro, expressão de preocupação e desabafo autêntico',
+    references: [{ id: 'ref-face-1', name: 'Meu Rosto', url: 'https://example.com/me.jpg', role: 'PESSOA' }],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: true,
+    preserveProduct: false
+  });
+
+  assert.ok(caseStory.finalPrompt.includes('FACIAL FIDELITY (MANDATORY)'), 'Caso Story deve ter trava de fidelidade facial');
+  assert.ok(caseStory.finalPrompt.includes('natural facial asymmetry'), 'Caso Story deve exigir assimetria facial natural');
+  assert.ok(caseStory.finalPrompt.includes('NO artificial plastic smoothing'), 'Caso Story deve proibir alisamento plástico');
+  const positiveStoryPrompt = caseStory.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0].toLowerCase();
+  assert.ok(!positiveStoryPrompt.includes('screaming') && !positiveStoryPrompt.includes('shocked'), 'Caso Story não deve induzir careta');
+  assert.ok(!caseStory.direction.expressao.toLowerCase().includes('grito') && !caseStory.direction.expressao.toLowerCase().includes('choque'), 'Expressão não deve prescrever choque');
+  console.log('  ✓ Caso 3 (Rosto / Story): Fidelidade de identidade facial, textura orgânica e ausência de caretas validadas.');
+
+  // Case 4: Sem Pessoa (Ambiente / Atmosfera / Mistério)
+  const caseSemPessoa = generateSimpleThumbnail({
+    videoTitle: 'O mistério do bunker abandonado na floresta',
+    ideaDescription: 'Entrada de concreto rachado de um bunker antigo coberta por musgo e folhas secas na penumbra',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+
+  assert.ok(!caseSemPessoa.finalPrompt.includes('FACIAL FIDELITY'), 'Cena sem pessoa NÃO deve ter trava de rosto');
+  assert.ok(caseSemPessoa.direction.foco.includes('concreto') || caseSemPessoa.direction.foco.includes('bunker') || caseSemPessoa.direction.foco.includes('ponto'), 'Foco deve ser espacial/arquitetônico');
+  console.log('  ✓ Caso 4 (Sem Pessoa): Foco exclusivamente arquitetônico e ausência de travas humanas validados.');
+
+  // Distinctiveness assertion across all 4 cases
+  assert.notEqual(caseGaming.direction.foco, caseTech.direction.foco, 'Gaming e Tech devem ter focos distintos');
+  assert.notEqual(caseTech.direction.foco, caseStory.direction.foco, 'Tech e Story devem ter focos distintos');
+  assert.notEqual(caseStory.direction.foco, caseSemPessoa.direction.foco, 'Story e Sem Pessoa devem ter focos distintos');
+  assert.notEqual(caseGaming.direction.composicao, caseStory.direction.composicao, 'Composições devem ser estruturalmente diferentes');
+  console.log('  ✓ Distinção estrutural comprovada entre todos os 4 casos.');
+}
+
+// 16. Real Simple Engine: Mode MELHORAR (Community Slop Purification)
+console.log('\n16. Testando Modo MELHORAR com Exemplo Completo de Slop da Comunidade...');
+{
+  const { improvePrompt } = await import('../src/lib/simpleEngine/engine.ts');
+
+  const dirtyCommunityPrompt = 'Epic cinematic gaming thumbnail, vibrant neon purple and blue lighting, dramatic rim light, glowing console, shocked YouTuber face, floating sparks, ultra detailed, high CTR';
+  const improvedResult = improvePrompt({ rawPrompt: dirtyCommunityPrompt });
+
+  assert.ok(improvedResult.changes.length >= 4, `Esperadas pelo menos 4 mudanças explicadas, obteve ${improvedResult.changes.length}`);
+  const positiveImproved = improvedResult.improvedPrompt.split('STRICTLY AVOID:')[0].toLowerCase();
+
+  assert.ok(!positiveImproved.includes('neon'), 'Parte positiva não deve conter neon');
+  assert.ok(!positiveImproved.includes('shocked') && !positiveImproved.includes('open mouth'), 'Parte positiva não deve conter careta de choque');
+  assert.ok(!positiveImproved.includes('sparks'), 'Parte positiva não deve conter faíscas');
+  assert.ok(!positiveImproved.includes('glowing'), 'Parte positiva não deve conter glowing console');
+  assert.ok(!positiveImproved.includes('high ctr'), 'Parte positiva não deve conter buzzword "high CTR"');
+  assert.ok(!positiveImproved.includes('epic'), 'Parte positiva não deve conter buzzword "epic"');
+  assert.ok(improvedResult.improvedPrompt.includes('Natural motivated light'), 'Deve conter luz física motivada');
+  assert.ok(improvedResult.improvedPrompt.includes('natural skin texture'), 'Deve conter textura natural de pele');
+  assert.ok(improvedResult.improvedPrompt.includes('STRICTLY AVOID:'), 'Deve incluir lista negativa de slop');
+  console.log('  ✓ Purificação completa de slop executada com sucesso.');
+  console.log(`    Mudanças registradas (${improvedResult.changes.length}):`);
+  improvedResult.changes.forEach(c => console.log(`      - ${c}`));
+}
+
+// 17. Real Simple Engine: Mode ANALISAR (Surgical Inpainting with CHANGE: & PRESERVE:)
+console.log('\n17. Testando Modo ANALISAR com Prompt Cirúrgico (CHANGE: e PRESERVE:)...');
+{
+  const { analyzeThumbnailLocally } = await import('../src/lib/simpleEngine/engine.ts');
+
+  const analysis = analyzeThumbnailLocally('Troquei o Windows do meu Legion Go');
+  assert.ok(analysis.fixPrompt.includes('CHANGE:'), 'fixPrompt DEVE conter bloco explícito "CHANGE:"');
+  assert.ok(analysis.fixPrompt.includes('PRESERVE:'), 'fixPrompt DEVE conter bloco explícito "PRESERVE:"');
+  assert.ok(analysis.fixPrompt.includes('AVOID:'), 'fixPrompt DEVE conter bloco explícito "AVOID:"');
+  assert.ok(analysis.functioning.length >= 2, 'Deve identificar aspectos funcionais');
+  assert.ok(analysis.aiLooking.length >= 2, 'Deve identificar defeitos de IA');
+  assert.ok(analysis.topProblem.length > 5, 'Deve formular o problema prioritário');
+  console.log('  ✓ Estrutura cirúrgica (CHANGE:, PRESERVE:, AVOID:) e diagnóstico validados.');
+}
+
+// 18. Mode ANALISAR with Real Visual PNG Fixture & Multimodal Contract
+console.log('\n18. Testando Fixture Visual PNG Real e Contrato de API Multimodal...');
+{
+  const fs = await import('node:fs');
+  const path = await import('node:path');
+  const fixturePath = path.resolve('tests/fixtures/sample-thumbnail.png');
+
+  assert.ok(fs.existsSync(fixturePath), `Fixture PNG deve existir em ${fixturePath}`);
+  const buf = fs.readFileSync(fixturePath);
+
+  // Validate PNG signature: 0x89 0x50 0x4E 0x47 0x0D 0x0A 0x1A 0x0A
+  assert.equal(buf[0], 0x89, 'Byte 0 do header PNG');
+  assert.equal(buf[1], 0x50, 'Byte 1 (P)');
+  assert.equal(buf[2], 0x4E, 'Byte 2 (N)');
+  assert.equal(buf[3], 0x47, 'Byte 3 (G)');
+
+  // Validate IHDR dimensions (offset 16-24: 4 bytes width, 4 bytes height)
+  const width = buf.readUInt32BE(16);
+  const height = buf.readUInt32BE(20);
+  assert.equal(width, 640, 'Largura da fixture deve ser 640px');
+  assert.equal(height, 360, 'Altura da fixture deve ser 360px');
+  console.log(`  ✓ Fixture PNG verificada com sucesso: ${width}x${height}px (${buf.length} bytes).`);
+
+  // Multimodal check
+  if (!process.env.OPENAI_API_KEY) {
+    console.log('  ℹ️ REAL MULTIMODAL TEST SKIPPED — API NOT CONFIGURED');
+  } else {
+    console.log('  ✓ OPENAI_API_KEY detectada — pronto para chamada multimodal.');
+  }
+}
+
 console.log('\n✅ TODOS OS TESTES PASSARAM COM SUCESSO! VALIDAÇÃO CONCLUÍDA.');

@@ -16,7 +16,7 @@ export interface CreateThumbnailInput {
   references: SimpleReference[];
   targetModel: TargetModel;
   aspectRatio: '16:9' | '9:16';
-  stylePreset: 'Cinematográfico' | 'Editorial' | 'Fotojornalismo' | 'Natural';
+  stylePreset: 'Natural' | 'Cinematográfico' | 'Editorial' | 'Fotojornalismo';
   realismLevel: 'Alto' | 'Estilizado';
   preserveFace: boolean;
   preserveProduct: boolean;

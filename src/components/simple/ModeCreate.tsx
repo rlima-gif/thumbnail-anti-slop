@@ -42,7 +42,7 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
   // Advanced settings (collapsed by default)
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [aspectRatio, setAspectRatio] = useState<'16:9' | '9:16'>('16:9');
-  const [stylePreset, setStylePreset] = useState<'Cinematográfico' | 'Editorial' | 'Fotojornalismo' | 'Natural'>('Cinematográfico');
+  const [stylePreset, setStylePreset] = useState<'Natural' | 'Cinematográfico' | 'Editorial' | 'Fotojornalismo'>('Natural');
   const [realismLevel, setRealismLevel] = useState<'Alto' | 'Estilizado'>('Alto');
   const [targetModel, setTargetModel] = useState<TargetModel>('GERAL');
   const [preserveFace, setPreserveFace] = useState(false);
@@ -378,7 +378,7 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-amber-500 font-mono"
                 >
                   <option value="GERAL">Geral (Compatível com todos)</option>
-                  <option value="MIDJOURNEY">Midjourney (--v 6.1 --style raw)</option>
+                  <option value="MIDJOURNEY">Midjourney (--style raw)</option>
                   <option value="FLUX">FLUX (Ultra-detalhes foto)</option>
                   <option value="GEMINI">Google Gemini Imagen</option>
                   <option value="OPENAI">OpenAI (DALL-E 3 / GPT-4o)</option>
@@ -407,13 +407,13 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
                 </label>
                 <select
                   value={stylePreset}
-                  onChange={e => setStylePreset(e.target.value as 'Cinematográfico' | 'Editorial' | 'Fotojornalismo' | 'Natural')}
+                  onChange={e => setStylePreset(e.target.value as 'Natural' | 'Cinematográfico' | 'Editorial' | 'Fotojornalismo')}
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-amber-500 font-mono"
                 >
+                  <option value="Natural">Natural / Iluminação Real (Padrão)</option>
                   <option value="Cinematográfico">Cinematográfico</option>
                   <option value="Editorial">Editorial / Revista</option>
                   <option value="Fotojornalismo">Fotojornalismo Documental</option>
-                  <option value="Natural">Natural / Iluminação Real</option>
                 </select>
               </div>
 

@@ -15,30 +15,33 @@ export async function POST(req: NextRequest) {
         const apiKey = process.env.OPENAI_API_KEY!;
         const model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o-mini';
 
-        const systemPrompt = `You are a world-class art director and cinematographer specializing in authentic, high-impact YouTube thumbnails.
+        const systemPrompt = `You are a world-class visual director specializing in honest, authentic, high-impact YouTube thumbnails.
 Your job is to convert a creator's plain conversational idea into a razor-sharp 5-point visual direction and an English image generation prompt.
-STRICT ANTI-SLOP RULES:
-- Zero unmotivated neon or glowing outlines.
-- Zero generic shocked expression, open mouth screams, or cartoonish reaction faces.
-- Zero random arrows, circles, particles, embers, floating emojis or icons.
-- If tech/hardware is mentioned, enforce strict physical chassis geometry, accurate controls and matte materials.
-- If person is mentioned, enforce real skin pores, authentic eye shape, bone structure, and facial asymmetry.
+
+CORE PRINCIPLES:
+1. RESPECT THE USER'S IDEA: Do NOT turn every scene into a generic fantasy or glowing advertising ad. If the user mentions a couch, a normal room, or a desk, preserve that authentic domestic context. Normal/ordinary realism is often best.
+2. TRANSLATE VAGUE ADJECTIVES: When user says "epic", "viral", or "high CTR", translate that into a larger primary subject, clear silhouette, and simplified background — NOT into neon, outer glow, or saturated clutter.
+3. DEPTH OF FIELD IS CONTEXTUAL: Do NOT pick f/2.0 or shallow depth of field automatically. If the room/environment matters, preserve background readability.
+4. NATURAL SKIN, NO PORE OBSESSION: Enforce natural skin texture, authentic eye shape, bone structure, natural asymmetry, and true age. Avoid plastic waxy smoothing and artificial beauty filters. Do NOT obsess over hyper-detailed pores.
+5. HARDWARE & HANDS: If holding a device/console/phone, enforce natural grip with five distinct fingers and zero button or chassis fusion. Strict physical geometry.
+6. NO UNMOTIVATED CLICHES: Zero unmotivated neon or glowing outlines. Zero generic shocked expression or open mouth screams. Zero random arrows, circles, floating particles, fire, or embers unless specifically requested.
+7. TYPOGRAPHY: If user did NOT provide text, do NOT add overlay text.
 
 Output strictly valid JSON with this exact schema:
 {
   "direction": {
     "ideia": "Frase curta em português resumindo a premissa central",
     "foco": "O que domina a atenção e o que é secundário",
-    "composicao": "Enquadramento, ângulo de câmera e profundidade de campo",
+    "composicao": "Enquadramento, ângulo e separação visual",
     "expressao": "Emoção e expressão facial humana autêntica (sem caretas)",
     "visual": "Iluminação motivada, cores e texturas reais"
   },
-  "finalPrompt": "English prompt for image generation with subject, lighting, lens, textures and negative avoid tokens"
+  "finalPrompt": "English prompt for image generation with subject, lighting source, environment, textures and negative avoid tokens"
 }`;
 
         const userPrompt = `Video Title: ${body.videoTitle || 'Untitled'}
 User Idea: ${body.ideaDescription || ''}
-Thumbnail Text: ${body.thumbnailText || 'None'}
+Thumbnail Text: ${body.thumbnailText || 'None (Do not add text)'}
 Approach Number: ${body.approachIndex || 0}
 Target Model: ${body.targetModel || 'GERAL'}
 References Count: ${(body.references || []).length}
