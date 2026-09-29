@@ -364,10 +364,10 @@ export function interpretUserIntent(
 // Generate complete photographic prompt tailored for specific target models
 export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThumbnailResult {
   const {
-    videoTitle,
-    ideaDescription,
+    videoTitle = '',
+    ideaDescription = '',
     thumbnailText,
-    references,
+    references = [],
     targetModel = 'GERAL',
     aspectRatio = '16:9',
     stylePreset = 'Natural',
@@ -378,8 +378,8 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
   } = input;
 
   const isTech = detectTechHardware(`${videoTitle} ${ideaDescription}`);
-  const hasPersonRef = preserveFace || references.some(r => r.role === 'PESSOA');
-  const hasProductRef = preserveProduct || references.some(r => r.role === 'PRODUTO');
+  const hasPersonRef = preserveFace || (references || []).some(r => r.role === 'PESSOA');
+  const hasProductRef = preserveProduct || (references || []).some(r => r.role === 'PRODUTO');
 
   const {
     subjectEn,

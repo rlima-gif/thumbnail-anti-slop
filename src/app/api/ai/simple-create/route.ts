@@ -5,7 +5,13 @@ import { CreateThumbnailInput } from '@/types/simple';
 
 export async function POST(req: NextRequest) {
   try {
-    const body: CreateThumbnailInput = await req.json();
+    const rawBody = await req.json();
+    const body: CreateThumbnailInput = {
+      ...rawBody,
+      ideaDescription: rawBody.ideaDescription || rawBody.idea || '',
+      videoTitle: rawBody.videoTitle || '',
+      references: rawBody.references || []
+    };
     const provider = getAIProvider();
     const status = await provider.getStatus();
 

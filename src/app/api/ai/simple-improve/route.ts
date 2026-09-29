@@ -5,7 +5,11 @@ import { ImprovePromptInput } from '@/types/simple';
 
 export async function POST(req: NextRequest) {
   try {
-    const body: ImprovePromptInput = await req.json();
+    const rawBody = await req.json();
+    const body: ImprovePromptInput = {
+      ...rawBody,
+      rawPrompt: rawBody.rawPrompt || rawBody.prompt || ''
+    };
     const provider = getAIProvider();
     const status = await provider.getStatus();
 
