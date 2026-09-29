@@ -19,10 +19,10 @@ export function generateABVariants(project: ProjectData): ABVariant[] {
     prompt: [
       `[VARIANT A — CHARACTER-DRIVEN EDITORIAL THUMBNAIL]`,
       `GOAL: Express intense psychological tension for the video "${title}".`,
-      `SUBJECT: Compelling authentic human character in intimate medium close-up (85mm lens at f/2.2). Contextual expression of quiet revelation and furrowed brow, zero exaggerated shock scream.`,
+      `SUBJECT: Compelling authentic human character in intimate medium close-up (85mm portrait lens). Contextual expression of quiet revelation and furrowed brow, zero exaggerated shock scream.`,
       `COMPOSITION: Asymmetric rule-of-thirds framing. Protagonist occupying right third, looking intently towards dramatic negative space on the left.`,
       `LIGHTING: Single soft motivated key light creating authentic Rembrandt triangle on cheek; natural physical shadow falloff into neutral backdrop.`,
-      `TEXTURE: Natural skin pores, authentic hair strands, subtle 35mm film grain, tactile clothing fabric.`,
+      `TEXTURE: Natural skin texture, authentic hair strands, subtle 35mm film grain, tactile clothing fabric.`,
       `AVOID: ${avoidList}.`,
       `PRIORITY: Authentic human vulnerability and psychological tension over theatrical gimmicks.`
     ].join('\n')
@@ -38,12 +38,12 @@ export function generateABVariants(project: ProjectData): ABVariant[] {
     composition: 'Enquadramento centralizado imponente ou diagonal tensa; objeto ocupando 75% da altura da tela.',
     contrast: 'Reflexo metálico especular nítido nas arestas do produto recortado contra escuridão industrial.',
     whatChanges: 'Elimina completamente rostos humanos. A autoridade e a curiosidade derivam 100% da verossimilhança do objeto.',
-    whatRemains: 'A promessa temática do título, a atmosfera cinematográfica e a ausência total de poluição visual.',
+    whatRemains: 'A promessa temática do título, a atmosfera fotográfica autêntica e a ausência total de poluição visual.',
     prompt: [
       `[VARIANT B — HERO OBJECT / HARDWARE INTEGRITY THUMBNAIL]`,
       `GOAL: Industrial design showcase and tactile mystery for video "${title}".`,
       `SUBJECT: Hero physical object / technical hardware as solitary protagonist, centered with commanding presence. Tactile industrial materials (brushed matte aluminum, real seams, micro-scratches, genuine physical ports).`,
-      `COMPOSITION: Razor-sharp 16:9 macro framing on 100mm macro lens. Shallow depth of field (f/2.8) throwing industrial workbench into soft neutral bokeh.`,
+      `COMPOSITION: Razor-sharp 16:9 macro framing on 100mm macro lens. Balanced optical separation softly isolating foreground with organic shadow falloff.`,
       `LIGHTING: Low-key precision studio lighting with motivated cold overhead panel and subtle warm grazing edge light highlighting true geometric contours.`,
       `AVOID: ${avoidList}, floating badges, fake holograms, fake UI overlays.`,
       `PRIORITY: Uncompromising physical materiality and instant silhouette readability at 10% mobile scale.`
@@ -57,7 +57,7 @@ export function generateABVariants(project: ProjectData): ABVariant[] {
     hypothesis: 'O clique é despertado pelo fascínio do "lugar proibido" ou da cena após o desastre, onde o ambiente conta a história inteira.',
     viewerQuestion: 'O que aconteceu nessa sala lacrada quando as portas se fecharam?',
     protagonist: 'O ambiente em si (um laboratório abandonado, uma mesa de reunião com cadeiras caídas, um galpão vazio iluminado por um facho de luz).',
-    composition: 'Plano aberto cinematográfico com grande profundidade de campo em perspectiva de ponto de fuga central de um ponto.',
+    composition: 'Plano aberto com grande profundidade de campo em perspectiva de ponto de fuga central de um ponto.',
     contrast: 'Facho de luz de alta intensidade cortando a penumbra e revelando apenas um detalhe crucial no centro da sala.',
     whatChanges: 'O protagonista deixa de ser uma pessoa ou objeto isolado e passa a ser o ecossistema espacial onde a história ocorreu.',
     whatRemains: 'A sobriedade de direção de arte, a paleta documental restrita e a ausência de elementos mágicos de IA.',
@@ -65,10 +65,10 @@ export function generateABVariants(project: ProjectData): ABVariant[] {
       `[VARIANT C — NARRATIVE SITUATION / SPATIAL TENSION THUMBNAIL]`,
       `GOAL: Atmospheric environmental storytelling capturing the aftermath for "${title}".`,
       `SUBJECT: Atmospheric architectural environment with heavy narrative presence (a sealed sterile development room, long casting shadows, single illuminated workstation).`,
-      `COMPOSITION: Wide cinematic 35mm composition with deep perspective leading lines converging towards a singular illuminated mystery point in the midground.`,
-      `LIGHTING: Dramatic motivated volumetric beam of light cutting through dusty atmospheric gloom; rich inky blacks in the corners with zero artificial HDR boost.`,
+      `COMPOSITION: Wide 35mm composition with deep perspective leading lines converging towards a singular illuminated mystery point in the midground.`,
+      `LIGHTING: Dramatic motivated beam of light cutting through dusty atmospheric gloom; rich inky blacks in the corners with zero artificial HDR boost.`,
       `AVOID: ${avoidList}, busy crowds, chaotic explosions, floating text.`,
-      `PRIORITY: Cinematic spatial atmosphere that makes the viewer feel like they are trespassing on a forbidden scene.`
+      `PRIORITY: Grounded spatial atmosphere that makes the viewer feel like they are trespassing on a forbidden scene.`
     ].join('\n')
   };
 

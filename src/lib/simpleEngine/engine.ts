@@ -7,37 +7,99 @@ import type {
   VisualDirectionOutput
 } from '@/types/simple';
 
-// Internal Anti-Slop Safeguards (Avoided unless functionally requested by the user)
+// Internal Anti-Slop Safeguards grouped strictly by Section 8 requirements
 export const CORE_ANTI_SLOP_AVOID = [
-  'generic shocked expression',
-  'mouth wide open',
-  'exaggerated eyes',
-  'fake YouTuber scream',
-  'random red arrows without functional reason',
-  'random red circles without functional reason',
-  'excessive outer glow on edges',
-  'unmotivated laser rim lighting without light source',
-  'random floating particles',
-  'floating embers',
-  'fire without narrative reason',
-  'unmotivated purple-blue gaming neon by default',
-  'plastic smoothed skin',
+  // ROSTO
+  'generic AI beauty face',
+  'same-face syndrome',
+  'perfect facial symmetry',
+  'plastic skin',
   'waxy skin texture',
-  'overprocessed HDR',
-  'oversharpened edges',
-  'fake blurry bokeh',
-  'floating icons',
-  'floating logos',
-  'fake glowing UI',
+  'excessive beauty filter',
+  'oversized eyes',
+  'unnatural teeth',
+  'generic shocked expression',
+  'unnecessary mouth-open reaction',
+  'identity drift from reference',
+  'age change',
+  'hair change',
+  'beard change',
+  'artificial beauty filter jaw slimming',
+  // MÃOS / CORPO
+  'incorrect fingers',
+  'fused fingers',
+  'unnatural grip',
+  'hand/object intersections',
+  'impossible arm pose',
+  'body proportion drift',
+  // PRODUTO
+  'wrong geometry',
+  'incorrect buttons',
+  'incorrect analog sticks',
+  'wrong ports',
+  'invented vents',
+  'wrong screen ratio',
+  'incorrect thickness',
+  'warped logo',
+  'unrecognizable silhouette',
   'deformed hardware geometry',
-  'incorrect controller buttons',
-  'AI-looking hands with fused or extra fingers',
-  'excessive global color saturation',
+  // LUZ
+  'unmotivated rim light',
+  'orange/teal lighting by default',
+  'purple/blue gaming neon by default',
+  'glowing edges',
+  'impossible reflections',
+  'multiple incompatible light directions',
+  'volumetric light without source',
+  // COMPOSIÇÃO
+  'too many focal points',
+  'everything equally sharp',
+  'everything equally saturated',
+  'everything equally contrasted',
   'background competing with subject',
-  'too many simultaneous focal points',
-  'generic AI same-face syndrome',
-  'artificial beauty filter jaw slimming'
+  'generic centered stock-photo composition',
+  'random floating elements',
+  'too many visual metaphors',
+  'tiny important story elements',
+  'composition failing at thumbnail size',
+  // PÓS-PROCESSAMENTO
+  'overprocessed HDR',
+  'excessive sharpening',
+  'fake bokeh',
+  'extreme color grading',
+  'excessive contrast',
+  'artificial clarity',
+  'uniform micro-detail',
+  'over-saturated skin',
+  // THUMBNAIL CLICHÉS
+  'random red arrows',
+  'random circles',
+  'floating emojis',
+  'floating logos',
+  'lightning',
+  'sparks',
+  'fire',
+  'particles',
+  'giant text',
+  'generic shocked creator',
+  'fake UI',
+  'random VS',
+  'generic before/after division'
 ];
+
+// Helper to filter avoid tokens conditionally if the user narratively requested them (Rule 9)
+export function buildAntiSlopAvoid(userText: string): string[] {
+  const lower = userText.toLowerCase();
+  return CORE_ANTI_SLOP_AVOID.filter(item => {
+    if (/neon/i.test(item) && /neon/i.test(lower)) return false;
+    if (item === 'fire' && /(fogo|fire|chama|fogueira)/i.test(lower)) return false;
+    if (/arrow/i.test(item) && /(seta|arrow)/i.test(lower)) return false;
+    if (/circles/i.test(item) && /(c[íi]rculo|circle)/i.test(lower)) return false;
+    if (item === 'lightning' && /(raio|rel[âa]mpago|lightning)/i.test(lower)) return false;
+    if (item === 'random VS' && /(vs\b|versus)/i.test(lower)) return false;
+    return true;
+  });
+}
 
 // Helper to detect gaming/tech/hardware in text
 export function detectTechHardware(text: string): boolean {
@@ -51,15 +113,19 @@ export function translateVagueBuzzwords(text: string): string[] {
   const lower = text.toLowerCase();
 
   if (/epic|dramatic|awesome|bomb[aá]stico|incr[íi]vel/.test(lower)) {
-    decisions.push('High local contrast on the primary subject to command immediate visual attention while keeping overall lighting grounded');
+    decisions.push('High local contrast on the primary hero subject to command immediate visual attention while keeping overall lighting grounded');
   }
 
   if (/viral|high\s*ctr|scroll\s*stopping|chama\s*aten[çc][ãa]o|eye[\s-]catching/.test(lower)) {
-    decisions.push('Bold figure-ground separation with a clean silhouette that remains instantly legible at small mobile thumbnail sizes');
+    decisions.push('Bold figure-ground separation with a clean unmistakable silhouette that remains instantly legible at 120px mobile thumbnail scale');
   }
 
   if (/profissional|high[\s-]end|pro\s*look/.test(lower)) {
-    decisions.push('Controlled physical lighting from believable room sources with natural falloff and authentic material textures');
+    decisions.push('Controlled physical lighting from believable practical room sources with natural falloff and authentic material textures');
+  }
+
+  if (/cinematic/.test(lower)) {
+    decisions.push('Deliberate narrative atmosphere and grounded optical depth rather than cartoon saturation or artificial studio glow');
   }
 
   return decisions;
@@ -103,33 +169,97 @@ export function interpretUserIntent(
   const isTech = detectTechHardware(combined);
   const approach = Math.abs(approachIndex) % 3;
 
-  const personKeywords = /(eu|meu\s*rosto|pessoa|homem|mulher|criador|cara|apresentador|sentado|segurando|olhando|falando|person|creator|human|face|selfie|minha\s*hist[óo]ria)/i;
+  const personKeywords = /(^|\b)(eu|meu\s*rosto|minha\s*rea[çc][ãa]o|pessoa|homem|mulher|criador|cara|apresentador|youtuber|selfie|jogador)(\b|$)/i;
   const hasPerson = hasPersonOverride !== undefined ? hasPersonOverride : personKeywords.test(combined);
-  const emotionalKeywords = /(perdi|canal|desabafo|crise|segredo|hist[óo]ria|arrepend|tristeza|consequ[êe]ncias|verdade|aviso|urgente|alerta|adeus)/i;
-  const isEmotionalStory = emotionalKeywords.test(combined);
 
-  // 1. Scene Archetype: Tech Teardown / Pure Hardware (No person)
-  if (!hasPerson && isTech) {
-    if (approach === 1) {
-      return {
-        approachTitle: 'Macro de Precisão nos Componentes',
-        hasPerson: false,
-        subjectEn: 'Extreme clean macro photography of the opened device motherboard, showing microscopic silicon chip traces, gold contacts, and precision soldered modules',
-        contextEn: 'Anti-static matte silicone workbench surface with magnetized precision screw tray',
-        lightingEn: 'Diffused neutral high-CRI workbench LED ring light eliminating harsh reflections while revealing crisp metallic textures',
-        compositionEn: 'Macro focus on the central processor die, diagonal composition leading the eye along ribbon cables',
-        expressionEn: 'None (pure technical hardware inspection)',
-        directionPt: {
-          ideia: 'Engenharia de precisão em close extremo: a beleza e sofisticação microscópica do novo chip.',
-          foco: 'O chip e os circuitos internos expostos com nitidez cirúrgica.',
-          composicao: 'Macro diagonal preenchendo o quadro com componentes industriais e trilhas douradas nítidas.',
-          expressao: 'Nenhuma (cena estritamente técnica sem pessoa).',
-          visual: 'Luz técnica difusa de bancada, destacando o acabamento do silício sem pontos de brilho estourado.'
-        }
-      };
-    }
+  // Specific Archetype 1: Side-by-Side Comparison (No person, e.g. "Um console antigo ao lado de um console moderno")
+  const isSideBySide = /(ao\s*lado\s*de|comparando|compara[çc][ãa]o|vs\b|versus|lado\s*a\s*lado|antigo.*moderno|antigo.*novo|evolu[çc][ãa]o)/i.test(combined) && !hasPerson;
+  if (isSideBySide) {
     return {
-      approachTitle: 'Bancada Técnica / Desmontagem Limpa',
+      approachTitle: 'Comparação Geracional Lado a Lado',
+      hasPerson: false,
+      subjectEn: 'Direct physical side-by-side comparison of a vintage retro gaming console next to a sleek modern gaming console resting on a clean neutral tabletop, showcasing generational evolution of industrial design',
+      contextEn: 'Clean neutral tabletop surface with subtle matte slate or wooden grain, calm background with soft natural falloff',
+      lightingEn: 'Natural soft side window light grazing both consoles evenly, highlighting material contrasts and textures without artificial digital glare',
+      compositionEn: 'Balanced 16:9 side-by-side composition with generous negative space and clear silhouette recognition at 120px mobile scale',
+      expressionEn: 'None (pure object comparison scene without human presence)',
+      directionPt: {
+        ideia: 'Contraste histórico e estético entre duas eras: o design clássico justaposto ao moderno em um enquadramento direto e equilibrado.',
+        foco: 'A justaposição física direta entre o console antigo e o moderno, evidenciando as diferenças de formato, portas e acabamentos.',
+        composicao: 'Enquadramento 16:9 limpo dividindo o espaço em proporção harmônica sobre a mesa, com espaço negativo para rápida leitura visual.',
+        expressao: 'Nenhuma (cena puramente comparativa de objetos sem presença humana).',
+        visual: 'Luz natural lateral revelando a textura e o desgaste do plástico retrô em contraste com o acabamento fosco contemporâneo.'
+      }
+    };
+  }
+
+  // Specific Archetype 2: Broken Product Story & Emotional Frustration (Person, e.g. "Eu olhando para um produto quebrado, decepcionado")
+  const isBrokenProductStory = /(quebrad|estragad|decepcionad|danificad|defeito)/i.test(combined) && hasPerson;
+  if (isBrokenProductStory) {
+    return {
+      approachTitle: 'Frustração Humana e Produto Danificado',
+      hasPerson: true,
+      subjectEn: 'The creator sitting at a normal domestic table, looking down thoughtfully at a visibly broken and cracked physical product with sincere quiet disappointment',
+      contextEn: 'Authentic everyday home room or workshop desk with realistic domestic details and grounded atmosphere',
+      lightingEn: 'Subdued practical overhead domestic lamp light with natural shadow falloff across the tabletop',
+      compositionEn: 'Two-tier depth framing establishing visual narrative tension between the cracked foreground product and the creator downcast gaze in the midground',
+      expressionEn: 'Authentic quiet disappointment, subtle downcast eyes, furrowed brow, closed mouth, sincere human emotional gravity without theatrical shouting',
+      directionPt: {
+        ideia: 'Narrativa humana de frustração honesta: o criador confronta o produto quebrado sem histeria ou melodrama.',
+        foco: 'A reação contida do criador em conexão direta com o produto danificado em primeiro plano sobre a mesa.',
+        composicao: 'Plano médio fechado com o produto danificado em destaque na mesa e o criador ao fundo observando desapontado.',
+        expressao: 'Desapontamento sincero e contido: sobrancelhas ligeiramente franzidas, olhar compenetrado, lábios fechados. Proibido qualquer grito ou careta de choque.',
+        visual: 'Iluminação intimista de ambiente doméstico com sombras suaves, destacando a gravidade do momento e a textura tátil do dano no produto.'
+      }
+    };
+  }
+
+  // Specific Archetype 3: Opened Laptop / Hardware Teardown on Desk (No person, e.g. "Notebook aberto na mesa mostrando uma diferença de hardware")
+  const isOpenedNotebook = (/(notebook|laptop).*aberto/i.test(combined) || (/(notebook|laptop|hardware|pe[çc]a|circuito)/i.test(combined) && !hasPerson));
+  if (isOpenedNotebook) {
+    return {
+      approachTitle: 'Bancada Técnica / Hardware Aberto',
+      hasPerson: false,
+      subjectEn: 'An opened laptop resting on a clean wooden work desk, chassis lower panel removed to clearly reveal internal cooling hardware and motherboard components',
+      contextEn: 'Authentic everyday work desk with organized precision repair tools and clean matte surface',
+      lightingEn: 'Diffused neutral desk lamp illumination with natural soft shadow falloff, eliminating specularity on electronic components',
+      compositionEn: 'Clean angled medium close-up focused on the specific hardware difference, maintaining clean silhouette and legible spatial orientation',
+      expressionEn: 'None (pure technical hardware inspection)',
+      directionPt: {
+        ideia: 'Comparação técnica de hardware: o notebook aberto na mesa revelando os detalhes internos reais de engenharia.',
+        foco: 'A área interna aberta do notebook e a diferença de hardware exposta com nitidez sobre a mesa.',
+        composicao: 'Enquadramento em ângulo técnico de 45 graus sobre a mesa de trabalho, permitindo leitura imediata da peça de hardware.',
+        expressao: 'Nenhuma (cena focada puramente em objeto técnico sem presença humana).',
+        visual: 'Iluminação de luminária de mesa difusa com alto CRI, sem pontos de reflexo cegantes na tela ou nos componentes.'
+      }
+    };
+  }
+
+  // Specific Archetype 4: Gaming Handheld in Domestic Living Room (Person on Couch, e.g. "Eu no sofá mostrando meu Legion Go depois de trocar o sistema")
+  const isGamingCouch = /(sof[aá]|legion|steam\s*deck|switch|rog\s*ally|jogando)/i.test(combined) && hasPerson;
+  if (isGamingCouch) {
+    return {
+      approachTitle: 'Cumplicidade no Sofá / Gaming Autêntico',
+      hasPerson: true,
+      subjectEn: 'The creator sitting comfortably on an authentic living room sofa, holding the handheld gaming console naturally toward the camera with both hands',
+      contextEn: 'Cozy real living room with authentic sofa fabric, home cushions, and lived-in domestic decor without artificial studio polish',
+      lightingEn: 'Warm motivated light from a living room floor lamp combined with soft natural daylight, zero unmotivated RGB neon',
+      compositionEn: 'Conversational eye-level medium framing with balanced optical depth preserving living room context readability',
+      expressionEn: 'Relaxed confidence and subtle satisfaction, direct engaging gaze toward viewer or down at screen, natural closed mouth',
+      directionPt: {
+        ideia: 'Momento autêntico e relaxado no sofá: o criador experimenta o console portátil com o novo sistema instalado.',
+        foco: 'O Legion Go em primeiro plano com tela ligada e a postura natural do criador no sofá da sala.',
+        composicao: 'Plano médio na altura dos olhos, enquadramento centrado no criador e no console, mantendo o ambiente crível da sala no fundo.',
+        expressao: 'Satisfação genuína e sutil, olhar atento ao console ou cúmplice com a câmera. Lábios fechados, sem caretas de gamer.',
+        visual: 'Luz suave de abajur de sala e luz natural difusa. Cores quentes de ambiente doméstico. Zero néon roxo/azul clichê.'
+      }
+    };
+  }
+
+  // General Scene Archetype: General Tech Teardown (No person)
+  if (!hasPerson && isTech) {
+    return {
+      approachTitle: 'Bancada Técnica de Precisão',
       hasPerson: false,
       subjectEn: 'Clean high-precision technical workbench shot of the disassembled device with exposed internal circuitry, clean ribbon cables, and specialized repair tools arranged nearby',
       contextEn: 'Orderly repair laboratory bench with authentic tools, hex drivers, and precision tweezers on an anti-static work mat',
@@ -146,26 +276,8 @@ export function interpretUserIntent(
     };
   }
 
-  // 2. Scene Archetype: Pure Environment / Space / Mystery (No person)
+  // General Scene Archetype: Pure Environment / Space / Mystery (No person)
   if (!hasPerson && !isTech) {
-    if (approach === 1) {
-      return {
-        approachTitle: 'Ângulo Baixo e Escala Imersiva',
-        hasPerson: false,
-        subjectEn: 'Low-angle architectural perspective looking up toward the weathered concrete entrance, emphasizing scale and monolithic mystery',
-        contextEn: 'Deep dense forest canopy casting organic dappled shadows across decaying autumn leaves and wet ground',
-        lightingEn: 'Moody natural overcast light filtering through tree branches, rich ambient occlusion in crevices',
-        compositionEn: 'Dynamic low perspective with powerful leading lines pulling the viewer straight into the dark entrance',
-        expressionEn: 'None (pure environmental discovery)',
-        directionPt: {
-          ideia: 'Escala monumental e mistério: a grandiosidade sombria do local esquecido pelo tempo.',
-          foco: 'A escala do concreto rachado e a entrada imersiva.',
-          composicao: 'Ângulo baixo dramático valorizando a imponência e o mistério da estrutura.',
-          expressao: 'Nenhuma (cena puramente espacial/arquitetônica).',
-          visual: 'Luz natural filtrada com penumbra densa e sombras ricas e naturais.'
-        }
-      };
-    }
     return {
       approachTitle: 'Atmosfera e Textura Espacial',
       hasPerson: false,
@@ -178,32 +290,17 @@ export function interpretUserIntent(
         ideia: 'Atmosfera de mistério e descoberta: o próprio espaço conta a história sem necessidade de elementos humanos.',
         foco: 'O ponto de entrada e as texturas arquitetônicas do ambiente (concreto, musgo e penumbra).',
         composicao: 'Perspectiva com linhas de fuga que atraem o olhar para o centro do mistério, com enquadramento equilibrado.',
-        expressao: 'Nenhuma (cena puramente espacial/atmosférica sem presença humana).',
+        expressao: 'Nenhuma (cena puramente espacial/arquitetônica sem presença humana).',
         visual: 'Luz natural filtrada e sombras dramáticas críveis do próprio ambiente, sem artifícios ou névoa artificial.'
       }
     };
   }
 
-  // 3. Scene Archetype: Human Storytelling & Authentic Emotional Tension
+  // General Scene Archetype: Human Storytelling & Authentic Emotional Tension
+  const emotionalKeywords = /(perdi|canal|desabafo|crise|segredo|hist[óo]ria|arrepend|tristeza|consequ[êe]ncias|verdade|aviso|urgente|alerta|adeus)/i;
+  const isEmotionalStory = emotionalKeywords.test(combined);
+
   if (hasPerson && isEmotionalStory) {
-    if (approach === 1) {
-      return {
-        approachTitle: 'Close Íntimo e Conexão Humana',
-        hasPerson: true,
-        subjectEn: 'Intimate close-up of the creator with raw, contemplative eye contact, natural facial asymmetry, real skin texture, and subdued posture',
-        contextEn: 'Dim home office interior with subtle room silhouettes in the background',
-        lightingEn: 'Soft cool bounce from a computer monitor on one side of the face balanced by warm practical room ambience',
-        compositionEn: 'Tight framing holding eye-level gaze, clean silhouette that commands instant attention at small feed scale',
-        expressionEn: 'Subtle vulnerability and grave honesty with closed mouth, reflective brow, and authentic human presence',
-        directionPt: {
-          ideia: 'Olhar direto e verdade desarmante: uma conversa honesta cara a cara com o público.',
-          foco: 'O olhar autêntico e a expressão facial desarmada do criador dominam a cena.',
-          composicao: 'Close intimista centralizado no olhar, eliminando qualquer distração periférica.',
-          expressao: 'Gravidade sincera e lábios fechados. Proibida qualquer careta caricata ou boca aberta.',
-          visual: 'Contraste suave de luz fria de tela e ambiente escuro com textura orgânica de pele.'
-        }
-      };
-    }
     return {
       approachTitle: 'Tensão Psicológica e Desabafo Autêntico',
       hasPerson: true,
@@ -222,9 +319,8 @@ export function interpretUserIntent(
     };
   }
 
-  // 4. Scene Archetype: Gaming / Tech Interaction with Person
+  // General Scene Archetype: Conversational Creator in Real Room
   if (approach === 1) {
-    // Approach 1: Foco no Objeto / Hardware
     return {
       approachTitle: 'Foco no Objeto / Hardware em Primeiro Plano',
       hasPerson: true,
@@ -245,29 +341,6 @@ export function interpretUserIntent(
     };
   }
 
-  if (approach === 2) {
-    // Approach 2: Momento Revelador / Tensão Real
-    return {
-      approachTitle: 'Momento Revelador / Tensão Real',
-      hasPerson: true,
-      subjectEn: isTech
-        ? 'A person in a regular room pausing to inspect the handheld device, captured mid-moment with relaxed, believable posture'
-        : 'A person captured in a genuine mid-action moment with natural posture, holding or examining the subject',
-      contextEn: 'Authentic everyday interior with honest room details, practical decor, and natural atmosphere without artificial studio gloss',
-      lightingEn: 'Single motivated light source from an overhead warm pendant fixture or natural daylight spill from an adjacent window, creating rich natural contrast',
-      compositionEn: 'Intentional 16:9 framing with clear figure-ground separation, deliberate negative space on one side for immediate visual clarity at 120px mobile size',
-      expressionEn: 'Contemplative, focused human expression with closed mouth and natural brow of concentration and discovery',
-      directionPt: {
-        ideia: 'Um momento de pausa e descoberta autêntica em um ambiente comum.',
-        foco: 'A relação direta entre o criador e a descoberta, com peso equilibrado entre pessoa e contexto.',
-        composicao: 'Enquadramento intencional em 16:9 com espaço negativo generoso e silhueta limpa e legível em telas pequenas.',
-        expressao: 'Olhar compenetrado e lábios fechados. Autenticidade emocional sem melodrama de YouTube antigo.',
-        visual: 'Iluminação que respeita as fontes físicas reais do cômodo, com sombras naturais e contraste pontual.'
-      }
-    };
-  }
-
-  // Approach 0: Equilíbrio Narrativo / Cumplicidade Natural
   return {
     approachTitle: 'Equilíbrio Narrativo / Cumplicidade com o Espectador',
     hasPerson: true,
@@ -383,7 +456,7 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
 
   // Handle thumbnail text strictly (Rule 14)
   if (thumbnailText && thumbnailText.trim().length > 0) {
-    promptBody += `\nOVERLAY TEXT: Bold clean sans-serif text reading "${thumbnailText.trim().toUpperCase()}" with dedicated clean negative space and high local contrast.`;
+    promptBody += `\nOVERLAY TEXT: Dedicated clean negative space reserved for typography reading "${thumbnailText.trim().toUpperCase()}", with clear figure-ground separation.`;
   }
 
   if (locks.length > 0) {
@@ -394,9 +467,10 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
     promptBody += `\nDIRECTOR NOTES: ${extraInstructions.trim()}`;
   }
 
-  promptBody += `\n\nNEGATIVE / STRICTLY AVOID:\n${CORE_ANTI_SLOP_AVOID.join(', ')}.`;
+  const activeAvoidList = buildAntiSlopAvoid(cleanIdea + ' ' + (extraInstructions || ''));
+  promptBody += `\n\nNEGATIVE / STRICTLY AVOID:\n${activeAvoidList.join(', ')}.`;
 
-  // Model-specific adjustments (No hardcoded versions like --v 6.1)
+  // Model-specific adjustments (No hardcoded versions)
   let finalPrompt = promptBody;
 
   if (targetModel === 'MIDJOURNEY') {
@@ -418,47 +492,60 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
   };
 }
 
-// Slop remover & prompt purifier (Understands intent first, strips cliches, preserves core idea)
+// Slop remover & prompt purifier (Understands intent first, strips cliches, reconstructs grounded prompt)
 export function improvePrompt(input: ImprovePromptInput): ImprovePromptResult {
   const raw = input.rawPrompt.trim();
   const changes: string[] = [];
 
+  const isGaming = /(game|gaming|console|playstation|xbox|nintendo|steam\s*deck|legion|controller|joystick)/i.test(raw);
+  const isTech = detectTechHardware(raw);
+  const hasFace = /(face|person|man|woman|youtuber|creator|shocked|screaming|mouth)/i.test(raw);
+
   let cleaned = raw;
 
-  // Check if neon was unmotivated and replace with motivated light
+  // 1. Identify and explain intent
+  if (/(epic|cinematic|vibrant|high\s*ctr|ultra\s*detailed)/i.test(raw)) {
+    changes.push('Identificada a intenção real: thumbnail de alto impacto visual, substituindo adjetivos vagos ("epic", "high CTR") por contraste local e separação figura-fundo.');
+  }
+
+  // 2. Neon replacement
   if (/neon/i.test(cleaned)) {
-    cleaned = cleaned.replace(/neon\s*(lighting|glow|colors?|lights?|blue\s*and\s*purple)?/gi, '');
-    changes.push('Substituído o neon genérico por iluminação motivada e crível de ambiente real.');
+    cleaned = cleaned.replace(/neon\s*(lighting|glow|colors?|lights?|blue\s*and\s*purple|purple\s*and\s*blue)?/gi, '');
+    changes.push('Substituído o néon roxo/azul genérico por iluminação motivada crível de ambiente real (luz quente de abajur e brilho suave de monitor).');
   }
 
-  // Remove glowing outlines
-  if (/(glow|dramatic glow|glowing|outer glow)/i.test(cleaned)) {
-    cleaned = cleaned.replace(/(dramatic\s*)?(outer\s*)?glow(ing)?/gi, '');
-    changes.push('Removido o efeito de brilho difuso (outer glow) em bordas.');
+  // 3. Rim light & outer glow
+  if (/(rim\s*light|glowing|outer\s*glow|glow)/i.test(cleaned)) {
+    cleaned = cleaned.replace(/(dramatic\s*)?(laser\s*)?rim\s*light(ing)?|(dramatic\s*)?(outer\s*)?glow(ing)?/gi, '');
+    changes.push('Removido o efeito de recorte luminoso artificial (rim light) e brilho difuso nas bordas para devolver tridimensionalidade física.');
   }
 
-  // Replace shock face with authentic human focus
-  if (/(shocked|screaming|open mouth|excited man|crazy face|gasping)/i.test(cleaned)) {
-    cleaned = cleaned.replace(/(shocked|screaming|open mouth|excited man|crazy face|gasping)/gi, 'focused calm expression');
-    changes.push('Trocada a expressão caricata de choque/grito por curiosidade e foco autênticos.');
+  // 4. Shock face
+  if (/(shocked|screaming|open\s*mouth|excited\s*man|crazy\s*face|gasping)/i.test(cleaned)) {
+    cleaned = cleaned.replace(/(shocked|screaming|open\s*mouth|excited\s*man|crazy\s*face|gasping)/gi, '');
+    changes.push('Trocada a expressão caricata de choque/grito por curiosidade autêntica e foco genuíno com lábios fechados.');
   }
 
-  // Remove unmotivated particles
-  if (/(particles|sparks|flying dust|floating embers)/i.test(cleaned)) {
-    cleaned = cleaned.replace(/(particles|sparks|flying dust|floating embers)/gi, '');
-    changes.push('Eliminadas partículas flutuantes e faíscas sem motivação narrativa.');
+  // 5. Sparks and floating particles
+  if (/(sparks|particles|flying\s*dust|floating\s*embers)/i.test(cleaned)) {
+    cleaned = cleaned.replace(/(particles|sparks|flying\s*dust|floating\s*embers)/gi, '');
+    changes.push('Eliminadas faíscas e partículas flutuantes sem motivação narrativa, limpando o ruído visual no feed mobile.');
   }
 
-  // Remove graphic stickers/arrows
-  if (/(arrows?|red circles?|floating emojis?|floating icons?)/i.test(cleaned)) {
-    cleaned = cleaned.replace(/(red\s*)?arrows?|(red\s*)?circles?|floating (emojis?|icons?)/gi, '');
+  // 6. Glowing console / hardware deformation
+  if (/(glowing\s*console|console\s*glowing)/i.test(raw)) {
+    changes.push('Removido o brilho difuso do console, preservando a geometria industrial autêntica, botões físicos e acabamento fosco de fábrica.');
+  }
+
+  // 7. Graphic arrows/circles
+  if (/(arrows?|red\s*circles?|floating\s*emojis?|floating\s*icons?)/i.test(cleaned)) {
+    cleaned = cleaned.replace(/(red\s*)?arrows?|(red\s*)?circles?|floating\s*(emojis?|icons?)/gi, '');
     changes.push('Subtraídos elementos gráficos poluentes (setas, círculos e ícones flutuantes).');
   }
 
-  // Remove forced "cinematic / epic" buzzwords unless justified
+  // 8. Buzzwords
   if (/(epic|cinematic\s*masterpiece|ultra\s*detailed|high\s*ctr|hyperrealistic|8k)/i.test(cleaned)) {
     cleaned = cleaned.replace(/(epic|cinematic\s*masterpiece|ultra\s*detailed|high\s*ctr|hyperrealistic|8k)/gi, '');
-    changes.push('Convertidos adjetivos vagos ("epic", "high CTR") em decisões concretas de foco e composição.');
   }
 
   if (changes.length === 0) {
@@ -467,12 +554,26 @@ export function improvePrompt(input: ImprovePromptInput): ImprovePromptResult {
     changes.push('Injetadas travas contra alisamento de pele (skin plastic) e distorção de hardware.');
   }
 
-  const improvedPrompt = `High-impact YouTube thumbnail photography, 16:9 widescreen format.
-SUBJECT: ${cleaned.replace(/\s+/g, ' ').trim()}.
-LIGHTING: Natural motivated light from believable physical sources with gentle falloff and rich shadow contrast.
-OPTICAL CHARACTERISTICS: 35mm lens, natural optical separation keeping the primary subject sharp and background balanced.
-TEXTURES: Authentic physical surface details, natural skin texture, tactile materials, true matte finishes.
-STRICTLY AVOID: ${CORE_ANTI_SLOP_AVOID.slice(0, 12).join(', ')}.`;
+  // Build reconstructed, grounded prompt based on understood intent
+  const cleanSubject = cleaned.replace(/\s+/g, ' ').trim();
+  const subjectDescription = isGaming && hasFace
+    ? 'A gaming creator seated in an authentic domestic room gaming setup, naturally focused on a modern gaming console held with both hands'
+    : cleanSubject || 'A compelling hero subject with authentic real-world presence and clean silhouette';
+
+  const handsHardwareDirective = isGaming || isTech
+    ? '\nHARDWARE & HANDS: Five distinct anatomical fingers gripping the device edges naturally, authentic buttons and sticks, factory matte chassis with zero AI melting or rubbery deformation.'
+    : '';
+
+  const expressionDirective = hasFace
+    ? '\nHUMAN EXPRESSION: Natural composed curiosity with closed mouth and expressive eyes, authentic facial asymmetry, natural skin texture avoiding plastic waxy smoothing.'
+    : '';
+
+  const improvedPrompt = `High-impact photographic YouTube thumbnail, 16:9 widescreen format.
+SUBJECT & FRAMING: ${subjectDescription}. Clean figure-ground separation with bold silhouette for instant readability at 120px mobile size.${handsHardwareDirective}${expressionDirective}
+LIGHTING: Motivated physical illumination from realistic room practicals (warm desk lamp and subtle ambient screen bounce) with soft natural shadow falloff.
+OPTICAL DEPTH: Balanced photographic perspective with 35mm lens, preserving room context and spatial realism without forced blur.
+TEXTURES: Authentic tactile materials, true matte finishes, natural skin texture, physical fabric and surfaces.
+STRICTLY AVOID: ${CORE_ANTI_SLOP_AVOID.slice(0, 18).join(', ')}.`;
 
   return {
     changes,
@@ -482,36 +583,97 @@ STRICTLY AVOID: ${CORE_ANTI_SLOP_AVOID.slice(0, 12).join(', ')}.`;
 
 // Local optical audit with surgical CHANGE and PRESERVE prompt (Rule 16 & 17)
 export function analyzeThumbnailLocally(videoTitle?: string): AnalyzeThumbnailSimpleResult {
-  const contextNote = videoTitle?.trim()
-    ? ` contextualizando "${videoTitle.trim()}"`
-    : '';
+  const title = (videoTitle || '').toLowerCase();
+  const isTechHardware = detectTechHardware(title);
+  const isCreatorFace = /(eu|olhando|perdi|desabafo|meu\s*rosto|humano|apresentador|pessoa|hist[óo]ria)/i.test(title);
 
-  return {
-    functioning: [
-      `Silhueta principal identificável com separação satisfatória em relação ao fundo${contextNote}.`,
-      'Enquadramento do sujeito mantém legibilidade em tamanhos reduzidos de feed.',
-      'Paleta de cores consistente sem saturação descontrolada no primeiro plano.'
-    ],
-    aiLooking: [
-      'Textura de pele excessivamente lisa (efeito boneco de cera / ausência de textura natural de pele).',
-      'Iluminação de recorte (rim light) sem correspondência com as fontes de luz do cenário.',
-      'Elementos de fundo competindo visualmente com o protagonista.'
-    ],
-    topProblem: 'Subtrair o excesso de iluminação artificial nas bordas e reintroduzir textura fotográfica natural.',
-    fixPrompt: `SURGICAL INPAINTING / CORRECTION PROMPT:
+  if (isTechHardware && !isCreatorFace) {
+    return {
+      functioning: [
+        'Geometria do hardware principal identificável com enquadramento claro em primeiro plano.',
+        'Hierarquia de escala destaca o produto técnico em tamanhos reduzidos de feed.',
+        'Paleta de cores sóbria e focada na leitura dos materiais físicos.'
+      ],
+      aiLooking: [
+        'Bordas do dispositivo com brilho especular difuso (glow) característico de renderização sintética.',
+        'Acabamento do chassi excessivamente polido e uniforme, sem a textura fosca tátil de fábrica.',
+        'Iluminação do ambiente desconectada das fontes de luz reais da bancada.'
+      ],
+      topProblem: 'Subtrair o brilho difuso das arestas e reintroduzir a textura fosca real de fábrica e portas precisas.',
+      fixPrompt: `SURGICAL INPAINTING / CORRECTION PROMPT:
 
 CHANGE:
-1. Tone down the artificial rim lighting along shoulders and hair; blend naturally with ambient room light falloff.
-2. Replace smoothed plastic skin texture with natural skin texture and organic skin tones, avoiding waxy smoothing.
+1. Tone down artificial glowing edges along the device chassis; blend naturally with ambient workbench light falloff.
+2. Restore authentic factory matte texture and precision button seams without synthetic plastic gloss.
+3. Slightly soften background contrast so the hardware centerpiece stands out with clear figure-ground separation.
+
+PRESERVE:
+1. Exact device industrial geometry, chassis proportions, ports, vents, and button layout.
+2. Desk work surface, tool arrangement, and physical materials.
+3. Camera framing, 45-degree angle, and 16:9 composition.
+
+AVOID:
+warped chassis, fictional ports, glowing outline, rubbery buttons, excessive HDR sharpness.`
+    };
+  }
+
+  if (isCreatorFace) {
+    return {
+      functioning: [
+        'Enquadramento do protagonista estabelece conexão direta com quem rola o feed.',
+        'Postura corporal crível sem a rigidez típica de poses de estoque.',
+        'Direção do olhar conduz a atenção para o ponto de curiosidade da thumbnail.'
+      ],
+      aiLooking: [
+        'Recorte luminoso artificial (rim light desmotivado) contornando ombros e cabelo sem fonte física no cenário.',
+        'Textura de pele excessivamente polida com aspecto de cera (ausência de textura natural e assimetria orgânica).',
+        'Elementos periféricos do fundo competindo visualmente com o rosto do criador.'
+      ],
+      topProblem: 'Suavizar a luz de recorte artificial nas bordas e reintroduzir textura e iluminação natural de pele.',
+      fixPrompt: `SURGICAL INPAINTING / CORRECTION PROMPT:
+
+CHANGE:
+1. Tone down artificial rim lighting along shoulders and hair; blend naturally with ambient room light falloff.
+2. Replace smoothed plastic skin texture with natural skin texture and organic facial asymmetry, avoiding waxy smoothing.
 3. Slightly soften background contrast so the primary foreground subject stands out with clear figure-ground separation.
 
 PRESERVE:
-1. Exact subject pose, clothing, and body posture.
-2. Authentic facial identity, eye direction, and subtle expression.
-3. Hand placement and authentic product/hardware geometry.
+1. Exact facial identity, authentic eye direction, hairline, and subtle expression.
+2. Subject pose, clothing, and body posture.
+3. Hand placement and natural grip on any held object.
 4. Camera framing and core spatial composition.
 
 AVOID:
-plastic waxy skin, cartoon saturation, generic shocked expression, changing facial identity.`
+plastic waxy skin, beauty filter jaw slimming, cartoon saturation, generic shocked expression, changing facial identity.`
+    };
+  }
+
+  // General balanced optical audit
+  return {
+    functioning: [
+      'Silhueta principal identificável com separação satisfatória em relação ao fundo.',
+      'Enquadramento mantém legibilidade visual em tamanhos reduzidos de feed mobile.',
+      'Paleta de cores consistente sem saturação descontrolada no primeiro plano.'
+    ],
+    aiLooking: [
+      'Contraste global artificialmente elevado em todo o quadro (efeito HDR exagerado).',
+      'Iluminação de recorte sem correspondência com as fontes de luz do cenário.',
+      'Elementos de fundo competindo visualmente com o ponto focal principal.'
+    ],
+    topProblem: 'Subtrair o excesso de iluminação artificial nas bordas e reintroduzir contraste local focado no protagonista.',
+    fixPrompt: `SURGICAL INPAINTING / CORRECTION PROMPT:
+
+CHANGE:
+1. Tone down artificial rim lighting on edges; blend naturally with ambient room light falloff.
+2. Rebalance local contrast so the primary subject commands visual hierarchy over the background.
+3. Soften peripheral elements to maintain clean figure-ground separation at mobile scale.
+
+PRESERVE:
+1. Exact subject pose, identity, and physical placement.
+2. Core spatial composition and 16:9 framing.
+3. Authentic product geometry and tactile material finishes.
+
+AVOID:
+overprocessed HDR, glowing outlines, cartoon saturation, generic AI beauty filter.`
   };
 }

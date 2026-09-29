@@ -179,19 +179,19 @@ export function generateFinalPrompt(project: ProjectData): {
 
     `BACKGROUND:\n${project.background || 'Subordinate environment contextualizing the narrative without competing for visual acuity'}.`,
 
-    `DEPTH:\n${project.depth || 'Optical depth of field with sharp critical focus on protagonist and gentle gradual falloff (f/2.8); clean figure-ground separation'}.`,
+    `DEPTH:\n${project.depth || 'Optical depth of field with sharp critical focus on protagonist and gentle gradual falloff; clean figure-ground separation'}.`,
 
-    `MATERIALS / TEXTURE:\nAuthentic physical tactile surfaces with realistic micro-texture (cotton, brushed matte metal, concrete, natural skin pores, subtle 35mm film grain).`,
+    `MATERIALS / TEXTURE:\nAuthentic physical tactile surfaces with realistic micro-texture (cotton, brushed matte metal, concrete, natural skin texture, subtle 35mm film grain).`,
 
     `TEXT:\n${project.activeModes.includes('SEM_TEXTO') || !project.thumbnailText.trim() ? 'NO text rendered in the image. Pure visual storytelling with reserved negative space.' : `Negative space reserved for clean post-production typography: "${project.thumbnailText}". Do not render distorted AI letterforms.`}`,
 
-    `REFERENCE FUNCTIONS:\n${referenceLines || 'Editorial magazine cover photography, documentary cinema lighting and premium key art composition'}.`,
+    `REFERENCE FUNCTIONS:\n${referenceLines || 'Editorial magazine cover photography, documentary lighting and premium key art composition'}.`,
 
     ...(activeLocks.length > 0
       ? [`PRESERVATION LOCKS (NON-NEGOTIABLE):\n${activeLocks.join('\n')}`]
       : []),
 
-    `CHANNEL VISUAL LANGUAGE:\n${project.channelIdentity || 'Art-directed, authoritative, cinematic and honest; free from disposable clickbait tropes'}. Style: ${project.visualStyle || 'High fidelity editorial documentary photography'}.`,
+    `CHANNEL VISUAL LANGUAGE:\n${project.channelIdentity || 'Art-directed, authoritative, grounded and honest; free from disposable clickbait tropes'}. Style: ${project.visualStyle || 'High fidelity editorial documentary photography'}.`,
 
     `REALISM / INTEGRATION:\n${modeNotes.join(' ') || 'Organic physical integration of subject in the environment with physically coherent lighting angle and matching color temperature.'}`,
 

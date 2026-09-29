@@ -141,7 +141,7 @@ export function createBlankProject(name = 'Novo Projeto de Thumbnail'): ProjectD
     depth: 'Profundidade com separação clara de primeiro, segundo plano e fundo',
     thumbnailText: '',
     channelIdentity: '',
-    visualStyle: 'Fotografia editorial cinematográfica',
+    visualStyle: 'Fotografia editorial autêntica',
     activeModes: [],
     references: [],
     referenceLocks: [],

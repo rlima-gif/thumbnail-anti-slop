@@ -100,7 +100,7 @@ export function ReferenciasModule() {
   const [notes, setNotes] = useState('');
 
   // Search generator state
-  const [searchAtmosphere, setSearchAtmosphere] = useState('dramatic cinematic tension');
+  const [searchAtmosphere, setSearchAtmosphere] = useState('authentic documentary atmosphere');
   const [searchVisualLang, setSearchVisualLang] = useState('editorial documentary');
   const [copiedQuery, setCopiedQuery] = useState<string | null>(null);
 

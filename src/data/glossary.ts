@@ -70,7 +70,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     translationEn: 'Depth',
     category: 'Composição & Espaço',
     definition: 'A tridimensionalidade percebida em uma tela plana criada por sobreposição de camadas, perspectiva e desfoque óptico.',
-    thumbnailRelevance: 'Transmite valor de produção cinematográfica e evita a sensação de colagem plana em 2D.',
+    thumbnailRelevance: 'Transmite valor de produção fotográfica e evita a sensação de colagem plana em 2D.',
     proTip: 'Crie sempre pelo menos 3 planos claros: primeiro plano (sutil), plano médio (protagonista) e fundo (desfocado).'
   },
   {
@@ -118,7 +118,7 @@ export const GLOSSARY_TERMS: GlossaryTerm[] = [
     translationEn: 'Motivated lighting',
     category: 'Luz & Cor',
     definition: 'Iluminação que possui uma justificativa física visível ou sugerida na cena (janela, abajur, tela de monitor, sol poente).',
-    thumbnailRelevance: 'É a diferença entre uma cena com verossimilhança cinematográfica e um render de IA com brilhos mágicos impossíveis.',
+    thumbnailRelevance: 'É a diferença entre uma cena com verossimilhança fotográfica e um render de IA com brilhos mágicos impossíveis.',
     proTip: 'Sempre se pergunte: "de onde vem essa luz?". Se não houver resposta, ajuste o prompt para definir a fonte.'
   },
   {

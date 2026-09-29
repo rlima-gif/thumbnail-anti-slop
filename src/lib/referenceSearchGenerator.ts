@@ -19,7 +19,7 @@ export function generateReferenceSearchQueries(params: ReferenceSearchParam): Ge
   const subject = clean(params.subject || params.protagonist, 'concept artifact');
   const niche = clean(params.niche, 'documentary feature');
   const atmosphere = clean(params.atmosphere, 'dramatic tension');
-  const lang = clean(params.visualLanguage, 'cinematic editorial');
+  const lang = clean(params.visualLanguage, 'documentary editorial');
 
   return [
     {
@@ -28,8 +28,8 @@ export function generateReferenceSearchQueries(params: ReferenceSearchParam): Ge
       whySearchThis: 'Foge do ciclo vicioso de thumbnails do YouTube; traz enquadramentos conceituais e luz de alto padrão da mídia impressa.'
     },
     {
-      category: 'Cinema & Still Frames (Cinematografia)',
-      query: `cinematography still frame 35mm ${subject} ${lang} ${atmosphere} Roger Deakins lighting`,
+      category: 'Fotografia & Still Frames (Referência de Imagem)',
+      query: `35mm film still photography ${subject} ${lang} ${atmosphere} natural lighting`,
       whySearchThis: 'Permite estudar separação figura/fundo, luz motivada e profundidade de campo óptica de diretores renomados.'
     },
     {

@@ -6,7 +6,7 @@ Sua tarefa é sugerir uma direção fotográfica e composicional estruturada a p
 
 REGRAS RÍGIDAS DE ANTI-SLOP:
 - "Subtrair antes de decorar."
-- Prefira composições sóbrias, cinematográficas ou editoriais em vez de colagens caóticas.
+- Prefira composições sóbrias, fotográficas ou editoriais em vez de colagens caóticas.
 - Escolha UM protagonista inequívoco.
 - Defina uma fonte de luz MOTIVADA (tangível fisicamente na cena).
 - Preserve espaço negativo intencional para respiração visual e legibilidade mobile.

@@ -187,7 +187,7 @@ export function IdeiaModule() {
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-amber-500" />
                       <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">
-                        Direção Cinematográfica
+                        Direção Documental
                       </span>
                     </div>
                     <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">

@@ -419,15 +419,15 @@ console.log('\n14. Testando Ausência de Viés Cinematográfico, Abertura Força
   console.log('  ✓ Presença de "Cinematográfico" estritamente restrita a pedidos explícitos do usuário.');
 }
 
-// 15. Real Simple Engine: 4 Diverse Mode CRIAR Cases (Gaming, Tech, Rosto/Story, Sem Pessoa)
+// 15. Real Simple Engine: 4 Diverse Mode CRIAR Cases (Section 19: Gaming, Tech, Rosto/Story, Sem Pessoa)
 console.log('\n15. Testando 4 Casos Diversos do Modo CRIAR (Gaming, Tech, Rosto/Story, Sem Pessoa)...');
 {
   const { generateSimpleThumbnail } = await import('../src/lib/simpleEngine/engine.ts');
 
-  // Case 1: Gaming (Handheld / Setup / Context)
+  // Case 1: GAMING ("Eu no sofá mostrando meu Legion Go depois de trocar o sistema.")
   const caseGaming = generateSimpleThumbnail({
-    videoTitle: 'Troquei o Windows do meu Legion Go',
-    ideaDescription: 'Eu sentado no sofá da sala segurando o Legion Go ligado jogando',
+    videoTitle: 'Troquei o sistema do Legion Go',
+    ideaDescription: 'Eu no sofá mostrando meu Legion Go depois de trocar o sistema.',
     references: [],
     targetModel: 'GERAL',
     aspectRatio: '16:9',
@@ -439,14 +439,14 @@ console.log('\n15. Testando 4 Casos Diversos do Modo CRIAR (Gaming, Tech, Rosto/
 
   assert.ok(caseGaming.finalPrompt.includes('HARDWARE & PRODUCT FIDELITY'), 'Caso Gaming deve conter trava de hardware');
   assert.ok(caseGaming.finalPrompt.includes('HAND & OBJECT INTERACTION'), 'Caso Gaming deve conter trava de anatomia de mãos no controle');
-  assert.ok(caseGaming.finalPrompt.includes('unmotivated purple-blue gaming neon by default'), 'Caso Gaming deve bloquear neon clichê');
   assert.ok(caseGaming.finalPrompt.includes('preserves the lived-in environmental context'), 'Caso Gaming com sofá/sala deve preservar legibilidade do ambiente');
-  console.log('  ✓ Caso 1 (Gaming): Travas de hardware, interação manual e preservação de ambiente validadas.');
+  assert.ok(caseGaming.direction.foco.includes('Legion Go'), 'Foco deve destacar o Legion Go no sofá');
+  console.log('  ✓ Caso 1 (Gaming): Travas de hardware, 5 dedos anatômicos e preservação de ambiente da sala validadas.');
 
-  // Case 2: Tech Teardown (Hardware / Mesa / Circuito)
+  // Case 2: TECH ("Notebook aberto na mesa mostrando uma diferença de hardware.")
   const caseTech = generateSimpleThumbnail({
-    videoTitle: 'Abri o iPhone 16 Pro Max para ver o novo chip',
-    ideaDescription: 'Mesa de bancada limpa com ferramentas de precisão e o aparelho aberto revelando o circuito interno',
+    videoTitle: 'Diferença interna de hardware',
+    ideaDescription: 'Notebook aberto na mesa mostrando uma diferença de hardware.',
     references: [],
     targetModel: 'GERAL',
     aspectRatio: '16:9',
@@ -456,14 +456,15 @@ console.log('\n15. Testando 4 Casos Diversos do Modo CRIAR (Gaming, Tech, Rosto/
     preserveProduct: true
   });
 
-  assert.ok(caseTech.direction.foco.includes('dispositivo aberto') || caseTech.direction.foco.includes('hardware') || caseTech.direction.foco.includes('circuito'), 'Caso Tech deve focar no hardware desmontado');
+  assert.ok(caseTech.direction.foco.includes('notebook') && caseTech.direction.foco.includes('hardware'), 'Caso Tech deve focar no notebook e hardware aberto');
   assert.ok(caseTech.finalPrompt.includes('HARDWARE & PRODUCT FIDELITY'), 'Caso Tech deve conter trava de integridade industrial');
-  console.log('  ✓ Caso 2 (Tech Teardown): Foco técnico e integridade de circuitos validados.');
+  assert.ok(!caseTech.finalPrompt.includes('HUMAN EXPRESSION:'), 'Caso Tech sem pessoa NÃO deve gerar diretiva de expressão humana');
+  console.log('  ✓ Caso 2 (Tech Teardown): Foco técnico de bancada sem pessoa e integridade de circuitos validados.');
 
-  // Case 3: Rosto / Story (Tensão Humana Autêntica)
+  // Case 3: ROSTO / STORY ("Eu olhando para um produto quebrado, decepcionado.")
   const caseStory = generateSimpleThumbnail({
-    videoTitle: 'O dia em que perdi meu canal com 1 milhão de inscritos',
-    ideaDescription: 'Eu olhando pensativo para a tela do computador no escuro, expressão de preocupação e desabafo autêntico',
+    videoTitle: 'Meu maior prejuízo',
+    ideaDescription: 'Eu olhando para um produto quebrado, decepcionado.',
     references: [{ id: 'ref-face-1', name: 'Meu Rosto', url: 'https://example.com/me.jpg', role: 'PESSOA' }],
     targetModel: 'GERAL',
     aspectRatio: '16:9',
@@ -476,15 +477,15 @@ console.log('\n15. Testando 4 Casos Diversos do Modo CRIAR (Gaming, Tech, Rosto/
   assert.ok(caseStory.finalPrompt.includes('FACIAL FIDELITY (MANDATORY)'), 'Caso Story deve ter trava de fidelidade facial');
   assert.ok(caseStory.finalPrompt.includes('natural facial asymmetry'), 'Caso Story deve exigir assimetria facial natural');
   assert.ok(caseStory.finalPrompt.includes('NO artificial plastic smoothing'), 'Caso Story deve proibir alisamento plástico');
+  assert.ok(caseStory.direction.expressao.includes('Desapontamento sincero'), 'Expressão deve ser desapontamento sincero e contido');
   const positiveStoryPrompt = caseStory.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0].toLowerCase();
-  assert.ok(!positiveStoryPrompt.includes('screaming') && !positiveStoryPrompt.includes('shocked'), 'Caso Story não deve induzir careta');
-  assert.ok(!caseStory.direction.expressao.toLowerCase().includes('grito') && !caseStory.direction.expressao.toLowerCase().includes('choque'), 'Expressão não deve prescrever choque');
-  console.log('  ✓ Caso 3 (Rosto / Story): Fidelidade de identidade facial, textura orgânica e ausência de caretas validadas.');
+  assert.ok(!positiveStoryPrompt.includes('screaming') && !positiveStoryPrompt.includes('shocked'), 'Caso Story não deve induzir careta de choque');
+  console.log('  ✓ Caso 3 (Rosto / Story): Frustração humana honesta com produto quebrado e ausência de caretas validadas.');
 
-  // Case 4: Sem Pessoa (Ambiente / Atmosfera / Mistério)
+  // Case 4: SEM PESSOA ("Um console antigo ao lado de um console moderno.")
   const caseSemPessoa = generateSimpleThumbnail({
-    videoTitle: 'O mistério do bunker abandonado na floresta',
-    ideaDescription: 'Entrada de concreto rachado de um bunker antigo coberta por musgo e folhas secas na penumbra',
+    videoTitle: 'Evolução dos videogames',
+    ideaDescription: 'Um console antigo ao lado de um console moderno.',
     references: [],
     targetModel: 'GERAL',
     aspectRatio: '16:9',
@@ -495,26 +496,30 @@ console.log('\n15. Testando 4 Casos Diversos do Modo CRIAR (Gaming, Tech, Rosto/
   });
 
   assert.ok(!caseSemPessoa.finalPrompt.includes('FACIAL FIDELITY'), 'Cena sem pessoa NÃO deve ter trava de rosto');
-  assert.ok(caseSemPessoa.direction.foco.includes('concreto') || caseSemPessoa.direction.foco.includes('bunker') || caseSemPessoa.direction.foco.includes('ponto'), 'Foco deve ser espacial/arquitetônico');
-  console.log('  ✓ Caso 4 (Sem Pessoa): Foco exclusivamente arquitetônico e ausência de travas humanas validados.');
+  assert.ok(!caseSemPessoa.finalPrompt.includes('HUMAN EXPRESSION:'), 'Cena sem pessoa NÃO deve conter diretiva de expressão humana');
+  assert.ok(caseSemPessoa.direction.foco.includes('justaposição') || caseSemPessoa.direction.foco.includes('console antigo'), 'Foco deve ser comparativo geracional');
+  console.log('  ✓ Caso 4 (Sem Pessoa): Comparação direta lado a lado sem elementos humanos validada.');
 
   // Distinctiveness assertion across all 4 cases
   assert.notEqual(caseGaming.direction.foco, caseTech.direction.foco, 'Gaming e Tech devem ter focos distintos');
   assert.notEqual(caseTech.direction.foco, caseStory.direction.foco, 'Tech e Story devem ter focos distintos');
   assert.notEqual(caseStory.direction.foco, caseSemPessoa.direction.foco, 'Story e Sem Pessoa devem ter focos distintos');
   assert.notEqual(caseGaming.direction.composicao, caseStory.direction.composicao, 'Composições devem ser estruturalmente diferentes');
-  console.log('  ✓ Distinção estrutural comprovada entre todos os 4 casos.');
+  assert.notEqual(caseGaming.finalPrompt, caseTech.finalPrompt, 'Prompts de Gaming e Tech devem ser distintos');
+  assert.notEqual(caseTech.finalPrompt, caseStory.finalPrompt, 'Prompts de Tech e Story devem ser distintos');
+  assert.notEqual(caseStory.finalPrompt, caseSemPessoa.finalPrompt, 'Prompts de Story e Sem Pessoa devem ser distintos');
+  console.log('  ✓ Distinção estrutural e conceitual comprovada entre todos os 4 casos.');
 }
 
-// 16. Real Simple Engine: Mode MELHORAR (Community Slop Purification)
-console.log('\n16. Testando Modo MELHORAR com Exemplo Completo de Slop da Comunidade...');
+// 16. Real Simple Engine: Mode MELHORAR (Community Slop Purification - Section 20)
+console.log('\n16. Testando Modo MELHORAR com Exemplo Completo de Slop da Comunidade (Seção 20)...');
 {
   const { improvePrompt } = await import('../src/lib/simpleEngine/engine.ts');
 
-  const dirtyCommunityPrompt = 'Epic cinematic gaming thumbnail, vibrant neon purple and blue lighting, dramatic rim light, glowing console, shocked YouTuber face, floating sparks, ultra detailed, high CTR';
+  const dirtyCommunityPrompt = 'Epic cinematic gaming thumbnail, vibrant neon purple and blue lighting, dramatic rim light, glowing console, shocked YouTuber face, floating sparks, ultra detailed, high CTR.';
   const improvedResult = improvePrompt({ rawPrompt: dirtyCommunityPrompt });
 
-  assert.ok(improvedResult.changes.length >= 4, `Esperadas pelo menos 4 mudanças explicadas, obteve ${improvedResult.changes.length}`);
+  assert.ok(improvedResult.changes.length >= 5, `Esperadas pelo menos 5 mudanças explicadas, obteve ${improvedResult.changes.length}`);
   const positiveImproved = improvedResult.improvedPrompt.split('STRICTLY AVOID:')[0].toLowerCase();
 
   assert.ok(!positiveImproved.includes('neon'), 'Parte positiva não deve conter neon');
@@ -523,27 +528,37 @@ console.log('\n16. Testando Modo MELHORAR com Exemplo Completo de Slop da Comuni
   assert.ok(!positiveImproved.includes('glowing'), 'Parte positiva não deve conter glowing console');
   assert.ok(!positiveImproved.includes('high ctr'), 'Parte positiva não deve conter buzzword "high CTR"');
   assert.ok(!positiveImproved.includes('epic'), 'Parte positiva não deve conter buzzword "epic"');
-  assert.ok(improvedResult.improvedPrompt.includes('Natural motivated light'), 'Deve conter luz física motivada');
+  assert.ok(!positiveImproved.includes('f/2.0'), 'Não deve injetar f/2.0');
+  assert.ok(!positiveImproved.includes('pores') && !positiveImproved.includes('poros'), 'Não deve usar poros como muleta');
+  assert.ok(improvedResult.improvedPrompt.includes('Motivated physical illumination'), 'Deve conter iluminação física motivada');
   assert.ok(improvedResult.improvedPrompt.includes('natural skin texture'), 'Deve conter textura natural de pele');
+  assert.ok(improvedResult.improvedPrompt.includes('Clean figure-ground separation'), 'Deve conter separação figura-fundo para mobile');
   assert.ok(improvedResult.improvedPrompt.includes('STRICTLY AVOID:'), 'Deve incluir lista negativa de slop');
-  console.log('  ✓ Purificação completa de slop executada com sucesso.');
+  console.log('  ✓ Purificação completa e reconstrução de intenção executadas com sucesso.');
   console.log(`    Mudanças registradas (${improvedResult.changes.length}):`);
   improvedResult.changes.forEach(c => console.log(`      - ${c}`));
 }
 
-// 17. Real Simple Engine: Mode ANALISAR (Surgical Inpainting with CHANGE: & PRESERVE:)
-console.log('\n17. Testando Modo ANALISAR com Prompt Cirúrgico (CHANGE: e PRESERVE:)...');
+// 17. Real Simple Engine: Mode ANALISAR (Surgical Inpainting with CHANGE: & PRESERVE: - Section 16 & 17)
+console.log('\n17. Testando Modo ANALISAR com Auditoria Baseada em Evidências e Prompt Cirúrgico...');
 {
   const { analyzeThumbnailLocally } = await import('../src/lib/simpleEngine/engine.ts');
 
-  const analysis = analyzeThumbnailLocally('Troquei o Windows do meu Legion Go');
-  assert.ok(analysis.fixPrompt.includes('CHANGE:'), 'fixPrompt DEVE conter bloco explícito "CHANGE:"');
-  assert.ok(analysis.fixPrompt.includes('PRESERVE:'), 'fixPrompt DEVE conter bloco explícito "PRESERVE:"');
-  assert.ok(analysis.fixPrompt.includes('AVOID:'), 'fixPrompt DEVE conter bloco explícito "AVOID:"');
-  assert.ok(analysis.functioning.length >= 2, 'Deve identificar aspectos funcionais');
-  assert.ok(analysis.aiLooking.length >= 2, 'Deve identificar defeitos de IA');
-  assert.ok(analysis.topProblem.length > 5, 'Deve formular o problema prioritário');
-  console.log('  ✓ Estrutura cirúrgica (CHANGE:, PRESERVE:, AVOID:) e diagnóstico validados.');
+  // Test 17A: Hardware context (Notebook aberto na mesa)
+  const analysisTech = analyzeThumbnailLocally('Notebook aberto na mesa mostrando uma diferença de hardware');
+  assert.ok(analysisTech.fixPrompt.includes('CHANGE:'), 'fixPrompt DEVE conter bloco explícito "CHANGE:"');
+  assert.ok(analysisTech.fixPrompt.includes('PRESERVE:'), 'fixPrompt DEVE conter bloco explícito "PRESERVE:"');
+  assert.ok(analysisTech.fixPrompt.includes('AVOID:'), 'fixPrompt DEVE conter bloco explícito "AVOID:"');
+  assert.ok(analysisTech.aiLooking.some(item => item.toLowerCase().includes('brilho') || item.toLowerCase().includes('chassi')), 'Deve auditar artefatos de hardware');
+  assert.ok(!analysisTech.aiLooking.some(item => item.toLowerCase().includes('pele') || item.toLowerCase().includes('rosto')), 'NÃO deve acusar defeitos de pele em imagem de hardware sem pessoa');
+  console.log('  ✓ Auditoria em Hardware: Foco em chassi e reflexos sem falsas acusações de pele.');
+
+  // Test 17B: Creator face context (Eu olhando decepcionado)
+  const analysisCreator = analyzeThumbnailLocally('Eu olhando para um produto quebrado, decepcionado');
+  assert.ok(analysisCreator.fixPrompt.includes('CHANGE:'), 'fixPrompt DEVE conter bloco explícito "CHANGE:"');
+  assert.ok(analysisCreator.fixPrompt.includes('PRESERVE:'), 'fixPrompt DEVE conter bloco explícito "PRESERVE:"');
+  assert.ok(analysisCreator.aiLooking.some(item => item.toLowerCase().includes('pele') || item.toLowerCase().includes('rim light')), 'Deve auditar pele e iluminação de recorte');
+  console.log('  ✓ Auditoria em Criador: Diagnóstico preciso de rim light e alisamento de pele com fixPrompt cirúrgico.');
 }
 
 // 18. Mode ANALISAR with Real Visual PNG Fixture & Multimodal Contract

@@ -11,9 +11,9 @@ export const AI_ARTIFACT_SIGNALS: AiArtifactSignal[] = [
   {
     id: 'pele-plastica-cera',
     title: 'Pele Plástica / Efeito Cera',
-    signal: 'Ausência total de poros, sardas, marcas de expressão e microtextura de pele, conferindo textura de manequim lubrificado.',
-    whyItHappens: 'Processos de upscaling agressivo e denoise sem retenção de granulação e textura microdérmica.',
-    howToDirectAgainst: 'Exija "visible skin pores", "natural skin imperfections", "35mm film grain" e proíba "smooth skin, airbrushed".'
+    signal: 'Ausência total de textura natural de pele, marcas de expressão e assimetria orgânica, conferindo textura de manequim lubrificado.',
+    whyItHappens: 'Processos de upscaling agressivo e denoise sem retenção de textura natural.',
+    howToDirectAgainst: 'Exija "natural skin texture", "preserve natural facial texture", "natural facial asymmetry" e proíba "plastic smoothing, waxy skin, airbrushed".'
   },
   {
     id: 'microdetalhe-aleatorio',
@@ -62,19 +62,19 @@ export const AI_ARTIFACT_SIGNALS: AiArtifactSignal[] = [
     title: 'Fundo Semanticamente Incoerente',
     signal: 'Um escritório onde as portas não levam a lugar nenhum, estantes com livros que derretem e janelas impossíveis.',
     whyItHappens: 'A IA preenche o fundo gerando formas vagas que lembram cenários sem entender a arquitetura do espaço.',
-    howToDirectAgainst: 'Defina um ambiente específico e subordinado: "neutral muted studio wall", "shallow depth of field f/1.8 with clean background bokeh".'
+    howToDirectAgainst: 'Defina um ambiente específico e subordinado: "neutral muted studio wall", "balanced optical perspective with clean background separation".'
   },
   {
     id: 'profundidade-campo-excessiva',
     title: 'Profundidade de Campo Simulada Excessiva',
     signal: 'Borrão de fundo que corta o contorno das orelhas da pessoa enquanto a ponta do nariz e o cabelo estão nítidos.',
     whyItHappens: 'Efeito "portrait mode" de software simulado em vez de física óptica de lente real.',
-    howToDirectAgainst: 'Descreva a ótica de lente real: "shot on 85mm f/2.8 with gradual natural optical falloff".'
+    howToDirectAgainst: 'Descreva a ótica de lente real: "shot on 85mm portrait lens with gradual natural optical falloff".'
   },
   {
     id: 'microdetalhe-uniformemente-nitido',
     title: 'Microdetalhe Uniformemente Nítido (Hipernitidez)',
-    signal: 'Cada poro, cada folha da árvore ao fundo e cada fibra da camisa possuem exatamente a mesma acuidade visual.',
+    signal: 'Cada detalhe de pele, cada folha da árvore ao fundo e cada fibra da camisa possuem exatamente a mesma acuidade visual.',
     whyItHappens: 'Prompts viciados com "8k, masterpiece, hyperdetailed, octane render" forçando o gerador ao limite de contraste.',
     howToDirectAgainst: 'Priorize hierarquia: "hierarchical focus on subject eyes, subtle background attenuation, natural lens softness".'
   },

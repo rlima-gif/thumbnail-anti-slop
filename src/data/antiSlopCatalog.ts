@@ -57,7 +57,7 @@ export const ANTI_SLOP_CATALOG: AntiSlopItem[] = [
     category: 'Composição & Elementos',
     explanation: 'Círculo vermelho desenhado ao redor de um elemento central para simular "segredo" ou "detalhe chocante".',
     whyItHappens: 'Clichê herdado de vídeos sensacionalistas de mistério e pegadinhas.',
-    whyItHarms: 'Quebra a estética cinematográfica ou editorial do canal e comunica baixo valor de produção.',
+    whyItHarms: 'Quebra a autenticidade fotográfica ou editorial do canal e comunica baixo valor de produção.',
     whenItMayBeIntentional: 'Documentários investigativos de segurança ou análise tática de quadros esportivos.',
     promptAvoidKeywords: ['red circle overlay', 'hand-drawn red highlight circle', 'clickbait marker rings']
   },
@@ -105,7 +105,7 @@ export const ANTI_SLOP_CATALOG: AntiSlopItem[] = [
     id: 'pele-plastica',
     name: 'PELE PLÁSTICA',
     category: 'Render & IA',
-    explanation: 'Pele sem poros, sem linhas de expressão, com textura de silicone ou cera polida de gerador de IA.',
+    explanation: 'Pele plástica sem textura natural, sem linhas de expressão, com textura de silicone ou cera polida de gerador de IA.',
     whyItHappens: 'Modelos de imagem com denoise agressivo ou filtros de suavização excessivos no Photoshop.',
     whyItHarms: 'Gatilho de "Uncanny Valley". O espectador rejeita a imagem por perceber que não é um ser humano real.',
     whenItMayBeIntentional: 'Arte conceitual de robôs, androides ou manequins.',

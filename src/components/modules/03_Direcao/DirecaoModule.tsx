@@ -34,9 +34,9 @@ const COMPOSITION_PRESETS = [
 ];
 
 const CAMERA_PRESETS = [
-  'Lente prime 85mm f/1.8 (retrato nítido com compressão elegante)',
+  'Lente prime 85mm (retrato nítido com compressão elegante)',
   'Lente 50mm no nível dos olhos (perspectiva documental natural)',
-  'Lente 35mm cinematográfica (imersão ambiental)',
+  'Lente 35mm fotográfica (imersão ambiental)',
   'Lente macro 100mm (detalhes industriais extremos de produto)'
 ];
 
@@ -66,7 +66,7 @@ const MODES_CONFIG: Array<{ id: GenerationMode; title: string; badge: string; de
     id: 'ROSTO_REAL',
     title: 'Rosto Real',
     badge: 'Anti-Cera',
-    desc: 'Preserva assimetria, poros, dentes e idade real do criador. Proíbe cara de silicone.'
+    desc: 'Preserva assimetria natural, textura autêntica de pele, dentes e idade real do criador. Proíbe cara de silicone.'
   },
   {
     id: 'GAMING',
@@ -788,7 +788,7 @@ export function DirecaoModule() {
                   type="text"
                   value={currentProject.depth}
                   onChange={e => updateProject({ depth: e.target.value })}
-                  placeholder="Ex: Desfoque óptico gradual f/2.8..."
+                  placeholder="Ex: Separação óptica natural com contexto crível..."
                   className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3.5 py-2 text-xs text-zinc-100 focus:outline-none focus:border-amber-500"
                 />
               </div>
@@ -825,7 +825,7 @@ export function DirecaoModule() {
                 type="text"
                 value={currentProject.channelIdentity}
                 onChange={e => updateProject({ channelIdentity: e.target.value })}
-                placeholder="Ex: Direção documental sóbria; cinematográfica e honesta..."
+                placeholder="Ex: Direção documental sóbria e honesta..."
                 className="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-3.5 py-2 text-xs text-zinc-100 focus:outline-none focus:border-amber-500"
               />
             </div>

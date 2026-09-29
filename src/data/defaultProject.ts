@@ -27,9 +27,9 @@ export const DEFAULT_PROJECT: ProjectData = {
   lighting: 'Luz pontual suave motivada de uma única lâmpada fluorescente industrial pendente sobre a mesa.',
   palette: 'Cinza chumbo industrial, preto profundo (#0b0c0e) e um único reflexo metálico âmbar quente.',
   background: 'Paredes de concreto aparente com bancadas de osciloscópios vintage desativados.',
-  depth: 'Plano médio nítido no vinco da lona; fundo caindo em desfoque óptico gradual f/2.8.',
+  depth: 'Plano médio nítido no vinco da lona; fundo com separação óptica gradual natural.',
   thumbnailText: '10 BILHÕES',
-  channelIdentity: 'Direção cinematográfica documental e sóbria; sem stickers nem setas vermelhas.',
+  channelIdentity: 'Direção documental sóbria e honesta; sem stickers nem setas vermelhas.',
   visualStyle: 'Fotografia documental investigativa de alta fidelidade analógica.',
 
   activeModes: ['TECH'],

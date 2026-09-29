@@ -38,7 +38,7 @@ export const CHECKLIST_ITEMS: ChecklistItemDef[] = [
   },
   {
     id: 'chk-8',
-    text: 'Fundo subordinado (menos contraste, menor saturação ou desfoque f/2.0).',
+    text: 'Fundo subordinado (menos contraste, menor saturação ou separação óptica natural).',
     category: 'Leitura & Foco'
   },
   {
@@ -68,7 +68,7 @@ export const CHECKLIST_ITEMS: ChecklistItemDef[] = [
   },
   {
     id: 'chk-14',
-    text: 'Texturas naturais (materiais táteis críveis: algodão, metal fosco, poros reais).',
+    text: 'Texturas naturais (materiais táteis críveis: algodão, metal fosco, textura natural de pele).',
     category: 'Luz & Realismo'
   },
   {

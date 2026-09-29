@@ -360,7 +360,7 @@ export function runPromptConsistencyCheck(project: ProjectData): PromptWarning[]
       title: 'RISCO DE FUNDO COMPETINDO',
       severity: 'warning',
       message: 'O fundo está configurado com alta nitidez e muitos detalhes, o que camuflará o protagonista.',
-      fixHint: 'Especifique desfoque óptico gradual (f/2.8) ou diminua a exposição do cenário em relação ao sujeito.'
+      fixHint: 'Especifique separação óptica gradual natural ou diminua a exposição do cenário em relação ao sujeito.'
     });
   }
 
