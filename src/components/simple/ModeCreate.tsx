@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   Wand2,
   Copy,
@@ -16,16 +16,39 @@ import {
   Camera,
   Eye,
   Smile,
-  Palette
+  Palette,
+  Info
 } from 'lucide-react';
 import {
   SimpleReference,
   SimpleReferenceRole,
   TargetModel,
+  TextTreatment,
+  ReservedSpacePosition,
   CreateThumbnailResult
 } from '@/types/simple';
 import { generateSimpleThumbnail } from '@/lib/simpleEngine/engine';
 import { saveSimpleHistoryItem } from '@/lib/simpleEngine/history';
+
+const ALL_ROLES: SimpleReferenceRole[] = [
+  'PESSOA',
+  'PRODUTO',
+  'CENÁRIO',
+  'ESTILO',
+  'COMPOSIÇÃO',
+  'TIPOGRAFIA',
+  'OUTRA'
+];
+
+const ROLE_MICROCOPY: Record<SimpleReferenceRole, string> = {
+  PESSOA: 'Envie uma foto com o rosto bem visível.',
+  PRODUTO: 'Uma foto real ajuda a manter formato e detalhes.',
+  CENÁRIO: 'Use se o ambiente real fizer parte da história.',
+  ESTILO: 'Serve para aparência, luz e acabamento.',
+  COMPOSIÇÃO: 'Serve para mostrar onde cada elemento deve ficar.',
+  TIPOGRAFIA: 'Serve apenas como referência de fonte e tratamento do texto.',
+  OUTRA: 'Referência geral de apoio.'
+};
 
 interface ModeCreateProps {
   onNotify: (msg: string) => void;
@@ -37,6 +60,10 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
   const [videoTitle, setVideoTitle] = useState('');
   const [ideaDescription, setIdeaDescription] = useState('');
   const [thumbnailText, setThumbnailText] = useState('');
+  const [textTreatment, setTextTreatment] = useState<TextTreatment>('AUTO');
+  const [fontName, setFontName] = useState('');
+  const [reserveSpaceForText, setReserveSpaceForText] = useState(false);
+  const [reservedSpacePosition, setReservedSpacePosition] = useState<ReservedSpacePosition>('DIREITA');
   const [references, setReferences] = useState<SimpleReference[]>([]);
 
   // Advanced settings (collapsed by default)
@@ -60,7 +87,35 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
   // Helper for word count on thumbnail text
   const textWords = thumbnailText.trim() ? thumbnailText.trim().split(/\s+/).length : 0;
 
-  // Handle image upload
+  // Contextual suggestions based on user description (Rule 4)
+  const contextualSuggestions = useMemo(() => {
+    const combined = `${videoTitle} ${ideaDescription}`.toLowerCase();
+    const suggestions: string[] = [];
+
+    const hasPersonInText = /(eu|meu\s*rosto|minha\s*cara|minha\s*rea[çc][ãa]o|pessoa|homem|mulher|criador|cara)(\b|$)/i.test(combined);
+    const hasPersonRef = references.some(r => r.role === 'PESSOA');
+    if (hasPersonInText && !hasPersonRef) {
+      suggestions.push('Uma foto sua ajuda a preservar seu rosto.');
+    }
+
+    const hasProductInText = /(legion|console|notebook|laptop|celular|smartphone|mouse|teclado|fone|headset|hardware|pe[çc]a|produto|aparelho|switch|steam\s*deck)/i.test(combined);
+    const hasProductRef = references.some(r => r.role === 'PRODUTO');
+    if (hasProductInText && !hasProductRef) {
+      const match = combined.match(/(legion\s*go|legion|steam\s*deck|switch|notebook|laptop|console|celular)/i);
+      const name = match ? match[0] : 'produto';
+      suggestions.push(`Uma foto do ${name} ajuda a preservar o hardware.`);
+    }
+
+    const hasSceneInText = /(sof[aá]|quarto|sala|mesa|bancada|escrit[oó]rio|est[uú]dio|oficina|cen[aá]rio)/i.test(combined);
+    const hasSceneRef = references.some(r => r.role === 'CENÁRIO');
+    if (hasSceneInText && !hasSceneRef) {
+      suggestions.push('Se esse sofá ou ambiente for importante, envie uma foto do cenário.');
+    }
+
+    return suggestions;
+  }, [videoTitle, ideaDescription, references]);
+
+  // Handle image upload with auto-role detection
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
     Array.from(files).forEach(file => {
@@ -68,7 +123,6 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
       const reader = new FileReader();
       reader.onload = e => {
         const url = e.target?.result as string;
-        // Default role: if tech-sounding name or word, guess PRODUTO, else OUTRA
         const nameLower = file.name.toLowerCase();
         let role: SimpleReferenceRole = 'OUTRA';
         if (nameLower.includes('face') || nameLower.includes('rosto') || nameLower.includes('me') || nameLower.includes('eu')) {
@@ -77,6 +131,11 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
         } else if (nameLower.includes('legion') || nameLower.includes('console') || nameLower.includes('produto') || nameLower.includes('phone') || nameLower.includes('hardware')) {
           role = 'PRODUTO';
           setPreserveProduct(true);
+        } else if (nameLower.includes('sala') || nameLower.includes('quarto') || nameLower.includes('cenario') || nameLower.includes('room') || nameLower.includes('fundo') || nameLower.includes('desk')) {
+          role = 'CENÁRIO';
+        } else if (nameLower.includes('fonte') || nameLower.includes('font') || nameLower.includes('type') || nameLower.includes('texto')) {
+          role = 'TIPOGRAFIA';
+          setTextTreatment('USAR_REFERENCIA');
         }
 
         setReferences(prev => [
@@ -98,6 +157,7 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
       const updated = prev.map(r => (r.id === id ? { ...r, role } : r));
       if (role === 'PESSOA') setPreserveFace(true);
       if (role === 'PRODUTO') setPreserveProduct(true);
+      if (role === 'TIPOGRAFIA') setTextTreatment('USAR_REFERENCIA');
       return updated;
     });
   };
@@ -120,7 +180,11 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
       const payload = {
         videoTitle,
         ideaDescription,
-        thumbnailText,
+        thumbnailText: textTreatment === 'SEM_TEXTO' ? '' : thumbnailText,
+        textTreatment,
+        fontName: fontName.trim() || undefined,
+        reserveSpaceForText,
+        reservedSpacePosition,
         references,
         targetModel,
         aspectRatio,
@@ -170,7 +234,11 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
       const fallback = generateSimpleThumbnail({
         videoTitle,
         ideaDescription,
-        thumbnailText,
+        thumbnailText: textTreatment === 'SEM_TEXTO' ? '' : thumbnailText,
+        textTreatment,
+        fontName: fontName.trim() || undefined,
+        reserveSpaceForText,
+        reservedSpacePosition,
         references,
         targetModel,
         aspectRatio,
@@ -235,35 +303,160 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
           <p className="text-[11px] text-zinc-500 mt-1.5">
             Você não precisa especificar termos técnicos de câmera ou iluminação. O motor traduz sua intenção em direção visual de alto nível.
           </p>
+
+          {/* Contextual Suggestions (Rule 4) */}
+          {contextualSuggestions.length > 0 && (
+            <div className="space-y-1.5 mt-3">
+              {contextualSuggestions.map((sug, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 text-xs text-amber-300 font-mono bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2"
+                >
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>{sug}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Optional Thumbnail Text */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
+        {/* Thumbnail Text & Typography Treatment (Rules 12-22) */}
+        <div className="space-y-3 bg-zinc-950/40 border border-zinc-800/60 p-4 sm:p-5 rounded-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <label className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-300">
               Texto na Thumbnail <span className="text-zinc-500 font-normal lowercase">(opcional)</span>
             </label>
-            {textWords > 4 && (
+            {textWords > 4 && textTreatment !== 'SEM_TEXTO' && (
               <span className="text-[10px] font-mono text-amber-400 flex items-center gap-1">
                 <AlertTriangle className="w-3 h-3" />
                 {textWords} palavras: textos longos perdem impacto em telas mobile
               </span>
             )}
           </div>
-          <input
-            type="text"
-            value={thumbnailText}
-            onChange={e => setThumbnailText(e.target.value)}
-            placeholder="Ex: OUTRO APARELHO"
-            className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl px-4 py-2.5 text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500 transition uppercase"
-          />
+
+          {/* Tratamento do Texto */}
+          <div className="space-y-1.5">
+            <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider font-bold block">
+              Tratamento do Texto
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setTextTreatment('AUTO')}
+                className={`py-2 px-3 rounded-xl border text-xs font-mono transition text-left flex items-center justify-between ${
+                  textTreatment === 'AUTO'
+                    ? 'bg-amber-500/10 border-amber-500/50 text-amber-300 font-bold'
+                    : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <span>AUTO</span>
+                {textTreatment === 'AUTO' && <Check className="w-3.5 h-3.5 text-amber-400" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTextTreatment('USAR_REFERENCIA')}
+                className={`py-2 px-3 rounded-xl border text-xs font-mono transition text-left flex items-center justify-between ${
+                  textTreatment === 'USAR_REFERENCIA'
+                    ? 'bg-amber-500/10 border-amber-500/50 text-amber-300 font-bold'
+                    : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <span className="truncate">USAR REFERÊNCIA DE TIPOGRAFIA</span>
+                {textTreatment === 'USAR_REFERENCIA' && <Check className="w-3.5 h-3.5 text-amber-400 shrink-0" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTextTreatment('SEM_TEXTO')}
+                className={`py-2 px-3 rounded-xl border text-xs font-mono transition text-left flex items-center justify-between ${
+                  textTreatment === 'SEM_TEXTO'
+                    ? 'bg-amber-500/10 border-amber-500/50 text-amber-300 font-bold'
+                    : 'bg-zinc-950 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                }`}
+              >
+                <span>GERAR SEM TEXTO</span>
+                {textTreatment === 'SEM_TEXTO' && <Check className="w-3.5 h-3.5 text-amber-400" />}
+              </button>
+            </div>
+          </div>
+
+          {textTreatment !== 'SEM_TEXTO' && (
+            <div className="space-y-3 pt-1">
+              <div>
+                <input
+                  type="text"
+                  value={thumbnailText}
+                  onChange={e => setThumbnailText(e.target.value)}
+                  placeholder="Ex: AGORA FUNCIONA"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-4 py-2.5 text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500 transition uppercase"
+                />
+                <p className="text-[10px] text-zinc-500 mt-1 font-mono">
+                  O texto digitado é tratado como exato (sem traduções ou palavras adicionais inventadas pela IA).
+                </p>
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider block mb-1 font-bold">
+                  Referência de Fonte Real <span className="text-zinc-500 font-normal lowercase">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={fontName}
+                  onChange={e => setFontName(e.target.value)}
+                  placeholder="Ex: Bebas Neue, Anton, Inter, Impact, Oswald"
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs font-mono text-zinc-200 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] text-zinc-400 bg-zinc-900/60 border border-zinc-800/80 rounded-xl px-3 py-2">
+                <Info className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                <span>Para máxima fidelidade tipográfica, gere a imagem sem texto e aplique a fonte depois.</span>
+              </div>
+            </div>
+          )}
+
+          {/* Reservar Espaço para Texto (Rule 17) */}
+          <div className="pt-2 border-t border-zinc-800/60 space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer text-xs font-mono text-zinc-300">
+              <input
+                type="checkbox"
+                checked={reserveSpaceForText}
+                onChange={e => setReserveSpaceForText(e.target.checked)}
+                className="accent-amber-500 w-4 h-4 rounded"
+              />
+              <span className="font-bold">RESERVAR ESPAÇO PARA TEXTO NA COMPOSIÇÃO</span>
+            </label>
+
+            {reserveSpaceForText && (
+              <div className="flex flex-wrap gap-2 pl-6 pt-1">
+                {(['ESQUERDA', 'DIREITA', 'SUPERIOR', 'INFERIOR'] as ReservedSpacePosition[]).map(pos => (
+                  <button
+                    key={pos}
+                    type="button"
+                    onClick={() => setReservedSpacePosition(pos)}
+                    className={`text-[10px] font-mono px-3 py-1 rounded-lg border transition font-bold ${
+                      reservedSpacePosition === pos
+                        ? 'bg-amber-500 text-zinc-950 border-amber-500'
+                        : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:text-zinc-200'
+                    }`}
+                  >
+                    {pos}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* References Drag & Drop Area */}
+        {/* References Drag & Drop Area (Rules 3, 5, 23) */}
         <div>
-          <label className="block text-xs font-mono font-bold uppercase tracking-wider text-zinc-300 mb-2">
+          <label className="block text-xs font-mono font-bold uppercase tracking-wider text-zinc-300 mb-1">
             Referências <span className="text-zinc-500 font-normal lowercase">(adicione imagens se quiser)</span>
           </label>
+          <p className="text-[11px] text-zinc-400 mb-3">
+            Referências ajudam muito na fidelidade. Se tiver, envie fotos da pessoa, produto ou cenário que realmente devem aparecer.
+          </p>
 
           <input
             type="file"
@@ -288,36 +481,36 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
               Arraste imagens aqui ou clique para selecionar
             </p>
             <p className="text-[11px] text-zinc-500 mt-0.5">
-              Suporta fotos suas, do produto ou imagens de estilo de referência
+              Suporta fotos suas, do produto, cenário, estilo ou tipografia de referência
             </p>
           </div>
 
-          {/* Reference Thumbnails & Quick Role Tags */}
+          {/* Reference Thumbnails & Quick Role Tags with Microcopy (Rule 23) */}
           {references.length > 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
               {references.map(ref => (
                 <div
                   key={ref.id}
-                  className="bg-zinc-950 border border-zinc-800 rounded-2xl p-3 flex items-center gap-3 relative group"
+                  className="bg-zinc-950 border border-zinc-800 rounded-2xl p-3 flex items-start gap-3 relative group"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={ref.url}
                     alt={ref.name}
-                    className="w-14 h-14 object-cover rounded-xl border border-zinc-800 shrink-0"
+                    className="w-14 h-14 object-cover rounded-xl border border-zinc-800 shrink-0 mt-1"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-zinc-200 font-mono truncate mb-1">
+                    <p className="text-xs text-zinc-200 font-mono truncate mb-1.5 font-bold">
                       {ref.name}
                     </p>
-                    {/* Role Picker Buttons */}
+                    {/* Role Picker Buttons (All 7 Roles) */}
                     <div className="flex flex-wrap gap-1">
-                      {(['PESSOA', 'PRODUTO', 'ESTILO', 'COMPOSIÇÃO', 'OUTRA'] as SimpleReferenceRole[]).map(role => (
+                      {ALL_ROLES.map(role => (
                         <button
                           key={role}
                           type="button"
                           onClick={() => handleRoleChange(ref.id, role)}
-                          className={`text-[9px] font-mono px-2 py-0.5 rounded border transition font-bold ${
+                          className={`text-[8.5px] font-mono px-1.5 py-0.5 rounded border transition font-bold ${
                             ref.role === role
                               ? 'bg-amber-500 text-zinc-950 border-amber-500'
                               : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200'
@@ -327,6 +520,10 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
                         </button>
                       ))}
                     </div>
+                    {/* Role Microcopy (Rule 23) */}
+                    <p className="text-[10px] text-amber-400/90 font-mono mt-1.5 leading-snug">
+                      {ROLE_MICROCOPY[ref.role]}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -339,12 +536,6 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
                 </div>
               ))}
             </div>
-          )}
-
-          {references.length > 0 && (
-            <p className="text-[10px] text-zinc-500 mt-2 font-mono">
-              Regras automáticas: PESSOA preserva fisionomia e textura • PRODUTO preserva geometria e botões • ESTILO aproveita apenas iluminação/paleta.
-            </p>
           )}
         </div>
 
@@ -378,7 +569,7 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
                   className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-amber-500 font-mono"
                 >
                   <option value="GERAL">Geral (Compatível com todos)</option>
-                  <option value="MIDJOURNEY">Midjourney (--style raw)</option>
+                  <option value="MIDJOURNEY">Midjourney</option>
                   <option value="FLUX">FLUX (Ultra-detalhes foto)</option>
                   <option value="GEMINI">Google Gemini Imagen</option>
                   <option value="OPENAI">OpenAI (DALL-E 3 / GPT-4o)</option>

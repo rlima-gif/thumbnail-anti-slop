@@ -93,7 +93,7 @@ export const CHECKLIST_ITEMS: ChecklistItemDef[] = [
   },
   {
     id: 'chk-19',
-    text: 'Sem anatomia estranha (mãos com 5 dedos bem delineados, olhos naturais).',
+    text: 'Sem anatomia estranha (mãos anatomicamente plausíveis com contagem correta de dedos visíveis segundo a oclusão natural, olhos naturais).',
     category: 'Subtração & Anti-Slop'
   },
   {

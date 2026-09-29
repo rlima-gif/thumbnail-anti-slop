@@ -4,7 +4,8 @@ import type {
   ImprovePromptInput,
   ImprovePromptResult,
   AnalyzeThumbnailSimpleResult,
-  VisualDirectionOutput
+  VisualDirectionOutput,
+  ReservedSpacePosition
 } from '@/types/simple';
 
 // Internal Anti-Slop Safeguards grouped strictly by Section 8 requirements
@@ -25,11 +26,10 @@ export const CORE_ANTI_SLOP_AVOID = [
   'hair change',
   'beard change',
   'artificial beauty filter jaw slimming',
-  // MÃOS / CORPO
-  'incorrect fingers',
-  'fused fingers',
-  'unnatural grip',
-  'hand/object intersections',
+  // MÃOS / CORPO (Regra 1: Oclusão natural, sem exigir 5 dedos visíveis)
+  'no duplicated or fused fingers',
+  'no fingers intersecting the product',
+  'no unnatural hand grip',
   'impossible arm pose',
   'body proportion drift',
   // PRODUTO
@@ -84,7 +84,17 @@ export const CORE_ANTI_SLOP_AVOID = [
   'generic shocked creator',
   'fake UI',
   'random VS',
-  'generic before/after division'
+  'generic before/after division',
+  // TIPOGRAFIA (Regra 19: Evitar a "fonte de IA")
+  'no malformed typography',
+  'no pseudo-text',
+  'no random letters',
+  'no inconsistent glyphs',
+  'no melted letterforms',
+  'no distorted baseline',
+  'no incorrect spelling',
+  'no unnecessary 3D extrusion',
+  'no fake metallic type by default'
 ];
 
 // Helper to filter avoid tokens conditionally if the user narratively requested them (Rule 9)
@@ -345,7 +355,7 @@ export function interpretUserIntent(
     approachTitle: 'Equilíbrio Narrativo / Cumplicidade com o Espectador',
     hasPerson: true,
     subjectEn: isTech
-      ? 'A person sitting comfortably on a real living room sofa, holding the device naturally toward the camera with both hands, five distinct fingers clearly visible on the grips'
+      ? 'A person sitting comfortably on a real living room sofa, holding the device toward the camera with anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact'
       : 'A person seated in a natural, believable room posture, holding or presenting the primary subject with genuine ease',
     contextEn: 'Cozy real apartment living room with authentic sofa cushions and natural home decor',
     lightingEn: 'Warm interior illumination from a living room floor lamp combined with soft ambient daylight bounce, grounded in real physical sources',
@@ -367,10 +377,15 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
     videoTitle = '',
     ideaDescription = '',
     thumbnailText,
+    textTreatment = 'AUTO',
+    fontName,
+    reserveSpaceForText,
+    reservedSpacePosition,
     references = [],
     targetModel = 'GERAL',
     aspectRatio = '16:9',
     stylePreset = 'Natural',
+    realismLevel = 'Alto',
     preserveFace,
     preserveProduct,
     extraInstructions,
@@ -398,39 +413,62 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
   // Translate any vague user buzzwords
   const buzzwordDecisions = translateVagueBuzzwords(`${videoTitle} ${ideaDescription} ${extraInstructions || ''}`);
 
-  // Build preservation lock directives
+  // Build preservation lock directives strictly isolated by role (Rules 5-11)
   const locks: string[] = [];
 
+  // 1. PESSOA (Regra 6: Preservar identidade, idade, barba, cabelo, proporções, assimetria. Não copiar roupa, cenário, luz, pose)
+  const personRefs = (references || []).filter(r => r.role === 'PESSOA');
   if (hasPersonRef && hasPerson) {
+    const refNames = personRefs.length > 0 ? ` (${personRefs.map(r => r.name).join(', ')})` : '';
     locks.push(
-      'FACIAL FIDELITY (MANDATORY): Strictly preserve the authentic facial geometry, eye shape, nose structure, natural facial asymmetry, real skin texture, natural hairline, and true age from the reference photo. Absolutely NO beauty filters, NO artificial plastic smoothing, NO oversized eyes, NO jaw slimming, NO cartoon exaggeration, NO unnatural teeth whitening.'
+      `FACIAL FIDELITY (MANDATORY)${refNames}: Strictly preserve authentic facial identity, true age, beard/facial hair, natural hairline, facial proportions, bone structure, eye shape, and natural facial asymmetry from the reference photo. Do NOT automatically copy clothes, background setting, lighting, or pose from the photo unless explicitly requested. Absolutely NO beauty filters, NO artificial plastic smoothing, NO oversized eyes, NO jaw slimming, NO cartoon exaggeration, NO unnatural teeth whitening.`
     );
   }
 
+  // 2. PRODUTO (Regra 7: Preservar geometria, proporções, botões, analógicos, portas, tela, materiais, silhueta. Não copiar cenário, composição, estilo)
+  const productRefs = (references || []).filter(r => r.role === 'PRODUTO');
   if (hasProductRef || isTech) {
+    const refNames = productRefs.length > 0 ? ` (${productRefs.map(r => r.name).join(', ')})` : '';
     locks.push(
-      'HARDWARE & PRODUCT FIDELITY (MANDATORY): Strictly preserve authentic industrial geometry, chassis proportions, exact button and analog stick placement, native screen aspect ratio, vents, ports, and factory matte material finish. Zero AI deformation, no rubbery curves, no fictional buttons.'
+      `HARDWARE & PRODUCT FIDELITY (MANDATORY)${refNames}: Strictly preserve authentic industrial geometry, chassis proportions, exact physical buttons, analog sticks, ports, screen, tactile materials, and instantly recognizable silhouette. Do NOT automatically copy background setting, composition, or style from the reference photo. Zero AI melting or rubbery deformation.`
     );
     if (hasPerson) {
+      // Regra 1: Oclusão natural sem exigir 5 dedos visíveis
       locks.push(
-        'HAND & OBJECT INTERACTION: Hands holding the device must show anatomically distinct fingers with a natural physical grip on the exterior edges. Thumbs positioned naturally on the controls without melting or button/chassis fusion.'
+        'HAND & OBJECT INTERACTION: Anatomically plausible hands with natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact. Thumbs positioned naturally on controls without chassis melting.'
       );
     }
   }
 
-  // Handle style references strictly for visual treatment (Rule 15)
-  const styleRefs = references.filter(r => r.role === 'ESTILO');
-  if (styleRefs.length > 0) {
+  // 3. CENÁRIO (Regra 8: Ambiente, arquitetura, posição geral de móveis, layout, elementos espaciais. Não copiar pessoas, objetos irrelevantes, filtros)
+  const sceneRefs = (references || []).filter(r => r.role === 'CENÁRIO');
+  if (sceneRefs.length > 0) {
     locks.push(
-      `STYLE REFERENCE: Emulate only the color grading and natural lighting mood from style references (${styleRefs.map(s => s.name).join(', ')}). Do NOT copy their subject matter or background.`
+      `ENVIRONMENT / SCENERY REFERENCE (${sceneRefs.map(s => s.name).join(', ')}): Use exclusively as reference for environment, room architecture, general position of furniture, layout, spatial depth, and important spatial elements. Do NOT copy people who might appear in this photo, do NOT copy irrelevant stray objects, and do NOT copy photographic filters/treatment from this photo.`
     );
   }
 
-  // Handle composition references strictly for framing (Rule 15)
-  const compRefs = references.filter(r => r.role === 'COMPOSIÇÃO');
+  // 4. ESTILO (Regra 9: Linguagem visual, acabamento, paleta, contraste, tratamento de luz, textura. Não transferir identidade ou objetos)
+  const styleRefs = (references || []).filter(r => r.role === 'ESTILO');
+  if (styleRefs.length > 0) {
+    locks.push(
+      `STYLE REFERENCE (${styleRefs.map(s => s.name).join(', ')}): Emulate only the visual language, overall finish, color palette, contrast curve, motivated lighting treatment, and tactile surface texture. Do NOT transfer personal identity, specific faces, or physical objects from the reference.`
+    );
+  }
+
+  // 5. COMPOSIÇÃO (Regra 10: Enquadramento, posição relativa, escala visual, negative space, relação entre elementos. Não copiar o conteúdo)
+  const compRefs = (references || []).filter(r => r.role === 'COMPOSIÇÃO');
   if (compRefs.length > 0) {
     locks.push(
-      `COMPOSITION REFERENCE: Emulate only the spatial organization and framing ratios from composition references (${compRefs.map(c => c.name).join(', ')}). Do NOT copy subjects or materials.`
+      `COMPOSITION REFERENCE (${compRefs.map(c => c.name).join(', ')}): Emulate only the camera framing, relative element positions, visual scale hierarchy, negative space distribution, and spatial relationships between elements. Do NOT copy the specific subject matter or contents of the reference.`
+    );
+  }
+
+  // 6. TIPOGRAFIA (Regra 11: Personalidade da fonte, peso, largura, caixa alta/baixa, spacing, tratamento, posição. Não copiar imagens, pessoas, cenário)
+  const typeRefs = (references || []).filter(r => r.role === 'TIPOGRAFIA');
+  if (typeRefs.length > 0) {
+    locks.push(
+      `TYPOGRAPHY REFERENCE (${typeRefs.map(t => t.name).join(', ')}): Emulate only font personality, typographic weight, width, letter-spacing, uppercase/lowercase styling, graphic treatment, and layout position. Do NOT copy images, people, background scenery, or objects from this reference.`
     );
   }
 
@@ -454,9 +492,44 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
     promptBody += `\nVISUAL EMPHASIS: ${buzzwordDecisions.join('. ')}.`;
   }
 
-  // Handle thumbnail text strictly (Rule 14)
-  if (thumbnailText && thumbnailText.trim().length > 0) {
-    promptBody += `\nOVERLAY TEXT: Dedicated clean negative space reserved for typography reading "${thumbnailText.trim().toUpperCase()}", with clear figure-ground separation.`;
+  // Handle thumbnail text, typography treatment and spatial reservation (Rules 12-22)
+  if (textTreatment === 'SEM_TEXTO') {
+    // Regra 16: Gerar sem texto
+    promptBody += `\nTYPOGRAPHY: Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.`;
+  } else if (thumbnailText && thumbnailText.trim().length > 0) {
+    // Regra 14: Texto exato - nunca traduzir, reescrever, corrigir ou adicionar palavras
+    const exactText = thumbnailText.trim();
+    let typeLine = `The only visible text must read exactly: "${exactText}". No extra words. No pseudo-text. No invented letters.`;
+
+    // Regra 18 & 20: Fonte real vs características tipográficas
+    if (fontName && fontName.trim().length > 0) {
+      typeLine += ` Typographic style: render in authentic ${fontName.trim()} typeface characteristics (clean letterforms, consistent baseline, bold weight).`;
+    } else if (textTreatment === 'USAR_REFERENCIA' && typeRefs.length > 0) {
+      typeLine += ` Typographic personality, weight, kerning, and treatment must strictly match the TYPOGRAPHY reference.`;
+    } else {
+      // Regra 13: AUTO - clean bold sans-serif, condensed ou heavy grotesk de acordo com o contexto
+      if (isTech) {
+        typeLine += ` Typographic style: simple clean heavy grotesk or modern neutral sans-serif with high contrast and legibility.`;
+      } else {
+        typeLine += ` Typographic style: simple bold condensed sans-serif with high contrast and immediate readability at mobile thumbnail size.`;
+      }
+    }
+
+    // Regra 21 & 22: Hierarquia tipográfica - mensagem única, não concorrer com o assunto
+    typeLine += ` Hierarchy: prioritize this single short message as secondary to the protagonist subject, never competing for focal dominance.`;
+    promptBody += `\nTYPOGRAPHY: ${typeLine}`;
+  }
+
+  // Regra 17: Reservar espaço para texto
+  if (reserveSpaceForText) {
+    const posMap: Record<ReservedSpacePosition, string> = {
+      ESQUERDA: 'left side',
+      DIREITA: 'right side',
+      SUPERIOR: 'upper top area',
+      INFERIOR: 'lower bottom area'
+    };
+    const chosenPos = reservedSpacePosition ? posMap[reservedSpacePosition] : 'right side';
+    promptBody += `\nCOMPOSITION RESERVATION: Leave clean negative space on the ${chosenPos} for later typography. Do not place important subjects or visual clutter in this region.`;
   }
 
   if (locks.length > 0) {
@@ -475,7 +548,9 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
 
   if (targetModel === 'MIDJOURNEY') {
     const arFlag = aspectRatio === '9:16' ? '--ar 9:16' : '--ar 16:9';
-    finalPrompt = `${promptBody}\n\n${arFlag} --style raw`;
+    // Regra 2: --style raw somente quando fizer sentido para a intenção visual (realismo/natural/fotojornalismo)
+    const wantsRaw = (stylePreset === 'Natural' || stylePreset === 'Fotojornalismo') && realismLevel === 'Alto' && !/(cinemat|styliz|fantasy|cartoon|3d)/i.test(cleanIdea);
+    finalPrompt = wantsRaw ? `${promptBody}\n\n${arFlag} --style raw` : `${promptBody}\n\n${arFlag}`;
   } else if (targetModel === 'FLUX') {
     finalPrompt = `[Authentic photography] ${promptBody} shot on professional digital camera with 35mm focal length, clean optical perspective, tactile real-world materials.`;
   } else if (targetModel === 'GEMINI') {
@@ -561,7 +636,7 @@ export function improvePrompt(input: ImprovePromptInput): ImprovePromptResult {
     : cleanSubject || 'A compelling hero subject with authentic real-world presence and clean silhouette';
 
   const handsHardwareDirective = isGaming || isTech
-    ? '\nHARDWARE & HANDS: Five distinct anatomical fingers gripping the device edges naturally, authentic buttons and sticks, factory matte chassis with zero AI melting or rubbery deformation.'
+    ? '\nHARDWARE & HANDS: Anatomically plausible hands with natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, physically believable hand-to-object contact, authentic buttons and sticks, factory matte chassis with zero AI melting or rubbery deformation.'
     : '';
 
   const expressionDirective = hasFace

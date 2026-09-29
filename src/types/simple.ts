@@ -1,4 +1,11 @@
-export type SimpleReferenceRole = 'PESSOA' | 'PRODUTO' | 'ESTILO' | 'COMPOSIÇÃO' | 'OUTRA';
+export type SimpleReferenceRole =
+  | 'PESSOA'
+  | 'PRODUTO'
+  | 'CENÁRIO'
+  | 'ESTILO'
+  | 'COMPOSIÇÃO'
+  | 'TIPOGRAFIA'
+  | 'OUTRA';
 
 export interface SimpleReference {
   id: string;
@@ -9,10 +16,17 @@ export interface SimpleReference {
 
 export type TargetModel = 'GERAL' | 'OPENAI' | 'GEMINI' | 'MIDJOURNEY' | 'FLUX';
 
+export type TextTreatment = 'AUTO' | 'USAR_REFERENCIA' | 'SEM_TEXTO';
+export type ReservedSpacePosition = 'ESQUERDA' | 'DIREITA' | 'SUPERIOR' | 'INFERIOR';
+
 export interface CreateThumbnailInput {
   videoTitle: string;
   ideaDescription: string;
   thumbnailText?: string;
+  textTreatment?: TextTreatment;
+  fontName?: string;
+  reserveSpaceForText?: boolean;
+  reservedSpacePosition?: ReservedSpacePosition;
   references: SimpleReference[];
   targetModel: TargetModel;
   aspectRatio: '16:9' | '9:16';

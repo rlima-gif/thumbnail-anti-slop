@@ -29,9 +29,9 @@ CORE PRINCIPLES:
 2. TRANSLATE VAGUE ADJECTIVES: When user says "epic", "viral", or "high CTR", translate that into a larger primary subject, clear silhouette, and simplified background — NOT into neon, outer glow, or saturated clutter.
 3. DEPTH OF FIELD IS CONTEXTUAL: Do NOT pick f/2.0 or shallow depth of field automatically. If the room/environment matters, preserve background readability.
 4. NATURAL SKIN, NO PORE OBSESSION: Enforce natural skin texture, authentic eye shape, bone structure, natural asymmetry, and true age. Avoid plastic waxy smoothing and artificial beauty filters. Do NOT obsess over hyper-detailed pores.
-5. HARDWARE & HANDS: If holding a device/console/phone, enforce natural grip with five distinct fingers and zero button or chassis fusion. Strict physical geometry.
+5. HARDWARE & HANDS: If holding a device/console/phone, enforce anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, physically believable hand-to-object contact, and zero button or chassis fusion. Strict physical geometry.
 6. NO UNMOTIVATED CLICHES: Zero unmotivated neon or glowing outlines. Zero generic shocked expression or open mouth screams. Zero random arrows, circles, floating particles, fire, or embers unless specifically requested.
-7. TYPOGRAPHY: If user did NOT provide text, do NOT add overlay text.
+7. TYPOGRAPHY: If text is provided, treat it as exact text (no translation, no extra words). Never invent fake gaming fonts. If generating without text or reserving space, reserve clean negative space for later typography.
 
 Output strictly valid JSON with this exact schema:
 {
@@ -43,11 +43,15 @@ Output strictly valid JSON with this exact schema:
     "visual": "Iluminação motivada, cores e texturas reais"
   },
   "finalPrompt": "English prompt for image generation with subject, lighting source, environment, textures and negative avoid tokens"
-}`;
+}
+`;
 
         const userPrompt = `Video Title: ${body.videoTitle || 'Untitled'}
 User Idea: ${body.ideaDescription || ''}
-Thumbnail Text: ${body.thumbnailText || 'None (Do not add text)'}
+Thumbnail Text: ${body.thumbnailText || 'None'}
+Text Treatment: ${body.textTreatment || 'AUTO'}
+Reserved Space: ${body.reserveSpaceForText ? body.reservedSpacePosition : 'None'}
+Specific Font: ${body.fontName || 'None'}
 Approach Number: ${body.approachIndex || 0}
 Target Model: ${body.targetModel || 'GERAL'}
 References Count: ${(body.references || []).length}

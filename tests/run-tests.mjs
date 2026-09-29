@@ -385,7 +385,7 @@ console.log('\n14. Testando Ausência de Viés Cinematográfico, Abertura Força
   assert.ok(!/pores|poros/i.test(promptLower), 'Prompt padrão NÃO deve usar "pores" como muleta de realismo');
   console.log('  ✓ Ausência de viés "cinematic", f/2.0 e "pores" validada no preset padrão Natural.');
 
-  // Test Midjourney target model flags
+  // Test Midjourney target model flags: Natural + Alto realism -> applies --style raw
   const resMJ = generateSimpleThumbnail({
     videoTitle: 'Setup de Gravação',
     ideaDescription: 'Mesa de trabalho com notebook e luz natural da janela',
@@ -399,9 +399,24 @@ console.log('\n14. Testando Ausência de Viés Cinematográfico, Abertura Força
   });
 
   assert.ok(!resMJ.finalPrompt.includes('--v 6'), 'Prompt Midjourney NÃO deve fixar versão volátil como --v 6.1');
-  assert.ok(resMJ.finalPrompt.includes('--style raw'), 'Prompt Midjourney DEVE incluir --style raw');
+  assert.ok(resMJ.finalPrompt.includes('--style raw'), 'Prompt Midjourney realista DEVE incluir --style raw');
   assert.ok(resMJ.finalPrompt.includes('--ar 16:9'), 'Prompt Midjourney DEVE incluir proporção --ar 16:9');
-  console.log('  ✓ Parâmetros Midjourney limpos (--style raw e --ar 16:9 sem --v 6.1 fixo) validados.');
+
+  // Test Midjourney target model flags: Cinematográfico / Estilizado -> NÃO deve forçar --style raw (Regra 2)
+  const resMJStylized = generateSimpleThumbnail({
+    videoTitle: 'Aventura Espacial',
+    ideaDescription: 'Nave espacial estilizada no espaço profundo',
+    references: [],
+    targetModel: 'MIDJOURNEY',
+    aspectRatio: '16:9',
+    stylePreset: 'Cinematográfico',
+    realismLevel: 'Estilizado',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  assert.ok(!resMJStylized.finalPrompt.includes('--style raw'), 'Prompt Midjourney cinematográfico/estilizado NÃO deve forçar --style raw');
+  assert.ok(resMJStylized.finalPrompt.includes('--ar 16:9'), 'Prompt Midjourney estilizado DEVE manter proporção --ar 16:9');
+  console.log('  ✓ Parâmetros Midjourney validados (--style raw aplicado por intenção visual, não fixo universalmente).');
 
   // Test explicit Cinematic request
   const resCinematic = generateSimpleThumbnail({
@@ -439,9 +454,15 @@ console.log('\n15. Testando 4 Casos Diversos do Modo CRIAR (Gaming, Tech, Rosto/
 
   assert.ok(caseGaming.finalPrompt.includes('HARDWARE & PRODUCT FIDELITY'), 'Caso Gaming deve conter trava de hardware');
   assert.ok(caseGaming.finalPrompt.includes('HAND & OBJECT INTERACTION'), 'Caso Gaming deve conter trava de anatomia de mãos no controle');
+  // Regra 1: mãos anatomicamente plausíveis com contagem correta de dedos segundo oclusão natural (NUNCA exigir 5 dedos fixos)
+  assert.ok(!caseGaming.finalPrompt.toLowerCase().includes('five distinct anatomical fingers'), 'NÃO deve exigir "five distinct anatomical fingers"');
+  assert.ok(!caseGaming.finalPrompt.toLowerCase().includes('5 dedos'), 'NÃO deve exigir "5 dedos"');
+  assert.ok(!caseGaming.finalPrompt.toLowerCase().includes('all five fingers'), 'NÃO deve exigir "all five fingers"');
+  assert.ok(caseGaming.finalPrompt.includes('Anatomically plausible hands'), 'Deve exigir mãos anatomicamente plausíveis');
+  assert.ok(caseGaming.finalPrompt.includes('natural occlusion'), 'Deve respeitar oclusão natural de dedos');
   assert.ok(caseGaming.finalPrompt.includes('preserves the lived-in environmental context'), 'Caso Gaming com sofá/sala deve preservar legibilidade do ambiente');
   assert.ok(caseGaming.direction.foco.includes('Legion Go'), 'Foco deve destacar o Legion Go no sofá');
-  console.log('  ✓ Caso 1 (Gaming): Travas de hardware, 5 dedos anatômicos e preservação de ambiente da sala validadas.');
+  console.log('  ✓ Caso 1 (Gaming): Travas de hardware, mãos com oclusão natural e preservação de ambiente da sala validadas.');
 
   // Case 2: TECH ("Notebook aberto na mesa mostrando uma diferença de hardware.")
   const caseTech = generateSimpleThumbnail({
@@ -590,6 +611,163 @@ console.log('\n18. Testando Fixture Visual PNG Real e Contrato de API Multimodal
   } else {
     console.log('  ✓ OPENAI_API_KEY detectada — pronto para chamada multimodal.');
   }
+}
+
+// 19. New Reference Roles, Typography Directives, and Attribute Isolation (Section 26)
+console.log('\n19. Testando Novos Tipos de Referência, Isolamento de Atributos e Regras Tipográficas (Seção 26)...');
+{
+  const { generateSimpleThumbnail } = await import('../src/lib/simpleEngine/engine.ts');
+
+  // Test 19A: CENÁRIO reference isolation
+  const resCenario = generateSimpleThumbnail({
+    videoTitle: 'Tour pelo meu novo estúdio',
+    ideaDescription: 'Mostrando a reforma do meu estúdio de gravação.',
+    references: [
+      { id: 'ref-cen-1', name: 'Foto do Quarto/Estúdio', url: 'https://example.com/studio.jpg', role: 'CENÁRIO' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  assert.ok(resCenario.finalPrompt.includes('ENVIRONMENT / SCENERY REFERENCE'), 'Deve conter trava de CENÁRIO');
+  assert.ok(resCenario.finalPrompt.includes('room architecture'), 'CENÁRIO deve preservar arquitetura e ambiente');
+  assert.ok(resCenario.finalPrompt.includes('Do NOT copy people who might appear in this photo'), 'CENÁRIO NÃO deve copiar pessoas da foto');
+  assert.ok(resCenario.finalPrompt.includes('do NOT copy photographic filters/treatment'), 'CENÁRIO NÃO deve copiar filtros fotográficos');
+  console.log('  ✓ CENÁRIO: Ambiente preservado sem vazar pessoas ou filtros fotográficos.');
+
+  // Test 19B: TIPOGRAFIA reference isolation
+  const resTipo = generateSimpleThumbnail({
+    videoTitle: 'Review de Fonte',
+    ideaDescription: 'Análise de design gráfico com texto de impacto.',
+    thumbnailText: 'NOVO DESIGN',
+    textTreatment: 'USAR_REFERENCIA',
+    references: [
+      { id: 'ref-tipo-1', name: 'Poster Tipográfico Suíço', url: 'https://example.com/poster.jpg', role: 'TIPOGRAFIA' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  assert.ok(resTipo.finalPrompt.includes('TYPOGRAPHY REFERENCE'), 'Deve conter trava de TIPOGRAFIA');
+  assert.ok(resTipo.finalPrompt.includes('font personality'), 'TIPOGRAFIA deve preservar personalidade da fonte');
+  assert.ok(resTipo.finalPrompt.includes('Do NOT copy images, people, background scenery'), 'TIPOGRAFIA NÃO deve copiar imagens, pessoas ou cenário');
+  assert.ok(resTipo.finalPrompt.includes('The only visible text must read exactly: "NOVO DESIGN"'), 'Deve manter texto exato');
+  console.log('  ✓ TIPOGRAFIA: Personalidade de fonte preservada sem vazar imagem ou cenário.');
+
+  // Test 19C: GERAR SEM TEXTO
+  const resSemTexto = generateSimpleThumbnail({
+    videoTitle: 'Vídeo Sem Texto',
+    ideaDescription: 'Cena limpa com espaço para design posterior.',
+    thumbnailText: 'TEXTO IGNORADO',
+    textTreatment: 'SEM_TEXTO',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  assert.ok(resSemTexto.finalPrompt.includes('Do not generate any text, letters, logos or pseudo-typography'), 'SEM TEXTO deve proibir geração de texto');
+  assert.ok(resSemTexto.finalPrompt.includes('Reserve clean negative space for later typography'), 'SEM TEXTO deve reservar espaço negativo limpo');
+  assert.ok(!resSemTexto.finalPrompt.includes('TEXTO IGNORADO'), 'SEM TEXTO NÃO deve injetar texto ignorado');
+  console.log('  ✓ GERAR SEM TEXTO: Veto a caracteres e reserva de espaço limpo validados.');
+
+  // Test 19D: RESERVAR ESPAÇO PARA TEXTO (posições: ESQUERDA, DIREITA, SUPERIOR, INFERIOR)
+  const posTests = [
+    { pos: 'ESQUERDA', expected: 'left side' },
+    { pos: 'DIREITA', expected: 'right side' },
+    { pos: 'SUPERIOR', expected: 'upper top area' },
+    { pos: 'INFERIOR', expected: 'lower bottom area' }
+  ];
+  for (const { pos, expected } of posTests) {
+    const resSpace = generateSimpleThumbnail({
+      videoTitle: 'Layout com Espaço',
+      ideaDescription: 'Composição com respiro.',
+      reserveSpaceForText: true,
+      reservedSpacePosition: pos,
+      references: [],
+      targetModel: 'GERAL',
+      aspectRatio: '16:9',
+      stylePreset: 'Natural',
+      realismLevel: 'Alto',
+      preserveFace: false,
+      preserveProduct: false
+    });
+    assert.ok(resSpace.finalPrompt.includes(`COMPOSITION RESERVATION: Leave clean negative space on the ${expected}`), `Deve reservar espaço para ${pos}`);
+  }
+  console.log('  ✓ RESERVAR ESPAÇO: 4 posições espaciais (ESQUERDA, DIREITA, SUPERIOR, INFERIOR) validadas.');
+
+  // Test 19E: TEXTO EXATO ("AGORA FUNCIONA")
+  const resExato = generateSimpleThumbnail({
+    videoTitle: 'Tutorial Completo',
+    ideaDescription: 'Agora o console está operando perfeitamente.',
+    thumbnailText: 'AGORA FUNCIONA',
+    textTreatment: 'AUTO',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  assert.ok(resExato.finalPrompt.includes('The only visible text must read exactly: "AGORA FUNCIONA". No extra words. No pseudo-text. No invented letters.'), 'Deve tratar AGORA FUNCIONA como texto exato sem alteração');
+  console.log('  ✓ TEXTO EXATO: Instrução literal "AGORA FUNCIONA" validada sem reescrita.');
+
+  // Test 19F: FONTE REAL INFORMADA PELO USUÁRIO (ex: Anton)
+  const resFonteReal = generateSimpleThumbnail({
+    videoTitle: 'Vídeo com Fonte Anton',
+    ideaDescription: 'Texto com tipografia limpa.',
+    thumbnailText: 'SUPER NOVIDADE',
+    fontName: 'Anton',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  assert.ok(resFonteReal.finalPrompt.includes('Anton typeface characteristics'), 'Deve usar nome de fonte real informada');
+  console.log('  ✓ FONTE REAL: Preservação de Anton sem nomes falsos inventados pela IA.');
+
+  // Test 19G: PESSOA + PRODUTO + CENÁRIO juntos (Isolamento estrito sem vazamento de atributos)
+  const resTrio = generateSimpleThumbnail({
+    videoTitle: 'Testando o Legion Go no meu estúdio',
+    ideaDescription: 'Eu sentado no sofá do estúdio segurando o Legion Go.',
+    references: [
+      { id: 'ref-face', name: 'Minha Foto', url: 'https://example.com/me.jpg', role: 'PESSOA' },
+      { id: 'ref-prod', name: 'Foto Legion Go', url: 'https://example.com/legion.jpg', role: 'PRODUTO' },
+      { id: 'ref-scen', name: 'Foto do Estúdio', url: 'https://example.com/room.jpg', role: 'CENÁRIO' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: true,
+    preserveProduct: true
+  });
+
+  // Verificar presença de todas as 3 travas
+  assert.ok(resTrio.finalPrompt.includes('FACIAL FIDELITY (MANDATORY) (Minha Foto): Strictly preserve authentic facial identity'), 'Deve conter trava de PESSOA com nome da referência');
+  assert.ok(resTrio.finalPrompt.includes('Do NOT automatically copy clothes, background setting, lighting, or pose'), 'PESSOA não deve vazar roupa, cenário ou pose');
+
+  assert.ok(resTrio.finalPrompt.includes('HARDWARE & PRODUCT FIDELITY (MANDATORY) (Foto Legion Go): Strictly preserve authentic industrial geometry'), 'Deve conter trava de PRODUTO com nome da referência');
+  assert.ok(resTrio.finalPrompt.includes('Do NOT automatically copy background setting, composition, or style'), 'PRODUTO não deve vazar cenário, composição ou estilo');
+
+  assert.ok(resTrio.finalPrompt.includes('ENVIRONMENT / SCENERY REFERENCE (Foto do Estúdio): Use exclusively as reference for environment'), 'Deve conter trava de CENÁRIO com nome da referência');
+  assert.ok(resTrio.finalPrompt.includes('Do NOT copy people who might appear in this photo'), 'CENÁRIO não deve copiar pessoas');
+
+  // Mãos com oclusão natural
+  assert.ok(resTrio.finalPrompt.includes('Anatomically plausible hands'), 'Trio com pessoa e produto deve usar mãos com oclusão natural');
+  console.log('  ✓ PESSOA + PRODUTO + CENÁRIO juntos: Coexistência harmoniosa com isolamento de atributos comprovado.');
 }
 
 console.log('\n✅ TODOS OS TESTES PASSARAM COM SUCESSO! VALIDAÇÃO CONCLUÍDA.');
