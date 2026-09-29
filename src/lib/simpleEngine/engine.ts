@@ -5,7 +5,8 @@ import type {
   ImprovePromptResult,
   AnalyzeThumbnailSimpleResult,
   VisualDirectionOutput,
-  ReservedSpacePosition
+  ReservedSpacePosition,
+  TextTreatment
 } from '@/types/simple';
 
 // Internal Anti-Slop Safeguards grouped strictly by Section 8 requirements
@@ -440,12 +441,23 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
     }
   }
 
-  // 3. CENÁRIO (Cenário não é decoração: preservar elementos estruturais do ambiente para servir à história)
+  // 3. CENÁRIO (Duas interpretações: MEU AMBIENTE vs. REFERÊNCIA DE AMBIENTE)
   const sceneRefs = (references || []).filter(r => r.role === 'CENÁRIO');
   if (sceneRefs.length > 0) {
-    locks.push(
-      `ENVIRONMENT / SCENERY REFERENCE (${sceneRefs.map(s => s.name).join(', ')}): Use exclusively as reference for environment, room architecture, general position of furniture, layout, spatial depth, and important spatial elements. Strictly preserve structural elements (couch/furniture position, desk, windows, TV, shelves, walls, and authentic existing room lighting). Do NOT copy people who might appear in this photo, do NOT copy irrelevant stray objects, and do NOT copy photographic filters/treatment from this photo. Never replace an authentic domestic room or bedroom with a generic gaming room, futuristic studio, or RGB streamer setup.`
-    );
+    const myEnvRefs = sceneRefs.filter(r => r.scenarioMode !== 'REFERENCIA_AMBIENTE');
+    const refEnvRefs = sceneRefs.filter(r => r.scenarioMode === 'REFERENCIA_AMBIENTE');
+
+    if (myEnvRefs.length > 0) {
+      locks.push(
+        `MY ENVIRONMENT / REAL LOCATION (${myEnvRefs.map(s => s.name).join(', ')}): Preserve spatial layout where visible, major furniture placement, windows, doors, walls, desk, sofa, shelves, lighting fixtures, and recognizable environmental features. Do NOT copy people who might appear in this photo, do NOT copy irrelevant stray objects, and do NOT copy photographic filters/treatment. Do not invent: generic gaming room, RGB streamer setup, or futuristic studio if they do not exist.`
+      );
+    }
+
+    if (refEnvRefs.length > 0) {
+      locks.push(
+        `ENVIRONMENT REFERENCE / MOOD ONLY (${refEnvRefs.map(s => s.name).join(', ')}): Extract only: type of environment, level of organization, materials, general lighting character, density, and atmosphere. Do NOT copy: exact furniture position, exact room geometry, specific decorations, or identifying objects.`
+      );
+    }
   }
 
   // 4. ESTILO (Regra 9: Linguagem visual, acabamento, paleta, contraste, tratamento de luz, textura. Não transferir identidade ou objetos)
@@ -510,7 +522,7 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
     let typeLine = `The only visible text must read exactly: "${exactText}". No extra words. No pseudo-text. No invented letters.`;
 
     if (textTreatment === 'RENDER_IN_IMAGE') {
-      typeLine += ` Render with high contrast on a calm area, never placing text over faces, hands, or main product.`;
+      typeLine += ` Render with high contrast on a calm area, never placing text over faces, hands, or main product. Strictly use only the exact text "${exactText}", zero additional words, zero pseudo-text, zero invented decorative symbols.`;
     } else {
       typeLine += ` Leave clean negative space on the ${chosenPos} for later typography. Do not generate random letters, words, logos, symbols, pseudo-text or decorative glyphs inside the image.`;
     }
@@ -566,7 +578,14 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
     finalPrompt = `DALL-E 3 / GPT-4o Prompt:\n${promptBody}\nRule: Photo style, realistic camera shutter capture, natural skin texture, authentic human facial asymmetry, and accurate hardware geometry.`;
   }
 
-  const typographyPlan = buildTypographyPlan(thumbnailText, isTech, fontName, reservedSpacePosition);
+  const typographyPlan = buildTypographyPlan(
+    thumbnailText,
+    isTech,
+    fontName,
+    reservedSpacePosition,
+    stylePreset,
+    textTreatment
+  );
 
   return {
     direction: directionPt,
@@ -582,9 +601,13 @@ export function buildTypographyPlan(
   thumbnailText?: string,
   isTech = false,
   fontName?: string,
-  position: ReservedSpacePosition = 'DIREITA'
-): string | undefined {
-  if (!thumbnailText || !thumbnailText.trim()) return undefined;
+  position: ReservedSpacePosition = 'DIREITA',
+  stylePreset?: 'Natural' | 'Cinematográfico' | 'Editorial' | 'Fotojornalismo',
+  textTreatment?: TextTreatment
+): string {
+  if (textTreatment === 'SEM_TEXTO' || !thumbnailText || !thumbnailText.trim()) {
+    return 'Nenhuma tipografia necessária. A imagem e o título já comunicam a ideia.';
+  }
 
   const posMap: Record<ReservedSpacePosition, string> = {
     ESQUERDA: 'à esquerda',
@@ -594,18 +617,37 @@ export function buildTypographyPlan(
   };
   const posPt = posMap[position] || 'à direita';
   const clean = thumbnailText.trim();
-  const wordCount = clean.split(/\s+/).length;
-  const lineCount = wordCount > 2 ? '2 linhas no máximo' : '1 a 2 linhas';
+  const wordCount = clean.split(/\s+/).filter(Boolean).length;
+  const lineCount = wordCount <= 2 ? '1 a 2 linhas' : wordCount <= 4 ? 'duas linhas no máximo' : 'duas a três linhas compactas';
 
   if (fontName && fontName.trim().length > 0) {
-    return `${fontName.trim()} / sans-serif com peso bold, ${lineCount}, adicionada posteriormente sobre o espaço negativo ${posPt}, alto contraste sem efeitos 3D.`;
+    const fName = fontName.trim();
+    return `Tipografia com características da família ${fName} (peso bold, caixa alta, ${lineCount}, alto contraste), aplicada posteriormente sobre o espaço negativo ${posPt}.\n\nSugestão: ${fName}.`;
   }
 
-  if (isTech) {
-    return `Archivo Black ou Inter / heavy grotesk limpa, ${lineCount}, adicionada posteriormente sobre o espaço negativo ${posPt}, sem efeitos 3D.`;
+  // Primeiro determina a FUNÇÃO VISUAL da tipografia:
+  let visualDecision = '';
+  let fontSuggestions = '';
+
+  if (stylePreset === 'Editorial' || stylePreset === 'Fotojornalismo') {
+    // GROTESCA EDITORIAL: para aparência mais natural, documental ou editorial
+    visualDecision = `Grotesca editorial, peso equilibrado e elegante, caixa alta, ${lineCount}, alto contraste sem agressividade visual, aplicada posteriormente sobre o espaço negativo ${posPt}.`;
+    fontSuggestions = 'Roboto Condensed ou Oswald';
+  } else if (wordCount >= 4 || position === 'SUPERIOR' || position === 'INFERIOR') {
+    // SANS NEUTRA: quando a imagem deve dominar ou há mais palavras
+    visualDecision = `Sans-serif neutra de peso médio/bold, ${lineCount}, servindo como apoio secundário para que a composição visual da imagem domine, aplicada posteriormente sobre o espaço negativo ${posPt}.`;
+    fontSuggestions = 'Inter ou Barlow Condensed';
+  } else if (isTech) {
+    // SANS GEOMÉTRICA PESADA: para tecnologia limpa e precisão
+    visualDecision = `Sans geométrica pesada, linhas limpas e estruturadas, caixa alta, ${lineCount}, alta legibilidade em telas compactas, aplicada posteriormente sobre o espaço negativo ${posPt}.`;
+    fontSuggestions = 'Archivo Black ou Inter';
+  } else {
+    // CONDENSADA PESADA: para poucas palavras com grande presença
+    visualDecision = `Sans-serif condensada pesada, caixa alta, ${lineCount}, alto contraste com a cena, aplicada posteriormente sobre o espaço negativo ${posPt}.`;
+    fontSuggestions = 'Anton ou Archivo Black';
   }
 
-  return `Anton ou Bebas Neue / sans-serif condensada pesada, ${lineCount}, adicionada posteriormente sobre o espaço negativo ${posPt}, sem sombras pesadas ou extrusão 3D.`;
+  return `${visualDecision}\n\nSugestões: ${fontSuggestions}.`;
 }
 
 // Slop remover & prompt purifier (Understands intent first, strips cliches, reconstructs grounded prompt)

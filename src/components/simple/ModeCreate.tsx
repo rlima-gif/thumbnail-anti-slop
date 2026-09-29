@@ -22,6 +22,7 @@ import {
 import {
   SimpleReference,
   SimpleReferenceRole,
+  ScenarioInterpretation,
   TargetModel,
   TextTreatment,
   ReservedSpacePosition,
@@ -171,12 +172,27 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
 
   const handleRoleChange = (id: string, role: SimpleReferenceRole) => {
     setReferences(prev => {
-      const updated = prev.map(r => (r.id === id ? { ...r, role } : r));
+      const updated = prev.map(r => {
+        if (r.id === id) {
+          return {
+            ...r,
+            role,
+            scenarioMode: role === 'CENÁRIO' ? (r.scenarioMode || 'MEU_AMBIENTE') : r.scenarioMode
+          };
+        }
+        return r;
+      });
       if (role === 'PESSOA') setPreserveFace(true);
       if (role === 'PRODUTO') setPreserveProduct(true);
       if (role === 'TIPOGRAFIA') setTextTreatment('USAR_REFERENCIA');
       return updated;
     });
+  };
+
+  const handleScenarioModeChange = (id: string, scenarioMode: ScenarioInterpretation) => {
+    setReferences(prev =>
+      prev.map(r => (r.id === id ? { ...r, scenarioMode } : r))
+    );
   };
 
   const handleRemoveRef = (id: string) => {
@@ -572,10 +588,44 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
                         </button>
                       ))}
                     </div>
-                    {/* Role Microcopy (Rule 23) */}
-                    <p className="text-[10px] text-amber-400/90 font-mono mt-1.5 leading-snug">
-                      {ROLE_MICROCOPY[ref.role]}
-                    </p>
+                    {/* Role Microcopy or Scenario Sub-selector */}
+                    {ref.role === 'CENÁRIO' ? (
+                      <div className="mt-2 pt-1.5 border-t border-zinc-800/80 space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleScenarioModeChange(ref.id, 'MEU_AMBIENTE')}
+                            className={`text-[8.5px] font-mono px-2 py-0.5 rounded border transition font-bold ${
+                              (ref.scenarioMode || 'MEU_AMBIENTE') === 'MEU_AMBIENTE'
+                                ? 'bg-amber-500 text-zinc-950 border-amber-500'
+                                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200'
+                            }`}
+                          >
+                            MEU AMBIENTE
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleScenarioModeChange(ref.id, 'REFERENCIA_AMBIENTE')}
+                            className={`text-[8.5px] font-mono px-2 py-0.5 rounded border transition font-bold ${
+                              ref.scenarioMode === 'REFERENCIA_AMBIENTE'
+                                ? 'bg-amber-500 text-zinc-950 border-amber-500'
+                                : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200'
+                            }`}
+                          >
+                            REFERÊNCIA DE AMBIENTE
+                          </button>
+                        </div>
+                        <p className="text-[9.5px] text-amber-400/90 font-mono leading-tight">
+                          {ref.scenarioMode === 'REFERENCIA_AMBIENTE'
+                            ? 'Use apenas atmosfera, tipo de espaço e características gerais. Não copie o layout.'
+                            : 'Preserve a estrutura e os elementos reconhecíveis deste local.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-amber-400/90 font-mono mt-1.5 leading-snug">
+                        {ROLE_MICROCOPY[ref.role]}
+                      </p>
+                    )}
                   </div>
                   <button
                     type="button"
@@ -824,12 +874,14 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
                   RECOMENDAÇÃO DE DESIGN
                 </span>
               </div>
-              <p className="text-xs text-zinc-200 leading-relaxed font-mono">
+              <p className="text-xs text-zinc-200 leading-relaxed font-mono whitespace-pre-line">
                 {result.typographyPlan}
               </p>
-              <p className="text-[11px] text-zinc-400 font-mono">
-                Para texto perfeitamente legível, é melhor adicionar a tipografia depois da geração.
-              </p>
+              {!result.typographyPlan.includes('Nenhuma tipografia necessária') && (
+                <p className="text-[11px] text-zinc-400 font-mono">
+                  Para texto perfeitamente legível, é melhor adicionar a tipografia depois da geração.
+                </p>
+              )}
             </div>
           )}
 

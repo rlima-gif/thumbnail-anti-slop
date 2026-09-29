@@ -7,11 +7,14 @@ export type SimpleReferenceRole =
   | 'TIPOGRAFIA'
   | 'OUTRA';
 
+export type ScenarioInterpretation = 'MEU_AMBIENTE' | 'REFERENCIA_AMBIENTE';
+
 export interface SimpleReference {
   id: string;
   url: string;
   name: string;
   role: SimpleReferenceRole;
+  scenarioMode?: ScenarioInterpretation;
 }
 
 export type TargetModel = 'GERAL' | 'OPENAI' | 'GEMINI' | 'MIDJOURNEY' | 'FLUX';

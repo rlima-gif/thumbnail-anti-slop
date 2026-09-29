@@ -82,7 +82,9 @@ Reference Roles: ${(body.references || []).map(r => `${r.name}: ${r.role}`).join
             body.thumbnailText,
             isTech,
             body.fontName,
-            body.reservedSpacePosition
+            body.reservedSpacePosition,
+            body.stylePreset,
+            body.textTreatment
           );
           return NextResponse.json({
             isLocal: false,

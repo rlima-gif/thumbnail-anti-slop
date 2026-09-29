@@ -618,12 +618,12 @@ console.log('\n19. Testando Novos Tipos de Referência, Isolamento de Atributos 
 {
   const { generateSimpleThumbnail } = await import('../src/lib/simpleEngine/engine.ts');
 
-  // Test 19A: CENÁRIO reference isolation
-  const resCenario = generateSimpleThumbnail({
+  // Test 19A: CENÁRIO - MEU AMBIENTE vs. REFERÊNCIA DE AMBIENTE
+  const resCenarioMeu = generateSimpleThumbnail({
     videoTitle: 'Tour pelo meu novo estúdio',
     ideaDescription: 'Mostrando a reforma do meu estúdio de gravação.',
     references: [
-      { id: 'ref-cen-1', name: 'Foto do Quarto/Estúdio', url: 'https://example.com/studio.jpg', role: 'CENÁRIO' }
+      { id: 'ref-cen-1', name: 'Foto do Quarto/Estúdio', url: 'https://example.com/studio.jpg', role: 'CENÁRIO', scenarioMode: 'MEU_AMBIENTE' }
     ],
     targetModel: 'GERAL',
     aspectRatio: '16:9',
@@ -632,11 +632,29 @@ console.log('\n19. Testando Novos Tipos de Referência, Isolamento de Atributos 
     preserveFace: false,
     preserveProduct: false
   });
-  assert.ok(resCenario.finalPrompt.includes('ENVIRONMENT / SCENERY REFERENCE'), 'Deve conter trava de CENÁRIO');
-  assert.ok(resCenario.finalPrompt.includes('room architecture'), 'CENÁRIO deve preservar arquitetura e ambiente');
-  assert.ok(resCenario.finalPrompt.includes('Do NOT copy people who might appear in this photo'), 'CENÁRIO NÃO deve copiar pessoas da foto');
-  assert.ok(resCenario.finalPrompt.includes('do NOT copy photographic filters/treatment'), 'CENÁRIO NÃO deve copiar filtros fotográficos');
-  console.log('  ✓ CENÁRIO: Ambiente preservado sem vazar pessoas ou filtros fotográficos.');
+  assert.ok(resCenarioMeu.finalPrompt.includes('MY ENVIRONMENT / REAL LOCATION (Foto do Quarto/Estúdio)'), 'Deve conter trava de MEU AMBIENTE');
+  assert.ok(resCenarioMeu.finalPrompt.includes('Preserve spatial layout where visible, major furniture placement'), 'MEU AMBIENTE deve preservar layout espacial e mobília');
+  assert.ok(resCenarioMeu.finalPrompt.includes('Do not invent: generic gaming room, RGB streamer setup, or futuristic studio'), 'MEU AMBIENTE deve proibir quarto gamer genérico e RGB');
+  console.log('  ✓ CENÁRIO (MEU AMBIENTE): Estrutura, layout e mobília preservados sem inventar setup gamer.');
+
+  // Test 19A2: CENÁRIO - REFERÊNCIA DE AMBIENTE
+  const resCenarioRef = generateSimpleThumbnail({
+    videoTitle: 'Como consertar eletrônicos',
+    ideaDescription: 'Gravando em uma oficina rústica com ferramentas.',
+    references: [
+      { id: 'ref-cen-2', name: 'Oficina Exemplo', url: 'https://example.com/workshop.jpg', role: 'CENÁRIO', scenarioMode: 'REFERENCIA_AMBIENTE' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  assert.ok(resCenarioRef.finalPrompt.includes('ENVIRONMENT REFERENCE / MOOD ONLY (Oficina Exemplo)'), 'Deve conter trava de REFERENCIA DE AMBIENTE');
+  assert.ok(resCenarioRef.finalPrompt.includes('Extract only: type of environment, level of organization, materials'), 'REFERENCIA DE AMBIENTE deve extrair apenas atmosfera e materiais');
+  assert.ok(resCenarioRef.finalPrompt.includes('Do NOT copy: exact furniture position, exact room geometry'), 'REFERENCIA DE AMBIENTE NÃO deve copiar layout ou mobília');
+  console.log('  ✓ CENÁRIO (REFERÊNCIA DE AMBIENTE): Extração pura de atmosfera sem cópia de layout ou geometria.');
 
   // Test 19B: TIPOGRAFIA reference isolation
   const resTipo = generateSimpleThumbnail({
@@ -762,33 +780,49 @@ console.log('\n19. Testando Novos Tipos de Referência, Isolamento de Atributos 
   assert.ok(resTrio.finalPrompt.includes('HARDWARE & PRODUCT FIDELITY (MANDATORY) (Foto Legion Go): Strictly preserve authentic industrial geometry'), 'Deve conter trava de PRODUTO com nome da referência');
   assert.ok(resTrio.finalPrompt.includes('Do NOT automatically copy background setting, composition, or style'), 'PRODUTO não deve vazar cenário, composição ou estilo');
 
-  assert.ok(resTrio.finalPrompt.includes('ENVIRONMENT / SCENERY REFERENCE (Foto do Estúdio): Use exclusively as reference for environment'), 'Deve conter trava de CENÁRIO com nome da referência');
+  assert.ok(resTrio.finalPrompt.includes('MY ENVIRONMENT / REAL LOCATION (Foto do Estúdio)'), 'Deve conter trava de CENÁRIO (MEU AMBIENTE) com nome da referência');
   assert.ok(resTrio.finalPrompt.includes('Do NOT copy people who might appear in this photo'), 'CENÁRIO não deve copiar pessoas');
 
   // Mãos com oclusão natural
   assert.ok(resTrio.finalPrompt.includes('Anatomically plausible hands'), 'Trio com pessoa e produto deve usar mãos com oclusão natural');
-  // Test 19H: Preservação Estrutural de Cenário e Veto a Quarto Gamer Genérico / RGB
-  assert.ok(resCenario.finalPrompt.includes('Strictly preserve structural elements (couch/furniture position, desk, windows, TV, shelves, walls, and authentic existing room lighting)'), 'CENÁRIO deve preservar elementos estruturais');
-  assert.ok(resCenario.finalPrompt.includes('Never replace an authentic domestic room or bedroom with a generic gaming room, futuristic studio, or RGB streamer setup'), 'CENÁRIO deve vetar quarto gamer genérico e RGB');
-  console.log('  ✓ CENÁRIO: Preservação de layout estrutural (sofá, mesa, janela, TV, paredes) e veto a setups RGB genéricos.');
 
-  // Test 19I: buildTypographyPlan (Recomendação de design pós-geração com fontes seguras)
+  // Test 19I: buildTypographyPlan (Função visual primeiro, sugestões reais depois, caso sem texto)
   const { buildTypographyPlan } = await import('../src/lib/simpleEngine/engine.ts');
-  const planGeneric = buildTypographyPlan('AGORA FUNCIONA', false, undefined, 'DIREITA');
-  assert.ok(planGeneric.includes('Anton ou Bebas Neue'), 'Deve sugerir fontes seguras e reais como Anton ou Bebas Neue');
+
+  // Condensada pesada para poucas palavras
+  const planGeneric = buildTypographyPlan('AGORA FUNCIONA', false, undefined, 'DIREITA', 'Natural');
+  assert.ok(planGeneric.includes('Sans-serif condensada pesada'), 'Deve determinar função condensada pesada');
+  assert.ok(planGeneric.includes('Anton ou Archivo Black'), 'Deve sugerir Anton ou Archivo Black');
   assert.ok(planGeneric.includes('à direita'), 'Deve respeitar a posição reservada');
 
-  const planTech = buildTypographyPlan('RTX 5090 TESTE', true, undefined, 'ESQUERDA');
-  assert.ok(planTech.includes('Archivo Black ou Inter'), 'Para tech deve sugerir grotesk limpa como Archivo Black ou Inter');
+  // Sans geométrica pesada para tech
+  const planTech = buildTypographyPlan('RTX 5090 TESTE', true, undefined, 'ESQUERDA', 'Natural');
+  assert.ok(planTech.includes('Sans geométrica pesada'), 'Para tech deve determinar sans geométrica pesada');
+  assert.ok(planTech.includes('Archivo Black ou Inter'), 'Sugestão para tech');
   assert.ok(planTech.includes('à esquerda'), 'Deve respeitar a posição à esquerda');
 
+  // Grotesca editorial para estilo Editorial / Fotojornalismo
+  const planEditorial = buildTypographyPlan('DOCUMENTÁRIO', false, undefined, 'DIREITA', 'Editorial');
+  assert.ok(planEditorial.includes('Grotesca editorial'), 'Para editorial deve determinar grotesca editorial');
+  assert.ok(planEditorial.includes('Roboto Condensed ou Oswald'), 'Sugestão para editorial');
+
+  // Sans neutra para texto mais longo (imagem deve dominar)
+  const planNeutra = buildTypographyPlan('TESTANDO MAIS DE QUATRO PALAVRAS', false, undefined, 'DIREITA', 'Natural');
+  assert.ok(planNeutra.includes('Sans-serif neutra'), 'Texto longo deve usar sans neutra para imagem dominar');
+  assert.ok(planNeutra.includes('Inter ou Barlow Condensed'), 'Sugestão para sans neutra');
+
+  // Fonte customizada informada pelo usuário
   const planCustom = buildTypographyPlan('IMPORTANTE', false, 'Montserrat', 'SUPERIOR');
   assert.ok(planCustom.includes('Montserrat'), 'Deve respeitar fonte informada pelo usuário');
   assert.ok(planCustom.includes('no topo'), 'Deve mapear SUPERIOR para no topo');
 
+  // Quando não houver necessidade de texto
   const planEmpty = buildTypographyPlan('', false);
-  assert.strictEqual(planEmpty, undefined, 'Deve retornar undefined se não houver texto');
-  console.log('  ✓ PLANO DE TIPOGRAFIA: Recomendações pós-geração, fontes reais seguras e mapeamento espacial validados.');
+  assert.strictEqual(planEmpty, 'Nenhuma tipografia necessária. A imagem e o título já comunicam a ideia.');
+
+  const planSemTexto = buildTypographyPlan('TEXTO IGNORADO', false, undefined, 'DIREITA', 'Natural', 'SEM_TEXTO');
+  assert.strictEqual(planSemTexto, 'Nenhuma tipografia necessária. A imagem e o título já comunicam a ideia.');
+  console.log('  ✓ PLANO DE TIPOGRAFIA: Funções visuais, sugestões de fontes reais e mensagem limpa para ausência de texto validadas.');
 }
 
 console.log('\n✅ TODOS OS TESTES PASSARAM COM SUCESSO! VALIDAÇÃO CONCLUÍDA.');
