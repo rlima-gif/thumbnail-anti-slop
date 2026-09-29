@@ -1,9 +1,29 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useProject } from '@/context/ProjectContext';
 import { GenerationMode } from '@/types';
-import { Sliders, Camera, Film, User, Sparkles } from 'lucide-react';
+import { Sliders, Camera, Film, User, Sparkles, Wand2, Check, X, ShieldCheck, Cpu } from 'lucide-react';
+
+interface AISuggestedDirection {
+  visualPromise?: string;
+  protagonist?: string;
+  protagonistPresence?: number;
+  secondarySubject?: string;
+  storyMoment?: string;
+  composition?: string;
+  camera?: string;
+  expression?: string;
+  lighting?: string;
+  palette?: string;
+  background?: string;
+  depth?: string;
+  thumbnailText?: string;
+  channelIdentity?: string;
+  visualStyle?: string;
+  avoidAdditions?: string[];
+  justification?: string;
+}
 
 const COMPOSITION_PRESETS = [
   'Regra dos terços com espaço negativo à direita',
@@ -69,7 +89,70 @@ const MODES_CONFIG: Array<{ id: GenerationMode; title: string; badge: string; de
 ];
 
 export function DirecaoModule() {
-  const { currentProject, updateProject, toggleMode } = useProject();
+  const { currentProject, updateProject, toggleMode, toggleReferenceLock, addAntiSlopToAvoid, showToast } = useProject();
+  const [isSuggesting, setIsSuggesting] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState<AISuggestedDirection | null>(null);
+
+  const handleSuggestDirection = async () => {
+    setIsSuggesting(true);
+    try {
+      const res = await fetch('/api/ai/suggest-direction', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoTitle: currentProject.videoTitle,
+          videoDescription: currentProject.videoDescription,
+          niche: currentProject.niche,
+          audience: currentProject.audience,
+          perceptionGoal: currentProject.perceptionGoal,
+          protagonistType: currentProject.protagonistType,
+          viewerQuestion: currentProject.viewerQuestion
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 503) {
+          showToast('ANÁLISE POR IA NÃO CONFIGURADA. Configure OPENAI_API_KEY no servidor.');
+        } else {
+          showToast(data.error || 'Erro ao sugerir direção.');
+        }
+        return;
+      }
+      setAiSuggestion(data.direction);
+      showToast('Sugestão de direção gerada com sucesso pela IA!');
+    } catch {
+      showToast('Falha na comunicação com a API de IA.');
+    } finally {
+      setIsSuggesting(false);
+    }
+  };
+
+  const handleApplyAllSuggestions = () => {
+    if (!aiSuggestion) return;
+    const updates: Record<string, unknown> = {};
+    if (aiSuggestion.visualPromise) updates.visualPromise = aiSuggestion.visualPromise;
+    if (aiSuggestion.protagonist) updates.protagonist = aiSuggestion.protagonist;
+    if (aiSuggestion.protagonistPresence) updates.protagonistPresence = aiSuggestion.protagonistPresence;
+    if (aiSuggestion.secondarySubject) updates.secondarySubject = aiSuggestion.secondarySubject;
+    if (aiSuggestion.storyMoment) updates.storyMoment = aiSuggestion.storyMoment;
+    if (aiSuggestion.composition) updates.composition = aiSuggestion.composition;
+    if (aiSuggestion.camera) updates.camera = aiSuggestion.camera;
+    if (aiSuggestion.expression) updates.expression = aiSuggestion.expression;
+    if (aiSuggestion.lighting) updates.lighting = aiSuggestion.lighting;
+    if (aiSuggestion.palette) updates.palette = aiSuggestion.palette;
+    if (aiSuggestion.background) updates.background = aiSuggestion.background;
+    if (aiSuggestion.depth) updates.depth = aiSuggestion.depth;
+    if (aiSuggestion.thumbnailText !== undefined) updates.thumbnailText = aiSuggestion.thumbnailText;
+    if (aiSuggestion.channelIdentity) updates.channelIdentity = aiSuggestion.channelIdentity;
+    if (aiSuggestion.visualStyle) updates.visualStyle = aiSuggestion.visualStyle;
+
+    updateProject(updates);
+    if (aiSuggestion.avoidAdditions && Array.isArray(aiSuggestion.avoidAdditions)) {
+      aiSuggestion.avoidAdditions.forEach(item => addAntiSlopToAvoid(item));
+    }
+    setAiSuggestion(null);
+    showToast('Todas as sugestões de direção foram aplicadas ao projeto!');
+  };
 
   // Guidance for protagonist presence slider
   const presence = currentProject.protagonistPresence;
@@ -84,6 +167,9 @@ export function DirecaoModule() {
     presenceAdvice = 'Plano aberto / Cena narrativa: o ambiente é crucial para o mistério da história.';
   }
 
+  const isTechOrGaming = currentProject.activeModes.includes('TECH') || currentProject.activeModes.includes('GAMING');
+  const isRealFace = currentProject.activeModes.includes('ROSTO_REAL');
+
   return (
     <section id="direcao" className="scroll-mt-24 py-12 border-b border-zinc-800">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
@@ -95,10 +181,171 @@ export function DirecaoModule() {
             Direção de Arte Completa
           </h2>
         </div>
-        <p className="text-xs text-zinc-400 max-w-md font-mono">
-          &ldquo;Não peça para a IA ser criativa onde você deveria ser específico. O diretor decide a lente, a luz e o corte.&rdquo;
-        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleSuggestDirection}
+            disabled={isSuggesting}
+            className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-zinc-950 font-mono text-xs font-bold flex items-center gap-2 shadow-lg shadow-amber-500/20 transition"
+          >
+            <Wand2 className="w-4 h-4" />
+            <span>{isSuggesting ? 'CONSULTANDO IA...' : 'SUGERIR DIREÇÃO COM IA'}</span>
+          </button>
+        </div>
       </div>
+
+      {/* AI DIRECTION PROPOSAL MODAL / PANEL */}
+      {aiSuggestion && (
+        <div className="mb-8 p-6 rounded-3xl bg-zinc-900 border-2 border-amber-500/80 shadow-2xl space-y-4">
+          <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <h3 className="text-sm font-bold text-zinc-100 uppercase tracking-tight">
+                Proposta de Direção Assistida por IA
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleApplyAllSuggestions}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-zinc-950 text-xs font-bold font-mono transition flex items-center gap-1.5"
+              >
+                <Check className="w-3.5 h-3.5" />
+                APLICAR TUDO
+              </button>
+              <button
+                type="button"
+                onClick={() => setAiSuggestion(null)}
+                className="text-zinc-500 hover:text-zinc-300 p-1 transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {aiSuggestion.justification && (
+            <p className="text-xs text-amber-300/90 font-mono italic bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+              💡 Racional: {aiSuggestion.justification}
+            </p>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+            {aiSuggestion.visualPromise && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 flex justify-between items-start gap-2">
+                <div>
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block font-bold">Promessa Visual</span>
+                  <p className="text-zinc-200 mt-0.5">{aiSuggestion.visualPromise}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateProject({ visualPromise: aiSuggestion.visualPromise });
+                    showToast('Promessa visual aplicada!');
+                  }}
+                  className="text-amber-400 hover:text-amber-300 text-[10px] font-mono shrink-0 uppercase"
+                >
+                  Aplicar
+                </button>
+              </div>
+            )}
+
+            {aiSuggestion.protagonist && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 flex justify-between items-start gap-2">
+                <div>
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block font-bold">Protagonista Proposto</span>
+                  <p className="text-zinc-200 mt-0.5">{aiSuggestion.protagonist}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateProject({ protagonist: aiSuggestion.protagonist });
+                    showToast('Protagonista aplicado!');
+                  }}
+                  className="text-amber-400 hover:text-amber-300 text-[10px] font-mono shrink-0 uppercase"
+                >
+                  Aplicar
+                </button>
+              </div>
+            )}
+
+            {aiSuggestion.composition && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 flex justify-between items-start gap-2">
+                <div>
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block font-bold">Composição Proposta</span>
+                  <p className="text-zinc-200 mt-0.5">{aiSuggestion.composition}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateProject({ composition: aiSuggestion.composition });
+                    showToast('Composição aplicada!');
+                  }}
+                  className="text-amber-400 hover:text-amber-300 text-[10px] font-mono shrink-0 uppercase"
+                >
+                  Aplicar
+                </button>
+              </div>
+            )}
+
+            {aiSuggestion.lighting && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 flex justify-between items-start gap-2">
+                <div>
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block font-bold">Iluminação Motivada</span>
+                  <p className="text-zinc-200 mt-0.5">{aiSuggestion.lighting}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateProject({ lighting: aiSuggestion.lighting });
+                    showToast('Iluminação aplicada!');
+                  }}
+                  className="text-amber-400 hover:text-amber-300 text-[10px] font-mono shrink-0 uppercase"
+                >
+                  Aplicar
+                </button>
+              </div>
+            )}
+
+            {aiSuggestion.palette && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 flex justify-between items-start gap-2">
+                <div>
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block font-bold">Paleta Restrita</span>
+                  <p className="text-zinc-200 mt-0.5">{aiSuggestion.palette}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateProject({ palette: aiSuggestion.palette });
+                    showToast('Paleta aplicada!');
+                  }}
+                  className="text-amber-400 hover:text-amber-300 text-[10px] font-mono shrink-0 uppercase"
+                >
+                  Aplicar
+                </button>
+              </div>
+            )}
+
+            {aiSuggestion.thumbnailText !== undefined && (
+              <div className="p-3 bg-zinc-950 rounded-xl border border-zinc-800 flex justify-between items-start gap-2">
+                <div>
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase block font-bold">Texto Curto</span>
+                  <p className="text-zinc-200 mt-0.5 font-bold">{aiSuggestion.thumbnailText || '(Sem texto recomendado)'}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    updateProject({ thumbnailText: aiSuggestion.thumbnailText || '' });
+                    showToast('Texto aplicado!');
+                  }}
+                  className="text-amber-400 hover:text-amber-300 text-[10px] font-mono shrink-0 uppercase"
+                >
+                  Aplicar
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* SPECIALIZED GENERATION MODES (Module 23) */}
       <div className="mb-8 bg-zinc-900/90 border border-zinc-800 rounded-3xl p-6">
@@ -154,6 +401,89 @@ export function DirecaoModule() {
             );
           })}
         </div>
+
+        {/* CONTEXTUAL FIDELITY PANELS */}
+        {(isTechOrGaming || isRealFace) && (
+          <div className="mt-4 pt-4 border-t border-zinc-800/80 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {isTechOrGaming && (
+              <div className="p-3.5 rounded-2xl bg-zinc-950/80 border border-amber-500/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1.5">
+                    <Cpu className="w-3.5 h-3.5 text-amber-400" />
+                    Fidelidade de Hardware
+                  </span>
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase">Tech & Gaming</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(
+                    [
+                      { id: 'LOCK_PRODUCT_GEOMETRY', label: 'Geometria do Produto' },
+                      { id: 'LOCK_SCREEN_ASPECT', label: 'Proporção de Tela' },
+                      { id: 'LOCK_CONTROLLER_LAYOUT', label: 'Layout de Botões' }
+                    ] as const
+                  ).map(item => {
+                    const active = (currentProject.referenceLocks || []).includes(item.id);
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => toggleReferenceLock(item.id)}
+                        className={`text-[10px] font-mono px-2 py-1 rounded-lg border transition ${
+                          active
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 font-bold'
+                            : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200'
+                        }`}
+                      >
+                        {active ? '✓ ' : '+ '}
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {isRealFace && (
+              <div className="p-3.5 rounded-2xl bg-zinc-950/80 border border-amber-500/30 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold text-amber-400 flex items-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                    Fidelidade Facial (Anti-Cera)
+                  </span>
+                  <span className="text-[10px] font-mono text-zinc-500 uppercase">Rosto Real</span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {(
+                    [
+                      { id: 'LOCK_FACE', label: 'Rosto & Assimetria' },
+                      { id: 'LOCK_AGE', label: 'Idade Real' },
+                      { id: 'LOCK_HAIR', label: 'Cabelo' },
+                      { id: 'LOCK_BEARD', label: 'Barba' },
+                      { id: 'LOCK_POSE', label: 'Postura' }
+                    ] as const
+                  ).map(item => {
+                    const active = (currentProject.referenceLocks || []).includes(item.id);
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => toggleReferenceLock(item.id)}
+                        className={`text-[10px] font-mono px-2 py-1 rounded-lg border transition ${
+                          active
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/60 font-bold'
+                            : 'bg-zinc-900 text-zinc-400 border-zinc-800 hover:text-zinc-200'
+                        }`}
+                      >
+                        {active ? '✓ ' : '+ '}
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

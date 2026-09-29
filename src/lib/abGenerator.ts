@@ -74,3 +74,44 @@ export function generateABVariants(project: ProjectData): ABVariant[] {
 
   return [variantA, variantB, variantC];
 }
+
+export interface ABDiversityResult {
+  isDiverse: boolean;
+  warning?: string;
+  reasons: string[];
+}
+
+export function checkABVariantDiversity(variants: ABVariant[]): ABDiversityResult {
+  const reasons: string[] = [];
+
+  if (!variants || variants.length < 2) {
+    return { isDiverse: true, reasons: [] };
+  }
+
+  // Check unique types
+  const types = new Set(variants.map(v => v.type));
+  if (types.size < variants.length && variants.length >= 3 && types.size === 1) {
+    reasons.push('Todas as variantes compartilham a mesma categoria de sujeito (apenas variações estéticas do mesmo elemento).');
+  }
+
+  // Check hypothesis similarity
+  const hypotheses = variants.map(v => v.hypothesis.toLowerCase().trim());
+  const uniqueHypotheses = new Set(hypotheses);
+  if (uniqueHypotheses.size < variants.length) {
+    reasons.push('Há variantes com hipóteses redundantes ou idênticas.');
+  }
+
+  // Check viewerQuestion similarity
+  const questions = variants.map(v => v.viewerQuestion.toLowerCase().trim());
+  const uniqueQuestions = new Set(questions);
+  if (uniqueQuestions.size < variants.length) {
+    reasons.push('A pergunta silenciosa do espectador não foi alterada entre as versões.');
+  }
+
+  const isDiverse = reasons.length === 0;
+  const warning = !isDiverse
+    ? 'ESTAS VARIAÇÕES PARECEM TRÊS VERSÕES ESTÉTICAS DA MESMA HIPÓTESE. Um teste A/B autêntico deve contrapor mecanismos psicológicos diferentes (ex: Cumplicidade Humana vs. Fetiche Táctil do Objeto vs. Fascínio pelo Espaço/Cena).'
+    : undefined;
+
+  return { isDiverse, warning, reasons };
+}

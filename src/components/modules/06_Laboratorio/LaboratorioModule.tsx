@@ -11,11 +11,26 @@ import {
   Upload,
   Eye,
   Clock,
-  X
+  X,
+  Split,
+  Wand2
 } from 'lucide-react';
+import { TextDensityWidget } from './TextDensityWidget';
+import { FeedSimulator } from './FeedSimulator';
+import { AIAnalysisPanel } from './AIAnalysisPanel';
+import { ABCompareModal } from './ABCompareModal';
 
 export function LaboratorioModule() {
-  const { currentProject, updateProject, toggleDiagnostic, showToast } = useProject();
+  const {
+    currentProject,
+    updateProject,
+    toggleDiagnostic,
+    saveAIAnalysis,
+    saveAIComparison,
+    addAntiSlopToAvoid,
+    applyAIProposedCorrection,
+    showToast
+  } = useProject();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -24,6 +39,14 @@ export function LaboratorioModule() {
   const [blurValue, setBlurValue] = useState(0); // 0 - 20px
   const [isSilhouette, setIsSilhouette] = useState(false);
   const [isGrayscale, setIsGrayscale] = useState(false);
+  const [isSquintTest, setIsSquintTest] = useState(false);
+  const [showEmphasisMap, setShowEmphasisMap] = useState(false);
+
+  // AI Analysis state
+  const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
+  const [unconfiguredError, setUnconfiguredError] = useState(false);
+  const [showRegionsOverlay, setShowRegionsOverlay] = useState(true);
+  const [isABModalOpen, setIsABModalOpen] = useState(false);
 
   // 1 Second Test state
   const [oneSecondActive, setOneSecondActive] = useState(false);
@@ -35,6 +58,8 @@ export function LaboratorioModule() {
   const [showEdgeSafety, setShowEdgeSafety] = useState(true);
   const [showMobileTitleZone, setShowMobileTitleZone] = useState(false);
   const [showRuleOfThirds, setShowRuleOfThirds] = useState(false);
+
+  const latestAnalysis = currentProject.aiAnalyses?.[0] || null;
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -55,6 +80,48 @@ export function LaboratorioModule() {
     };
     reader.readAsDataURL(file);
     if (e.target) e.target.value = '';
+  };
+
+  const handleAnalyzeWithAI = async () => {
+    if (!currentProject.uploadedImageUri) {
+      showToast('Carregue uma imagem de thumbnail antes de solicitar a análise por IA.');
+      return;
+    }
+    setIsAnalyzingAI(true);
+    setUnconfiguredError(false);
+
+    try {
+      const res = await fetch('/api/ai/analyze-thumbnail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageUri: currentProject.uploadedImageUri,
+          videoTitle: currentProject.videoTitle,
+          videoDescription: currentProject.videoDescription,
+          niche: currentProject.niche,
+          perceptionGoal: currentProject.perceptionGoal,
+          protagonistType: currentProject.protagonistType,
+          viewerQuestion: currentProject.viewerQuestion
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 503) {
+          setUnconfiguredError(true);
+          showToast('ANÁLISE POR IA NÃO CONFIGURADA. Configure OPENAI_API_KEY no servidor.');
+        } else {
+          showToast(data.error || 'Erro na análise da thumbnail.');
+        }
+        return;
+      }
+      saveAIAnalysis(data.analysis);
+      setShowRegionsOverlay(true);
+      showToast('Análise multimodal por IA concluída com sucesso!');
+    } catch {
+      showToast('Falha na comunicação com a API de análise.');
+    } finally {
+      setIsAnalyzingAI(false);
+    }
   };
 
   const startOneSecondTest = () => {
@@ -100,19 +167,38 @@ export function LaboratorioModule() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Visual Workspace & Canvas */}
           <div className="lg:w-7/12 space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <span className="text-xs font-mono uppercase tracking-wider text-zinc-300 font-bold flex items-center gap-2">
                 <Eye className="w-4 h-4 text-amber-500" />
                 Mesa de Testes de Estresse Óptico (16:9)
               </span>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsABModalOpen(true)}
+                  className="px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-amber-500 text-zinc-300 text-xs font-mono font-medium flex items-center gap-1.5 transition"
+                >
+                  <Split className="w-3.5 h-3.5 text-amber-400" />
+                  <span>COMPARAR A × B</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleAnalyzeWithAI}
+                  disabled={isAnalyzingAI || !currentProject.uploadedImageUri}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-zinc-950 text-xs font-mono font-bold flex items-center gap-1.5 shadow transition"
+                >
+                  <Wand2 className="w-3.5 h-3.5" />
+                  <span>{isAnalyzingAI ? 'ANALISANDO...' : 'ANALISAR COM IA'}</span>
+                </button>
+
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className="px-3 py-1.5 rounded-xl bg-zinc-900 border border-zinc-700 hover:border-amber-500 text-zinc-200 text-xs font-mono font-medium flex items-center gap-1.5 transition"
                 >
                   <Upload className="w-3.5 h-3.5 text-amber-400" />
-                  Carregar Imagem Local
+                  Carregar Imagem
                 </button>
                 {currentProject.uploadedImageUri && (
                   <button
@@ -151,6 +237,7 @@ export function LaboratorioModule() {
                       blur(${blurValue}px)
                       ${isGrayscale ? 'grayscale(100%)' : ''}
                       ${isSilhouette ? 'contrast(300%) grayscale(100%) brightness(80%)' : ''}
+                      ${isSquintTest ? 'blur(16px) contrast(140%) brightness(85%)' : ''}
                     `
                   }}
                 />
@@ -163,6 +250,7 @@ export function LaboratorioModule() {
                       blur(${blurValue}px)
                       ${isGrayscale ? 'grayscale(100%)' : ''}
                       ${isSilhouette ? 'contrast(350%) grayscale(100%) brightness(70%)' : ''}
+                      ${isSquintTest ? 'blur(16px) contrast(140%) brightness(85%)' : ''}
                     `
                   }}
                 >
@@ -197,6 +285,35 @@ export function LaboratorioModule() {
                   </div>
                 </div>
               )}
+
+              {/* ESTIMATED EMPHASIS MAP */}
+              {showEmphasisMap && (
+                <div className="absolute inset-0 pointer-events-none z-25 flex flex-col justify-between p-3 select-none">
+                  <div className="absolute inset-0 bg-radial from-amber-400/50 via-rose-500/30 to-blue-950/40 mix-blend-screen" />
+                  <div className="relative z-10 self-start bg-black/85 border border-amber-500/50 rounded-lg px-2.5 py-1 text-[9px] font-mono text-amber-300 font-bold">
+                    ESTIMATIVA HEURÍSTICA DE CONTRASTE — NÃO É EYE-TRACKING BIOMÉTRICO REAL
+                  </div>
+                </div>
+              )}
+
+              {/* ANNOTATED REGIONS BOUNDING BOXES */}
+              {showRegionsOverlay && latestAnalysis?.regions?.map(r => (
+                <div
+                  key={r.id}
+                  className="absolute border-2 border-amber-400 bg-amber-400/15 pointer-events-auto cursor-pointer z-25 transition hover:bg-amber-400/30 group"
+                  style={{
+                    left: `${Math.max(0, Math.min(100, r.x * 100))}%`,
+                    top: `${Math.max(0, Math.min(100, r.y * 100))}%`,
+                    width: `${Math.max(4, Math.min(100, r.width * 100))}%`,
+                    height: `${Math.max(4, Math.min(100, r.height * 100))}%`
+                  }}
+                  title={`${r.label}: ${r.interpretation}`}
+                >
+                  <span className="absolute -top-5 left-0 bg-amber-500 text-zinc-950 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded shadow whitespace-nowrap">
+                    {r.label}
+                  </span>
+                </div>
+              ))}
 
               {/* 1-SECOND TEST CURTAIN OVERLAY */}
               {oneSecondActive && !oneSecondRevealed && (
@@ -350,7 +467,45 @@ export function LaboratorioModule() {
                 </button>
               </div>
 
-              {/* 5. One Second Test */}
+              {/* 5. Squint Test */}
+              <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80">
+                <div>
+                  <div className="text-xs font-bold text-zinc-200">Teste do Semicerrar (Squint)</div>
+                  <div className="text-[10px] text-zinc-400">Simula fechamento de pálpebras / massa dominante</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsSquintTest(!isSquintTest)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition ${
+                    isSquintTest
+                      ? 'bg-amber-500 text-zinc-950 shadow'
+                      : 'bg-zinc-900 border border-zinc-700 text-zinc-400'
+                  }`}
+                >
+                  {isSquintTest ? 'Ativo' : 'Testar'}
+                </button>
+              </div>
+
+              {/* 6. Estimated Emphasis Map */}
+              <div className="flex items-center justify-between pt-2 border-t border-zinc-800/80">
+                <div>
+                  <div className="text-xs font-bold text-zinc-200">Mapa de Ênfase Estimado</div>
+                  <div className="text-[10px] text-zinc-400">Estimativa heurística de contraste visual</div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowEmphasisMap(!showEmphasisMap)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition ${
+                    showEmphasisMap
+                      ? 'bg-amber-500 text-zinc-950 shadow'
+                      : 'bg-zinc-900 border border-zinc-700 text-zinc-400'
+                  }`}
+                >
+                  {showEmphasisMap ? 'Ativo' : 'Ver Mapa'}
+                </button>
+              </div>
+
+              {/* 7. One Second Test */}
               <div className="pt-2 border-t border-zinc-800/80">
                 <button
                   type="button"
@@ -407,6 +562,9 @@ export function LaboratorioModule() {
                 </label>
               </div>
             </div>
+
+            {/* Text Density Analysis Widget */}
+            <TextDensityWidget text={currentProject.thumbnailText} />
           </div>
         </div>
 
@@ -432,6 +590,32 @@ export function LaboratorioModule() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* FEED SIMULATOR EXTENSION */}
+      <div className="mb-8">
+        <FeedSimulator
+          thumbnailUri={currentProject.uploadedImageUri}
+          videoTitle={currentProject.videoTitle}
+          channelName={currentProject.channelIdentity}
+          protagonist={currentProject.protagonist}
+          thumbnailText={currentProject.thumbnailText}
+        />
+      </div>
+
+      {/* MULTIMODAL AI CRITIQUE PANEL */}
+      <div className="mb-8">
+        <AIAnalysisPanel
+          analysis={latestAnalysis}
+          isAnalyzing={isAnalyzingAI}
+          unconfiguredError={unconfiguredError}
+          onAnalyze={handleAnalyzeWithAI}
+          showRegions={showRegionsOverlay}
+          onToggleRegions={() => setShowRegionsOverlay(prev => !prev)}
+          onAddAvoid={addAntiSlopToAvoid}
+          onApplyCorrection={applyAIProposedCorrection}
+          hasImage={Boolean(currentProject.uploadedImageUri)}
+        />
       </div>
 
       {/* DIAGNOSTIC WORKSPACE & CRITIQUE ENGINE (Module 15, 16, 17) */}
@@ -706,6 +890,15 @@ export function LaboratorioModule() {
           </div>
         </div>
       </div>
+
+      {/* A/B COMPARISON MODAL */}
+      <ABCompareModal
+        isOpen={isABModalOpen}
+        onClose={() => setIsABModalOpen(false)}
+        videoTitle={currentProject.videoTitle}
+        onSaveComparison={saveAIComparison}
+        showToast={showToast}
+      />
     </section>
   );
 }

@@ -1,6 +1,7 @@
 import { ProjectData } from '@/types';
 
 export const DEFAULT_PROJECT: ProjectData = {
+  schemaVersion: 2,
   id: 'proj-anti-slop-default',
   name: 'O Carro Secreto da Apple (Documentário)',
   videoTitle: 'Por que a Apple desistiu do projeto mais caro da sua história',
@@ -39,16 +40,20 @@ export const DEFAULT_PROJECT: ProjectData = {
       name: 'David Fincher — Mindhunter / The Social Network',
       category: 'Luz',
       purpose: 'Controle de penumbra e tons dessaturados',
-      extractedDecision: 'Manter áreas de sombra ricas e profundas, permitindo que apenas os contornos do chassi recebam reflexo suave.'
+      extractedDecision: 'Manter áreas de sombra ricas e profundas, permitindo que apenas os contornos do chassi recebam reflexo suave.',
+      roles: ['LUZ', 'ESTILO']
     },
     {
       id: 'ref-2',
       name: 'Wired Magazine — Capa Editorial Industrial',
       category: 'Composição',
       purpose: 'Respeito ao hardware e aos materiais reais',
-      extractedDecision: 'Não inventar painéis de luz neon; usar alumínio usinado real e poeira ambiente autêntica.'
+      extractedDecision: 'Não inventar painéis de luz neon; usar alumínio usinado real e poeira ambiente autêntica.',
+      roles: ['COMPOSIÇÃO', 'PRODUTO / HARDWARE']
     }
   ],
+
+  referenceLocks: ['LOCK_PRODUCT_GEOMETRY', 'LOCK_COMPOSITION'],
 
   avoidList: [
     'EXPRESSÃO DE CHOQUE GENÉRICA',
@@ -100,6 +105,12 @@ export const DEFAULT_PROJECT: ProjectData = {
     'chk-20': true,
     'chk-21': true
   },
+
+  promptVersions: [],
+  aiAnalyses: [],
+  aiComparisons: [],
+  experimentJournal: [],
+  performanceSnapshots: [],
 
   createdAt: '2026-09-28T12:00:00.000Z',
   updatedAt: '2026-09-28T12:00:00.000Z'

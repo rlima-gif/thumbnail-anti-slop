@@ -2,14 +2,15 @@
 
 import React, { useState } from 'react';
 import { useProject } from '@/context/ProjectContext';
-import { generateABVariants } from '@/lib/abGenerator';
-import { Copy, Check, User, Box, Compass } from 'lucide-react';
+import { generateABVariants, checkABVariantDiversity } from '@/lib/abGenerator';
+import { Copy, Check, User, Box, Compass, AlertTriangle } from 'lucide-react';
 
 export function ABTestModule() {
   const { currentProject, showToast } = useProject();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const variants = generateABVariants(currentProject);
+  const diversity = checkABVariantDiversity(variants);
 
   const handleCopyVariantPrompt = (id: string, prompt: string) => {
     navigator.clipboard.writeText(prompt);
@@ -33,6 +34,24 @@ export function ABTestModule() {
           &ldquo;Testar A/B não é trocar a cor da camiseta do criador. É testar se a história funciona melhor por um Rosto, por um Objeto ou por uma Situação.&rdquo;
         </p>
       </div>
+
+      {/* DIVERSITY WARNING BANNER */}
+      {!diversity.isDiverse && diversity.warning && (
+        <div className="mb-8 p-5 rounded-2xl bg-amber-500/10 border border-amber-500/40 text-amber-200 space-y-2">
+          <div className="flex items-center gap-2 font-mono text-xs uppercase font-bold text-amber-400">
+            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+            Alerta de Diversidade de Hipóteses
+          </div>
+          <p className="text-xs leading-relaxed">{diversity.warning}</p>
+          {diversity.reasons.length > 0 && (
+            <ul className="list-disc list-inside text-[11px] text-amber-300/80 space-y-0.5">
+              {diversity.reasons.map((r, i) => (
+                <li key={i}>{r}</li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       {/* THREE CONCEPTUAL VARIANTS GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

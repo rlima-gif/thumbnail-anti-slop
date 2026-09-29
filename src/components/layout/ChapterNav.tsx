@@ -19,6 +19,7 @@ export const CHAPTERS: Chapter[] = [
   { id: 'checklist', number: '07', title: 'Checklist' },
   { id: 'gerador', number: '08', title: 'Gerador' },
   { id: 'ab-test', number: '09', title: 'A/B Test' },
+  { id: 'channel-dna', number: '10', title: 'Channel DNA' },
   { id: 'glossario', number: '§', title: 'Glossário' }
 ];
 

@@ -115,8 +115,30 @@ export function generateFinalPrompt(project: ProjectData): {
 } {
   const avoidTokens = buildAvoidTokens(project);
 
-  // Extract reference decisions
-  const referenceLines = project.references.map(r => `${r.category} (${r.name}): ${r.extractedDecision}`).join('; ');
+  // Extract reference decisions with roles
+  const referenceLines = project.references
+    .map(r => {
+      const roleStr = r.roles && r.roles.length > 0 ? ` [Roles: ${r.roles.join(', ')}]` : '';
+      return `${r.category} (${r.name})${roleStr}: ${r.extractedDecision}`;
+    })
+    .join('; ');
+
+  // Reference Locks directives
+  const lockDescriptions: Record<string, string> = {
+    LOCK_FACE: 'MANDATORY: Lock facial geometry, bone structure, eye shape and authentic human asymmetry. Do not alter identity.',
+    LOCK_HAIR: 'MANDATORY: Lock natural hairstyle, density, hairline and fiber texture.',
+    LOCK_BEARD: 'MANDATORY: Lock facial hair styling, natural grain and grooming lines.',
+    LOCK_AGE: 'MANDATORY: Preserve authentic subject age; strictly prohibit airbrush de-aging or silicone smoothing.',
+    LOCK_CLOTHING: 'MANDATORY: Preserve precise garment structure, fabric weight, seamlines and authentic drape.',
+    LOCK_POSE: 'MANDATORY: Lock exact physical stance, head angle, shoulder vector and gaze direction.',
+    LOCK_PRODUCT_GEOMETRY: 'MANDATORY: Strictly preserve authentic industrial product geometry, bevel radii, material finishes and physical proportions.',
+    LOCK_SCREEN_ASPECT: 'MANDATORY: Preserve true screen aspect ratios, bezel thickness and UI display geometry without warping.',
+    LOCK_CONTROLLER_LAYOUT: 'MANDATORY: Strictly preserve physical button positions, analog sticks, trigger shapes and OEM controller layout.',
+    LOCK_COMPOSITION: 'MANDATORY: Lock exact camera angle, perspective lines, framing borders and negative space distribution.',
+    LOCK_BACKGROUND: 'MANDATORY: Preserve background environment scale, architectural lines and depth subordinate hierarchy.'
+  };
+
+  const activeLocks = (project.referenceLocks || []).map(l => lockDescriptions[l] || l);
 
   // Mode instructions
   const modeNotes: string[] = [];
@@ -164,6 +186,10 @@ export function generateFinalPrompt(project: ProjectData): {
     `TEXT:\n${project.activeModes.includes('SEM_TEXTO') || !project.thumbnailText.trim() ? 'NO text rendered in the image. Pure visual storytelling with reserved negative space.' : `Negative space reserved for clean post-production typography: "${project.thumbnailText}". Do not render distorted AI letterforms.`}`,
 
     `REFERENCE FUNCTIONS:\n${referenceLines || 'Editorial magazine cover photography, documentary cinema lighting and premium key art composition'}.`,
+
+    ...(activeLocks.length > 0
+      ? [`PRESERVATION LOCKS (NON-NEGOTIABLE):\n${activeLocks.join('\n')}`]
+      : []),
 
     `CHANNEL VISUAL LANGUAGE:\n${project.channelIdentity || 'Art-directed, authoritative, cinematic and honest; free from disposable clickbait tropes'}. Style: ${project.visualStyle || 'High fidelity editorial documentary photography'}.`,
 

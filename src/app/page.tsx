@@ -15,6 +15,7 @@ import { LaboratorioModule } from '@/components/modules/06_Laboratorio/Laborator
 import { ChecklistModule } from '@/components/modules/07_Checklist/ChecklistModule';
 import { GeradorModule } from '@/components/modules/08_Gerador/GeradorModule';
 import { ABTestModule } from '@/components/modules/09_ABTest/ABTestModule';
+import { ChannelDNAModule } from '@/components/modules/10_ChannelDNA/ChannelDNAModule';
 import { GlossarioModule } from '@/components/modules/Glossario/GlossarioModule';
 
 export default function Home() {
@@ -61,6 +62,9 @@ export default function Home() {
 
           {/* Module 09 — A/B Test */}
           <ABTestModule />
+
+          {/* Module 10 — YouTube Channel DNA & Diário de Experimentos */}
+          <ChannelDNAModule />
 
           {/* Technical Reference — Glossário */}
           <GlossarioModule />

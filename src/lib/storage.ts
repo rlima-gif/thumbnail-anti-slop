@@ -4,6 +4,50 @@ import { DEFAULT_PROJECT } from '@/data/defaultProject';
 const STORAGE_KEY_PROJECTS = 'anti_slop_projects_v1';
 const STORAGE_KEY_ACTIVE_ID = 'anti_slop_active_id_v1';
 
+export function migrateProject(raw: unknown): ProjectData {
+  if (!raw || typeof raw !== 'object') {
+    return createBlankProject();
+  }
+  const r = raw as Record<string, unknown>;
+  const base = createBlankProject(typeof r.name === 'string' ? r.name : 'Projeto Sem Título');
+
+  const migrated: ProjectData = {
+    ...base,
+    ...(r as unknown as Partial<ProjectData>),
+    schemaVersion: 2,
+    activeModes: Array.isArray(r.activeModes) ? (r.activeModes as ProjectData['activeModes']) : [],
+    references: Array.isArray(r.references)
+      ? (r.references as Array<Record<string, unknown>>).map(ref => ({
+          id: String(ref.id || `ref-${Date.now()}`),
+          name: String(ref.name || 'Referência'),
+          category: (ref.category as ProjectData['references'][0]['category']) || 'Composição',
+          purpose: String(ref.purpose || ''),
+          extractedDecision: String(ref.extractedDecision || ''),
+          notes: ref.notes ? String(ref.notes) : undefined,
+          sourceDomain: ref.sourceDomain ? String(ref.sourceDomain) : undefined,
+          roles: Array.isArray(ref.roles) ? (ref.roles as ProjectData['references'][0]['roles']) : []
+        }))
+      : [],
+    referenceLocks: Array.isArray(r.referenceLocks) ? (r.referenceLocks as ProjectData['referenceLocks']) : [],
+    avoidList: Array.isArray(r.avoidList) ? (r.avoidList as string[]) : base.avoidList,
+    diagnosticState: {
+      ...base.diagnosticState,
+      ...(r.diagnosticState as ProjectData['diagnosticState'] || {})
+    },
+    checklistState: {
+      ...base.checklistState,
+      ...(r.checklistState as Record<string, boolean> || {})
+    },
+    promptVersions: Array.isArray(r.promptVersions) ? (r.promptVersions as ProjectData['promptVersions']) : [],
+    aiAnalyses: Array.isArray(r.aiAnalyses) ? (r.aiAnalyses as ProjectData['aiAnalyses']) : [],
+    aiComparisons: Array.isArray(r.aiComparisons) ? (r.aiComparisons as ProjectData['aiComparisons']) : [],
+    experimentJournal: Array.isArray(r.experimentJournal) ? (r.experimentJournal as ProjectData['experimentJournal']) : [],
+    performanceSnapshots: Array.isArray(r.performanceSnapshots) ? (r.performanceSnapshots as ProjectData['performanceSnapshots']) : []
+  };
+
+  return migrated;
+}
+
 export function loadAllProjects(): ProjectData[] {
   if (typeof window === 'undefined') {
     return [DEFAULT_PROJECT];
@@ -18,7 +62,18 @@ export function loadAllProjects(): ProjectData[] {
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      return parsed;
+      let needsResave = false;
+      const migrated = parsed.map((p: unknown) => {
+        const item = p as Record<string, unknown>;
+        if (!item || !item.schemaVersion || (item.schemaVersion as number) < 2) {
+          needsResave = true;
+        }
+        return migrateProject(item);
+      });
+      if (needsResave) {
+        localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(migrated));
+      }
+      return migrated;
     }
     return [DEFAULT_PROJECT];
   } catch (err) {
@@ -61,6 +116,7 @@ export function setActiveProjectId(id: string): void {
 export function createBlankProject(name = 'Novo Projeto de Thumbnail'): ProjectData {
   const now = new Date().toISOString();
   return {
+    schemaVersion: 2,
     id: `proj-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     name,
     videoTitle: '',
@@ -88,6 +144,7 @@ export function createBlankProject(name = 'Novo Projeto de Thumbnail'): ProjectD
     visualStyle: 'Fotografia editorial cinematográfica',
     activeModes: [],
     references: [],
+    referenceLocks: [],
     avoidList: [
       'EXPRESSÃO DE CHOQUE GENÉRICA',
       'CONTORNO BRANCO AUTOMÁTICO',
@@ -113,6 +170,11 @@ export function createBlankProject(name = 'Novo Projeto de Thumbnail'): ProjectD
     },
     oneSecondPerceptionNote: '',
     checklistState: {},
+    promptVersions: [],
+    aiAnalyses: [],
+    aiComparisons: [],
+    experimentJournal: [],
+    performanceSnapshots: [],
     createdAt: now,
     updatedAt: now
   };
@@ -147,11 +209,10 @@ export function parseProjectJson(jsonContent: string): ProjectData {
   if (!parsed || typeof parsed !== 'object') {
     throw new Error('Conteúdo JSON inválido.');
   }
-  // Ensure basic fields exist
+  const migrated = migrateProject(parsed);
   const now = new Date().toISOString();
   return {
-    ...createBlankProject(parsed.name || 'Projeto Importado'),
-    ...parsed,
+    ...migrated,
     id: `proj-import-${Date.now()}`,
     updatedAt: now
   };

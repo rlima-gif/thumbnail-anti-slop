@@ -1,7 +1,17 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { ProjectData, GenerationMode } from '@/types';
+import {
+  ProjectData,
+  GenerationMode,
+  PromptSource,
+  PromptVersion,
+  ThumbnailAIAnalysis,
+  ThumbnailAIComparison,
+  ReferenceLock,
+  ReferenceRole,
+  ExperimentEntry
+} from '@/types';
 import {
   loadAllProjects,
   saveAllProjects,
@@ -32,6 +42,16 @@ interface ProjectContextValue {
   toggleMode: (mode: GenerationMode) => void;
   toggleDiagnostic: (field: keyof ProjectData['diagnosticState']) => void;
   toggleChecklist: (itemId: string) => void;
+  addPromptVersion: (prompt: string, reason: string, source: PromptSource, diffSummary?: string) => void;
+  restorePromptVersion: (versionId: string) => void;
+  saveAIAnalysis: (analysis: ThumbnailAIAnalysis) => void;
+  saveAIComparison: (comparison: ThumbnailAIComparison) => void;
+  toggleReferenceLock: (lock: ReferenceLock) => void;
+  updateReferenceRoles: (refId: string, roles: ReferenceRole[]) => void;
+  addExperimentEntry: (entry: Omit<ExperimentEntry, 'id' | 'createdAt'>) => void;
+  updateExperimentEntry: (id: string, updates: Partial<ExperimentEntry>) => void;
+  deleteExperimentEntry: (id: string) => void;
+  applyAIProposedCorrection: (field: keyof ProjectData, value: unknown) => void;
   toastMessage: string | null;
   showToast: (msg: string) => void;
 }
@@ -197,6 +217,93 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
     });
   }, [currentProject.checklistState, updateProject]);
 
+  const addPromptVersion = useCallback((prompt: string, reason: string, source: PromptSource, diffSummary?: string) => {
+    const currentVersions = currentProject.promptVersions || [];
+    const nextVersionNum = currentVersions.length > 0 ? Math.max(...currentVersions.map(v => v.versionNumber)) + 1 : 1;
+    const newVersion: PromptVersion = {
+      id: `pv-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      versionNumber: nextVersionNum,
+      timestamp: new Date().toISOString(),
+      prompt,
+      reason,
+      source,
+      diffSummary
+    };
+    updateProject({
+      customPrompt: prompt,
+      promptVersions: [newVersion, ...currentVersions]
+    });
+    showToast(`Versão v${nextVersionNum} do prompt salva no histórico.`);
+  }, [currentProject.promptVersions, updateProject, showToast]);
+
+  const restorePromptVersion = useCallback((versionId: string) => {
+    const version = currentProject.promptVersions?.find(v => v.id === versionId);
+    if (!version) return;
+    updateProject({
+      customPrompt: version.prompt
+    });
+    showToast(`Prompt restaurado para versão v${version.versionNumber}.`);
+  }, [currentProject.promptVersions, updateProject, showToast]);
+
+  const saveAIAnalysis = useCallback((analysis: ThumbnailAIAnalysis) => {
+    const existing = currentProject.aiAnalyses || [];
+    updateProject({
+      aiAnalyses: [analysis, ...existing]
+    });
+    showToast('Análise de IA registrada.');
+  }, [currentProject.aiAnalyses, updateProject, showToast]);
+
+  const saveAIComparison = useCallback((comparison: ThumbnailAIComparison) => {
+    const existing = currentProject.aiComparisons || [];
+    updateProject({
+      aiComparisons: [comparison, ...existing]
+    });
+    showToast('Comparação A × B registrada.');
+  }, [currentProject.aiComparisons, updateProject, showToast]);
+
+  const toggleReferenceLock = useCallback((lock: ReferenceLock) => {
+    const currentLocks = currentProject.referenceLocks || [];
+    const exists = currentLocks.includes(lock);
+    const updated = exists ? currentLocks.filter(l => l !== lock) : [...currentLocks, lock];
+    updateProject({ referenceLocks: updated });
+    showToast(exists ? `Trava ${lock} desativada.` : `Trava ${lock} ativada no prompt!`);
+  }, [currentProject.referenceLocks, updateProject, showToast]);
+
+  const updateReferenceRoles = useCallback((refId: string, roles: ReferenceRole[]) => {
+    const updatedRefs = currentProject.references.map(r => (r.id === refId ? { ...r, roles } : r));
+    updateProject({ references: updatedRefs });
+    showToast('Funções da referência atualizadas.');
+  }, [currentProject.references, updateProject, showToast]);
+
+  const addExperimentEntry = useCallback((entry: Omit<ExperimentEntry, 'id' | 'createdAt'>) => {
+    const newEntry: ExperimentEntry = {
+      ...entry,
+      id: `exp-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      createdAt: new Date().toISOString()
+    };
+    const existing = currentProject.experimentJournal || [];
+    updateProject({ experimentJournal: [newEntry, ...existing] });
+    showToast('Novo experimento adicionado ao Diário.');
+  }, [currentProject.experimentJournal, updateProject, showToast]);
+
+  const updateExperimentEntry = useCallback((id: string, updates: Partial<ExperimentEntry>) => {
+    const existing = currentProject.experimentJournal || [];
+    const updated = existing.map(e => (e.id === id ? { ...e, ...updates } : e));
+    updateProject({ experimentJournal: updated });
+    showToast('Experimento atualizado.');
+  }, [currentProject.experimentJournal, updateProject, showToast]);
+
+  const deleteExperimentEntry = useCallback((id: string) => {
+    const existing = currentProject.experimentJournal || [];
+    updateProject({ experimentJournal: existing.filter(e => e.id !== id) });
+    showToast('Experimento removido.');
+  }, [currentProject.experimentJournal, updateProject, showToast]);
+
+  const applyAIProposedCorrection = useCallback((field: keyof ProjectData, value: unknown) => {
+    updateProject({ [field]: value });
+    showToast(`Direção atualizada: "${String(field)}".`);
+  }, [updateProject, showToast]);
+
   return (
     <ProjectContext.Provider
       value={{
@@ -217,6 +324,16 @@ export function ProjectProvider({ children }: { children: React.ReactNode }) {
         toggleMode,
         toggleDiagnostic,
         toggleChecklist,
+        addPromptVersion,
+        restorePromptVersion,
+        saveAIAnalysis,
+        saveAIComparison,
+        toggleReferenceLock,
+        updateReferenceRoles,
+        addExperimentEntry,
+        updateExperimentEntry,
+        deleteExperimentEntry,
+        applyAIProposedCorrection,
         toastMessage,
         showToast
       }}

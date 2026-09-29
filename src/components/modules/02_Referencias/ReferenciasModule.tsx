@@ -2,13 +2,39 @@
 
 import React, { useState } from 'react';
 import { useProject } from '@/context/ProjectContext';
-import { ReferenceCategory, ReferenceItem } from '@/types';
+import { ReferenceCategory, ReferenceItem, ReferenceRole, ReferenceLock } from '@/types';
 import { generateReferenceSearchQueries } from '@/lib/referenceSearchGenerator';
-import { Plus, Trash2, Copy, Check, Search, BookmarkPlus } from 'lucide-react';
+import { Plus, Trash2, Copy, Check, Search, BookmarkPlus, Lock } from 'lucide-react';
 
 function createRefId(): string {
   return `ref-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 7)}`;
 }
+
+const REFERENCE_ROLES: ReferenceRole[] = [
+  'IDENTIDADE',
+  'PRODUTO / HARDWARE',
+  'COMPOSIÇÃO',
+  'LUZ',
+  'COR',
+  'ESTILO',
+  'AMBIENTE',
+  'TEXTURA',
+  'EXPRESSÃO'
+];
+
+const REFERENCE_LOCKS: Array<{ id: ReferenceLock; label: string; desc: string }> = [
+  { id: 'LOCK_FACE', label: 'Preservar Rosto / Identidade', desc: 'Anatomia e assimetria humana autêntica' },
+  { id: 'LOCK_HAIR', label: 'Preservar Cabelo', desc: 'Penteado e linha natural' },
+  { id: 'LOCK_BEARD', label: 'Preservar Barba', desc: 'Textura e corte real' },
+  { id: 'LOCK_AGE', label: 'Preservar Idade', desc: 'Sem rejuvenescimento ou pele plástica' },
+  { id: 'LOCK_CLOTHING', label: 'Preservar Vestuário', desc: 'Corte, costura e caimento autêntico' },
+  { id: 'LOCK_POSE', label: 'Preservar Postura', desc: 'Ângulo corporal e olhar fixo' },
+  { id: 'LOCK_PRODUCT_GEOMETRY', label: 'Preservar Geometria do Produto', desc: 'Dimensões industriais e chanfros reais' },
+  { id: 'LOCK_SCREEN_ASPECT', label: 'Preservar Proporção de Telas', desc: 'Displays sem distorção geométrica' },
+  { id: 'LOCK_CONTROLLER_LAYOUT', label: 'Preservar Layout de Controles', desc: 'Botões e manetes físicos originais' },
+  { id: 'LOCK_COMPOSITION', label: 'Preservar Composição', desc: 'Enquadramento e respiro de terços' },
+  { id: 'LOCK_BACKGROUND', label: 'Preservar Subordinação do Fundo', desc: 'Escala e desfoque óptico' }
+];
 
 const REFERENCE_CATEGORIES: ReferenceCategory[] = [
   'Composição',
@@ -30,34 +56,45 @@ const CURATED_PRESETS: Array<Omit<ReferenceItem, 'id'>> = [
     name: 'David Fincher (Mindhunter)',
     category: 'Luz',
     purpose: 'Atmosfera documental investigativa e controle de penumbra',
-    extractedDecision: 'Sombras profundas e ricas; manter a luz quente pontual apenas onde o olhar deve focar.'
+    extractedDecision: 'Sombras profundas e ricas; manter a luz quente pontual apenas onde o olhar deve focar.',
+    roles: ['LUZ', 'ESTILO']
   },
   {
     name: 'Wired Magazine (Fotografia Industrial)',
     category: 'Textura',
     purpose: 'Verossimilhança de hardware e materiais táteis',
-    extractedDecision: 'Exibir micro-texturas reais de metal e plástico fosco sem reflexos falsos de CGI.'
+    extractedDecision: 'Exibir micro-texturas reais de metal e plástico fosco sem reflexos falsos de CGI.',
+    roles: ['PRODUTO / HARDWARE', 'TEXTURA']
   },
   {
     name: 'Blade Runner 2049 (Roger Deakins)',
     category: 'Separação figura/fundo',
     purpose: 'Silhueta pura contra névoa luminosa',
-    extractedDecision: 'Subordinar o cenário em uma massa monocromática de poeira e destacar o sujeito por recorte de silhueta.'
+    extractedDecision: 'Subordinar o cenário em uma massa monocromática de poeira e destacar o sujeito por recorte de silhueta.',
+    roles: ['COMPOSIÇÃO', 'LUZ']
   },
   {
     name: 'Steve McCurry (Fotojornalismo Magnum)',
     category: 'Expressão',
     purpose: 'Olhar penetrante sem afetação ou careta',
-    extractedDecision: 'Expressão humana calma, sobrancelhas relaxadas e intensidade ocular motivada pela situação.'
+    extractedDecision: 'Expressão humana calma, sobrancelhas relaxadas e intensidade ocular motivada pela situação.',
+    roles: ['EXPRESSÃO', 'IDENTIDADE']
   }
 ];
 
 export function ReferenciasModule() {
-  const { currentProject, updateProject, showToast } = useProject();
+  const {
+    currentProject,
+    updateProject,
+    toggleReferenceLock,
+    updateReferenceRoles,
+    showToast
+  } = useProject();
 
   // New Reference Form State
   const [name, setName] = useState('');
   const [category, setCategory] = useState<ReferenceCategory>('Composição');
+  const [selectedRoles, setSelectedRoles] = useState<ReferenceRole[]>(['COMPOSIÇÃO']);
   const [purpose, setPurpose] = useState('');
   const [extractedDecision, setExtractedDecision] = useState('');
   const [notes, setNotes] = useState('');
@@ -78,6 +115,7 @@ export function ReferenciasModule() {
       id: createRefId(),
       name: name.trim(),
       category,
+      roles: selectedRoles,
       purpose: purpose.trim() || 'Referência de estilo',
       extractedDecision: extractedDecision.trim(),
       notes: notes.trim()
@@ -88,10 +126,27 @@ export function ReferenciasModule() {
     });
 
     setName('');
+    setSelectedRoles(['COMPOSIÇÃO']);
     setPurpose('');
     setExtractedDecision('');
     setNotes('');
     showToast(`Referência "${newItem.name}" adicionada.`);
+  };
+
+  const toggleRoleSelection = (role: ReferenceRole) => {
+    setSelectedRoles(prev =>
+      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+    );
+  };
+
+  const handleToggleRefRole = (refId: string, role: ReferenceRole) => {
+    const targetRef = currentProject.references.find(r => r.id === refId);
+    if (!targetRef) return;
+    const currentRoles = targetRef.roles || [];
+    const nextRoles = currentRoles.includes(role)
+      ? currentRoles.filter(r => r !== role)
+      : [...currentRoles, role];
+    updateReferenceRoles(refId, nextRoles);
   };
 
   const handleAddPreset = (preset: Omit<ReferenceItem, 'id'>) => {
@@ -186,6 +241,33 @@ export function ReferenciasModule() {
                 </div>
               </div>
 
+              {/* Reference Roles Chips */}
+              <div>
+                <label className="text-[11px] font-mono text-zinc-400 uppercase block mb-1.5">
+                  Funções Desta Referência (Reference Roles)
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {REFERENCE_ROLES.map(role => {
+                    const isSelected = selectedRoles.includes(role);
+                    return (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => toggleRoleSelection(role)}
+                        className={`text-[10px] font-mono px-2 py-1 rounded-lg border transition ${
+                          isSelected
+                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                            : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-700'
+                        }`}
+                      >
+                        {isSelected ? '✓ ' : '+ '}
+                        {role}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div>
                 <label className="text-[11px] font-mono text-zinc-400 uppercase block mb-1">
                   Propósito da Referência
@@ -246,8 +328,8 @@ export function ReferenciasModule() {
                     key={ref.id}
                     className="p-3.5 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-start justify-between gap-3 group hover:border-zinc-700 transition"
                   >
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
                           {ref.category}
                         </span>
@@ -257,15 +339,37 @@ export function ReferenciasModule() {
                         &ldquo;{ref.extractedDecision}&rdquo;
                       </p>
                       {ref.purpose && (
-                        <span className="text-[10px] text-zinc-400 block mt-1">
+                        <span className="text-[10px] text-zinc-400 block">
                           Propósito: {ref.purpose}
                         </span>
                       )}
+
+                      {/* Reference Roles Selector for this reference */}
+                      <div className="pt-1 flex flex-wrap items-center gap-1">
+                        <span className="text-[9px] font-mono text-zinc-500 uppercase mr-1">Funções:</span>
+                        {REFERENCE_ROLES.map(role => {
+                          const hasRole = (ref.roles || []).includes(role);
+                          return (
+                            <button
+                              key={role}
+                              type="button"
+                              onClick={() => handleToggleRefRole(ref.id, role)}
+                              className={`text-[9px] font-mono px-1.5 py-0.5 rounded border transition ${
+                                hasRole
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                  : 'bg-zinc-950/80 text-zinc-500 border-zinc-800 hover:text-zinc-300'
+                              }`}
+                            >
+                              {hasRole ? '✓ ' : ''}{role}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
                     <button
                       onClick={() => handleRemoveReference(ref.id)}
-                      className="text-zinc-400 hover:text-rose-400 p-1 rounded transition opacity-80 group-hover:opacity-100"
+                      className="text-zinc-400 hover:text-rose-400 p-1 rounded transition opacity-80 group-hover:opacity-100 shrink-0"
                       title="Remover referência"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -274,6 +378,56 @@ export function ReferenciasModule() {
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Reference Locks Panel */}
+          <div className="bg-zinc-900/90 border border-zinc-800 p-6 rounded-3xl space-y-4">
+            <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-amber-500" />
+                <h4 className="text-sm font-bold text-zinc-100 uppercase tracking-tight">
+                  Travas de Preservação (Reference Locks)
+                </h4>
+              </div>
+              <span className="text-[11px] font-mono text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                {(currentProject.referenceLocks || []).length} ativas no prompt
+              </span>
+            </div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Diretrizes não-negociáveis de geometria e identidade física injetadas no bloco de preservação do prompt, instruindo o modelo a congelar elementos críticos sem reinterpretação.
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {REFERENCE_LOCKS.map(lock => {
+                const isActive = (currentProject.referenceLocks || []).includes(lock.id);
+                return (
+                  <button
+                    key={lock.id}
+                    type="button"
+                    onClick={() => toggleReferenceLock(lock.id)}
+                    className={`text-left p-3 rounded-2xl border transition flex items-start gap-2.5 ${
+                      isActive
+                        ? 'bg-amber-500/10 border-amber-500/60 shadow-lg shadow-amber-500/5'
+                        : 'bg-zinc-950/70 border-zinc-800/90 hover:border-zinc-700'
+                    }`}
+                  >
+                    <div className={`w-4 h-4 rounded mt-0.5 flex items-center justify-center shrink-0 border ${
+                      isActive ? 'bg-amber-500 border-amber-500 text-zinc-950' : 'border-zinc-700 bg-zinc-900'
+                    }`}>
+                      {isActive && <Check className="w-3 h-3 stroke-[3]" />}
+                    </div>
+                    <div>
+                      <span className={`text-xs font-mono font-bold block ${isActive ? 'text-amber-300' : 'text-zinc-200'}`}>
+                        {lock.label}
+                      </span>
+                      <span className="text-[10px] text-zinc-400 block mt-0.5">
+                        {lock.desc}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
