@@ -54,8 +54,8 @@ export default function Home() {
         aiConfigured={aiConfigured}
       />
 
-      {/* 2. Main Work Area (Pure & Simple) */}
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6">
+      {/* 2. Main Work Area (Pure & Simple, Spacious Creative Canvas) */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {currentMode === 'CRIAR' && (
           <ModeCreate
             onNotify={handleNotify}
@@ -79,11 +79,11 @@ export default function Home() {
       </main>
 
       {/* 3. Subtle Editorial Footer */}
-      <footer className="border-t border-zinc-900 bg-zinc-950/60 py-8 mt-12 text-center text-xs font-mono text-zinc-500">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>THUMBNAIL ANTI-SLOP</span>
-          <span className="text-zinc-600">Subtrair antes de decorar • Menos efeitos, mais decisões</span>
-          <span>100% Privado & Local</span>
+      <footer className="border-t border-zinc-900 bg-zinc-950/70 py-6 mt-16 text-center text-xs font-mono text-zinc-500">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span className="font-semibold text-zinc-400">THUMBNAIL ANTI-SLOP</span>
+          <span className="text-zinc-600 font-sans text-xs">Subtrair antes de decorar • Menos efeitos, mais decisões</span>
+          <span className="text-zinc-500">100% Privado & Local</span>
         </div>
       </footer>
 
