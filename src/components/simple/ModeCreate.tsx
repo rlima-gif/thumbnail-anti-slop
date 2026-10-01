@@ -21,7 +21,9 @@ import {
   TargetModel,
   TextTreatment,
   ReservedSpacePosition,
-  CreateThumbnailResult
+  CreateThumbnailResult,
+  normalizeTargetModel,
+  TARGET_MODEL_CONFIGS
 } from '@/types/simple';
 import { generateSimpleThumbnail } from '@/lib/simpleEngine/engine';
 import { saveSimpleHistoryItem } from '@/lib/simpleEngine/history';
@@ -607,15 +609,16 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
                 Modelo Alvo do Prompt
               </label>
               <select
-                value={targetModel}
-                onChange={e => setTargetModel(e.target.value as TargetModel)}
+                value={normalizeTargetModel(targetModel)}
+                onChange={e => setTargetModel(normalizeTargetModel(e.target.value as TargetModel))}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-amber-500 font-mono"
               >
                 <option value="GERAL">Geral (Compatível com todos)</option>
+                <option value="OPENAI_GPT_IMAGE_2_5_SUNBURST">OpenAI — GPT Image 2.5 Sunburst</option>
+                <option value="OPENAI_GPT_IMAGE_2_5_FLARE">OpenAI — GPT Image 2.5 Flare</option>
                 <option value="MIDJOURNEY">Midjourney</option>
                 <option value="FLUX">FLUX (Ultra-detalhes foto)</option>
-                <option value="GEMINI">Google Gemini Imagen</option>
-                <option value="OPENAI">OpenAI (DALL-E 3 / GPT-4o)</option>
+                <option value="GEMINI">Google Gemini Image</option>
               </select>
             </div>
 
@@ -929,9 +932,20 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
                     <span className="text-xs font-mono uppercase tracking-wider text-amber-500 font-bold block">
                       PROMPT FINAL (ENGLISH)
                     </span>
-                    <p className="text-xs text-zinc-400 mt-0.5 font-sans">
-                      Pronto para colar no {targetModel === 'GERAL' ? 'Midjourney, FLUX ou seu gerador preferido' : targetModel}
-                    </p>
+                    <div className="flex items-center flex-wrap gap-2 mt-0.5">
+                      <p className="text-xs text-zinc-400 font-sans">
+                        Pronto para colar no{' '}
+                        {normalizeTargetModel(targetModel) === 'GERAL'
+                          ? 'Midjourney, FLUX ou seu gerador preferido'
+                          : TARGET_MODEL_CONFIGS[normalizeTargetModel(targetModel)]?.displayName || targetModel}
+                      </p>
+                      {result?.outputMetadata && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-zinc-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          {result.outputMetadata.modelId} · {result.outputMetadata.aspectRatioHint}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Prominent Copy Button */}

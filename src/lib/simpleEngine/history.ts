@@ -1,4 +1,4 @@
-import { SimpleHistoryItem } from '@/types/simple';
+import { SimpleHistoryItem, normalizeTargetModel } from '@/types/simple';
 
 const HISTORY_KEY = 'tas_simple_history_v1';
 
@@ -8,7 +8,22 @@ export function getSimpleHistory(): SimpleHistoryItem[] {
     const raw = localStorage.getItem(HISTORY_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((item: SimpleHistoryItem) => {
+      if (item && item.data && typeof item.data === 'object') {
+        const d = item.data as unknown as Record<string, unknown>;
+        if (typeof d.targetModel === 'string') {
+          d.targetModel = normalizeTargetModel(d.targetModel);
+        }
+        if (d.outputMetadata && typeof d.outputMetadata === 'object') {
+          const meta = d.outputMetadata as Record<string, unknown>;
+          if (typeof meta.targetModel === 'string') {
+            meta.targetModel = normalizeTargetModel(meta.targetModel);
+          }
+        }
+      }
+      return item;
+    });
   } catch {
     return [];
   }

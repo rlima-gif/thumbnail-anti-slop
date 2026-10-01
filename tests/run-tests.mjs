@@ -1414,4 +1414,119 @@ console.log('\n22. Testando Multimodal AI Director, Auditor Visual Complementar 
   }
 }
 
+// 23. Testando Novos Alvos OpenAI 2026: GPT Image 2.5 Sunburst, Flare, Metadados e Migração Legada...
+console.log('\n23. Testando Novos Alvos OpenAI 2026: GPT Image 2.5 Sunburst, Flare, Metadados e Migração Legada...');
+{
+  const { generateSimpleThumbnail, normalizeTargetModel, TARGET_MODEL_CONFIGS } = await import('../src/lib/simpleEngine/engine.ts');
+
+  // TEST 23.1: Normalização e Migração Legada 'OPENAI' -> 'OPENAI_GPT_IMAGE_2_5_SUNBURST'
+  assert.equal(normalizeTargetModel('OPENAI'), 'OPENAI_GPT_IMAGE_2_5_SUNBURST', 'TEST 23.1: "OPENAI" legado migra para SUNBURST');
+  assert.equal(normalizeTargetModel('OPENAI_GPT_IMAGE_2_5_SUNBURST'), 'OPENAI_GPT_IMAGE_2_5_SUNBURST');
+  assert.equal(normalizeTargetModel('OPENAI_GPT_IMAGE_2_5_FLARE'), 'OPENAI_GPT_IMAGE_2_5_FLARE');
+  assert.equal(normalizeTargetModel('MIDJOURNEY'), 'MIDJOURNEY');
+  assert.equal(normalizeTargetModel('GERAL'), 'GERAL');
+  assert.equal(normalizeTargetModel(null), 'GERAL');
+  assert.equal(TARGET_MODEL_CONFIGS.OPENAI_GPT_IMAGE_2_5_SUNBURST.apiModelId, 'gpt-image-2.5-sunburst');
+  assert.equal(TARGET_MODEL_CONFIGS.OPENAI_GPT_IMAGE_2_5_FLARE.apiModelId, 'gpt-image-2.5-flare');
+  console.log('  ✓ TEST 23.1: Normalização e migração transparente do ID legado "OPENAI" validadas.');
+
+  // TEST 23.2: Sunburst com Reconstrução de Identidade e Seções Estruturadas
+  const sunburstIdentityResult = generateSimpleThumbnail({
+    videoTitle: 'A Jornada no Deserto Carmesim',
+    ideaDescription: 'Meu rosto adaptado no guerreiro segurando o mapa mágico',
+    references: [
+      { id: 'ref-target', name: 'guerreiro_carmesim.jpg', url: 'https://example.com/target.jpg', role: 'IMAGEM_ALVO' },
+      { id: 'ref-person', name: 'meu_rosto.jpg', url: 'https://example.com/me.jpg', role: 'PESSOA' }
+    ],
+    targetModel: 'OPENAI_GPT_IMAGE_2_5_SUNBURST',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: true,
+    preserveProduct: false
+  });
+
+  const sbPrompt = sunburstIdentityResult.finalPrompt;
+  assert.ok(sbPrompt.includes('GOAL:'), 'Sunburst deve conter seção GOAL:');
+  assert.ok(sbPrompt.includes('REFERENCE ROLES:'), 'Sunburst deve conter seção REFERENCE ROLES:');
+  assert.ok(sbPrompt.includes('TARGET STRUCTURE:'), 'Sunburst em identity transfer deve conter TARGET STRUCTURE:');
+  assert.ok(sbPrompt.includes('IDENTITY SOURCE:'), 'Sunburst em identity transfer deve conter IDENTITY SOURCE:');
+  assert.ok(sbPrompt.includes('CHANGE:'), 'Sunburst deve conter seção CHANGE:');
+  assert.ok(sbPrompt.includes('ADAPT:'), 'Sunburst deve conter seção ADAPT:');
+  assert.ok(sbPrompt.includes('PRESERVE:'), 'Sunburst deve conter seção PRESERVE:');
+  assert.ok(sbPrompt.includes('ENVIRONMENT:'), 'Sunburst deve conter seção ENVIRONMENT:');
+  assert.ok(sbPrompt.includes('COMPOSITION:'), 'Sunburst deve conter seção COMPOSITION:');
+  assert.ok(sbPrompt.includes('LIGHTING:'), 'Sunburst deve conter seção LIGHTING:');
+  assert.ok(sbPrompt.includes('AVOID:'), 'Sunburst deve conter seção AVOID:');
+
+  // Semântica obrigatória de reconstrução facial
+  assert.ok(
+    sbPrompt.includes('Reconstruct the target subject so it naturally has the recognizable identity of the source person while preserving target geometry, perspective, pose and lighting.'),
+    'Sunburst deve conter frase exata de reconstrução anatômica sem face-swap'
+  );
+
+  // Metadados de saída de imagem (não embutidos como resolução no texto do prompt)
+  assert.ok(!sbPrompt.includes('3840x2160'), 'Dimensões NÃO devem estar hardcoded no texto do prompt');
+  assert.equal(sunburstIdentityResult.outputMetadata?.modelId, 'gpt-image-2.5-sunburst', 'Model ID correto nos metadados');
+  assert.equal(sunburstIdentityResult.outputMetadata?.aspectRatioHint, '3840x2160', 'Aspect ratio hint 3840x2160 nos metadados');
+  assert.ok(sunburstIdentityResult.outputMetadata?.supportedQualities?.includes('xhigh'), 'Suporte a qualidades amplas');
+  console.log('  ✓ TEST 23.2: GPT Image 2.5 Sunburst validado com 10 seções estruturadas, reconstrução anatômica e metadados.');
+
+  // TEST 23.3: Flare com Geração Rápida e Redação Concisa
+  const flareResult = generateSimpleThumbnail({
+    videoTitle: 'Setup de Edição 2026',
+    ideaDescription: 'Notebook profissional na bancada iluminada',
+    references: [],
+    targetModel: 'OPENAI_GPT_IMAGE_2_5_FLARE',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+
+  const flarePrompt = flareResult.finalPrompt;
+  assert.ok(flarePrompt.includes('GOAL:'), 'Flare deve conter seção GOAL:');
+  assert.ok(flarePrompt.includes('TARGET IMAGE:'), 'Flare deve conter TARGET IMAGE:');
+  assert.ok(flarePrompt.includes('CHANGE:'), 'Flare deve conter CHANGE:');
+  assert.ok(flarePrompt.includes('PRESERVE:'), 'Flare deve conter PRESERVE:');
+  assert.ok(flarePrompt.includes('AVOID:'), 'Flare deve conter AVOID:');
+  assert.ok(!flarePrompt.includes('2048x1152'), 'Dimensões Flare NÃO devem estar no texto do prompt');
+  assert.equal(flareResult.outputMetadata?.modelId, 'gpt-image-2.5-flare', 'Model ID gpt-image-2.5-flare nos metadados');
+  assert.equal(flareResult.outputMetadata?.aspectRatioHint, '2048x1152', 'Aspect ratio hint 2048x1152 nos metadados');
+  console.log('  ✓ TEST 23.3: GPT Image 2.5 Flare validado com estrutura correta e resolução rápida 2048x1152 em metadados.');
+
+  // TEST 23.4: Compatibilidade de Entrada com ID Legado 'OPENAI'
+  const legacyResult = generateSimpleThumbnail({
+    videoTitle: 'Review de Teclado Mecânico',
+    ideaDescription: 'Teclado de alumínio minimalista com switch óptico',
+    references: [],
+    targetModel: 'OPENAI',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  assert.ok(legacyResult.finalPrompt.includes('GOAL:'), 'Input com "OPENAI" legado deve gerar formato estruturado Sunburst');
+  assert.equal(legacyResult.outputMetadata?.modelId, 'gpt-image-2.5-sunburst', 'Input legado migra para metadados Sunburst');
+  console.log('  ✓ TEST 23.4: Entrada com targetModel "OPENAI" legado processada e migrada para Sunburst perfeitamente.');
+
+  // TEST 23.5: Modelo GERAL permanece agnóstico e sem seções de fornecedor
+  const geralResult = generateSimpleThumbnail({
+    videoTitle: 'Vlog Diário',
+    ideaDescription: 'Apresentador falando em café iluminado',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  assert.ok(!geralResult.finalPrompt.includes('GOAL:'), 'GERAL mantém formato limpo e neutro');
+  assert.ok(geralResult.finalPrompt.includes('Photographic YouTube thumbnail'), 'GERAL mantém cabeçalho fotográfico padrão');
+  console.log('  ✓ TEST 23.5: TargetModel "GERAL" permanece 100% agnóstico e limpo.');
+}
+
 console.log('\n✅ TODOS OS TESTES PASSARAM COM SUCESSO! VALIDAÇÃO CONCLUÍDA.');

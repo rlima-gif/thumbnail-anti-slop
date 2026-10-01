@@ -11,8 +11,78 @@ import type {
   TaskType,
   ScenePlan,
   AttributeOwner,
-  ProvenanceOrigin
+  ProvenanceOrigin,
+  TargetModel,
+  ImageOutputMetadata,
+  OpenAIImageQuality
 } from '@/types/simple';
+export function normalizeTargetModel(model?: string | null): TargetModel {
+  if (!model) return 'GERAL';
+  if (model === 'OPENAI') return 'OPENAI_GPT_IMAGE_2_5_SUNBURST';
+  const valid: TargetModel[] = [
+    'GERAL',
+    'OPENAI_GPT_IMAGE_2_5_SUNBURST',
+    'OPENAI_GPT_IMAGE_2_5_FLARE',
+    'GEMINI',
+    'MIDJOURNEY',
+    'FLUX'
+  ];
+  if (valid.includes(model as TargetModel)) return model as TargetModel;
+  return 'GERAL';
+}
+
+export const TARGET_MODEL_CONFIGS = {
+  GERAL: {
+    id: 'GERAL' as TargetModel,
+    displayName: 'Geral (Compatível com todos)',
+    description: 'Prompt limpo e agnóstico de provedor para qualquer gerador moderno.'
+  },
+  OPENAI_GPT_IMAGE_2_5_SUNBURST: {
+    id: 'OPENAI_GPT_IMAGE_2_5_SUNBURST' as TargetModel,
+    apiModelId: 'gpt-image-2.5-sunburst',
+    displayName: 'OpenAI — GPT Image 2.5 Sunburst',
+    description: 'Máxima fidelidade para thumbnails exigentes, preservação estrita de identidade, produtos e edições precisas.',
+    aspectRatio16_9Hint: '3840x2160',
+    aspectRatio9_16Hint: '2160x3840',
+    supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'] as OpenAIImageQuality[],
+    defaultQuality: 'high' as OpenAIImageQuality
+  },
+  OPENAI_GPT_IMAGE_2_5_FLARE: {
+    id: 'OPENAI_GPT_IMAGE_2_5_FLARE' as TargetModel,
+    apiModelId: 'gpt-image-2.5-flare',
+    displayName: 'OpenAI — GPT Image 2.5 Flare',
+    description: 'Geração rápida e eficiente para thumbnails diárias e experimentação iterativa.',
+    aspectRatio16_9Hint: '2048x1152',
+    aspectRatio9_16Hint: '1152x2048',
+    supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh'] as OpenAIImageQuality[],
+    defaultQuality: 'auto' as OpenAIImageQuality
+  },
+  GEMINI: {
+    id: 'GEMINI' as TargetModel,
+    displayName: 'Google Gemini Image',
+    description: 'Otimizado para fidelidade física, perspectiva óptica natural e zero plastificação.'
+  },
+  MIDJOURNEY: {
+    id: 'MIDJOURNEY' as TargetModel,
+    displayName: 'Midjourney',
+    description: 'Com parâmetros de proporção (--ar) e --style raw sob demanda.'
+  },
+  FLUX: {
+    id: 'FLUX' as TargetModel,
+    displayName: 'FLUX',
+    description: 'Otimizado para textura tátil profissional e perspectiva óptica 35mm.'
+  },
+  OPENAI: {
+    id: 'OPENAI' as TargetModel,
+    apiModelId: 'gpt-image-2.5-sunburst',
+    displayName: 'OpenAI (Legado)',
+    description: 'Redirecionado automaticamente para GPT Image 2.5 Sunburst.',
+    aspectRatio16_9Hint: '3840x2160',
+    aspectRatio9_16Hint: '2160x3840',
+    supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'] as OpenAIImageQuality[],
+    defaultQuality: 'high' as OpenAIImageQuality
+  }
+};
 
 // Internal Anti-Slop Safeguards grouped strictly by Section 8 requirements
 export const CORE_ANTI_SLOP_AVOID = [
@@ -894,6 +964,265 @@ export interface PromptBuilderResult {
   approachTitle: string;
   typographyPlan?: string;
   cleanedPlan: ScenePlan;
+  outputMetadata?: ImageOutputMetadata;
+}
+
+export function resolveOutputMetadata(
+  targetModel: TargetModel = 'GERAL',
+  aspectRatio: '16:9' | '9:16' = '16:9'
+): ImageOutputMetadata | undefined {
+  const norm = normalizeTargetModel(targetModel);
+  if (norm === 'OPENAI_GPT_IMAGE_2_5_SUNBURST') {
+    return {
+      modelId: 'gpt-image-2.5-sunburst',
+      targetModel: 'OPENAI_GPT_IMAGE_2_5_SUNBURST',
+      aspectRatioHint: aspectRatio === '9:16' ? '2160x3840' : '3840x2160',
+      quality: 'high',
+      supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh', 'max']
+    };
+  }
+  if (norm === 'OPENAI_GPT_IMAGE_2_5_FLARE') {
+    return {
+      modelId: 'gpt-image-2.5-flare',
+      targetModel: 'OPENAI_GPT_IMAGE_2_5_FLARE',
+      aspectRatioHint: aspectRatio === '9:16' ? '1152x2048' : '2048x1152',
+      quality: 'auto',
+      supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh']
+    };
+  }
+  return undefined;
+}
+
+/**
+ * Builds structured prompt for OpenAI GPT Image 2.5 targets (Sunburst / Flare).
+ * Enforces structured sections:
+ * GOAL, REFERENCE ROLES, TARGET IMAGE (or TARGET STRUCTURE / IDENTITY SOURCE),
+ * CHANGE, ADAPT, PRESERVE, ENVIRONMENT, COMPOSITION, LIGHTING, AVOID.
+ * Note: Aspect ratio resolutions and qualities are maintained in metadata, NOT hardcoded in prompt.
+ */
+export function buildOpenAIStructuredPrompt({
+  plan,
+  input,
+  variant,
+  typographyDirective,
+  arParam
+}: {
+  plan: ScenePlan;
+  input: CreateThumbnailInput;
+  variant: 'SUNBURST' | 'FLARE';
+  typographyDirective: string;
+  arParam: string;
+}): string {
+  const { videoTitle = '', ideaDescription = '', references = [], extraInstructions } = input;
+  const cleanIdea = ideaDescription.trim() || videoTitle.trim();
+  const targetName = plan.targetImage?.name || 'personagem/imagem mestre';
+  const idName = plan.identitySource?.name || 'foto de identidade';
+  const prodName = plan.productSource?.name || 'novo produto';
+  const envName = plan.environmentSource?.name || 'novo cenário';
+
+  const isSunburst = variant === 'SUNBURST';
+
+  // 1. GOAL
+  let goal = '';
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    goal = isSunburst
+      ? `Execute high-fidelity photographic YouTube thumbnail with precise anatomical identity reconstruction, organically embodying source individual facial identity into target character body and world without synthetic AI gloss or beauty filters.`
+      : `Photographic YouTube thumbnail with anatomical identity reconstruction of the target character embodying source identity.`;
+  } else if (plan.taskType === 'REPLACE_OBJECT') {
+    goal = isSunburst
+      ? `Surgically replace the held object with the referenced physical hardware with exact industrial geometry, chassis proportions, matte tactile finish, and natural hand grip contact.`
+      : `Surgically replace held object with referenced hardware while preserving human pose, lighting, and scene context.`;
+  } else if (plan.taskType === 'CHANGE_ENVIRONMENT') {
+    goal = isSunburst
+      ? `Seamlessly transport the primary subject into the referenced environment, preserving authentic human identity, clothing, and posture while realistically harmonizing directional environmental lighting.`
+      : `Replace background with referenced environment while preserving subject identity, clothing, and framing.`;
+  } else {
+    goal = isSunburst
+      ? `Generate an authentic, high-impact photographic YouTube thumbnail for "${cleanIdea}". Maximize click-through readability at small mobile feed scale (120px) through clean figure-ground separation and tactile physical realism.`
+      : `Generate a photographic YouTube thumbnail for "${cleanIdea}". Clean visual hierarchy and strong mobile readability.`;
+  }
+
+  // 2. REFERENCE ROLES
+  let refRolesText = '';
+  if (references && references.length > 0) {
+    const roleLines = references.map(r => {
+      const roleLabel =
+        r.role === 'IMAGEM_ALVO' ? 'TARGET IMAGE / MASTER' :
+        r.role === 'PESSOA' ? 'PERSON / IDENTITY SOURCE' :
+        r.role === 'PRODUTO' ? 'PRODUCT / HARDWARE' :
+        r.role === 'CENÁRIO' ? (r.scenarioMode === 'REFERENCIA_AMBIENTE' ? 'SCENARIO / MOOD ATMOSPHERE' : 'SCENARIO / EXACT ENVIRONMENT') :
+        r.role === 'ESTILO' ? 'STYLE / MOOD' :
+        r.role === 'COMPOSIÇÃO' ? 'COMPOSITION' :
+        r.role === 'TIPOGRAFIA' ? 'TYPOGRAPHY' : 'SUPPORT REFERENCE';
+      return `- ${roleLabel}: "${r.name}"`;
+    });
+    refRolesText = roleLines.join('\n');
+  } else {
+    refRolesText = 'No external image references. Ground all elements from explicit concept description.';
+  }
+
+  // 3. TARGET STRUCTURE & IDENTITY SOURCE (or TARGET IMAGE)
+  let targetSection = '';
+  const hairDesc = plan.hairOwner === 'TARGET'
+    ? `hairstyle, hair color, and texture preserved from target master (${targetName})`
+    : plan.hairOwner === 'PERSON_REF'
+    ? `personal hairstyle from identity reference (${idName})`
+    : 'natural hair styling';
+
+  const beardDesc = plan.beardOwner === 'TARGET'
+    ? `facial hair styling preserved from target master (${targetName})`
+    : plan.beardOwner === 'PERSON_REF'
+    ? `personal beard from identity reference (${idName})`
+    : 'natural clean facial finish';
+
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    const targetStructureText = isSunburst
+      ? `Master character image ("${targetName}"): Strictly preserves master composition, camera angle, 16:9 framing distance, body posture, head tilt, and 3D skull orientation. Exact target character armor, physical fabrics, metal finishes, weathered textures, hair styling (${hairDesc}), and handheld physical props.`
+      : `Master character ("${targetName}"): Preserves composition, camera angle, body posture, skull angle, armor, hair styling (${hairDesc}), and held props.`;
+
+    const identitySourceText = isSunburst
+      ? `Person reference ("${idName}"): Reconstruct the target subject so it naturally has the recognizable identity of the source person while preserving target geometry, perspective, pose and lighting. Incorporate recognizable bone structure, eye shape, nose structure, mouth proportions, natural facial asymmetry, and true age.`
+      : `Person reference ("${idName}"): Reconstruct the target subject so it naturally has the recognizable identity of the source person while preserving target geometry, perspective, pose and lighting. Preserves natural bone structure, eye shape, and age.`;
+
+    targetSection = `TARGET STRUCTURE:\n${targetStructureText}\n\nIDENTITY SOURCE:\n${identitySourceText}`;
+  } else if (plan.targetImage) {
+    const targetImageText = isSunburst
+      ? `Master photo ("${targetName}"): Master photographic anchor. Preserves camera perspective, subject framing, scene lighting direction, and all original elements not explicitly marked for replacement in CHANGE.`
+      : `Master photo ("${targetName}"): Master visual anchor for framing, perspective, and unedited elements.`;
+    targetSection = `TARGET IMAGE:\n${targetImageText}`;
+  } else {
+    targetSection = isSunburst
+      ? `TARGET IMAGE:\nNone (original photographic composition established from scratch).`
+      : `TARGET IMAGE:\nNone (original scene generated from scratch).`;
+  }
+
+  // 4. CHANGE
+  let changeText = '';
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    changeText = isSunburst
+      ? `Reconstruct facial anatomy to embody the source individual ("${idName}"). Strictly map facial bone structure and features onto target character's 3D skull angle, head tilt, and gaze direction without altering target body posture, armor, hair styling, or physical equipment.`
+      : `Reconstruct facial anatomy to match source identity ("${idName}") mapped to target 3D skull angle and gaze.`;
+  } else if (plan.taskType === 'REPLACE_OBJECT') {
+    changeText = isSunburst
+      ? `Replace original held object with exact physical hardware geometry, chassis proportions, ports, button seams, screen ratio, and tactile matte materials from product reference ("${prodName}").`
+      : `Replace held object with hardware geometry, ports, and materials from product reference ("${prodName}").`;
+  } else if (plan.taskType === 'CHANGE_ENVIRONMENT') {
+    changeText = isSunburst
+      ? `Replace background setting entirely with authentic architectural space, spatial depth, perspective, and lighting atmosphere from scenario reference ("${envName}").`
+      : `Replace background setting with environment and atmosphere from scenario reference ("${envName}").`;
+  } else {
+    changeText = isSunburst
+      ? `Establish complete photographic composition and hero subject based on: "${cleanIdea}".`
+      : `Establish photographic composition for: "${cleanIdea}".`;
+  }
+
+  if (extraInstructions && extraInstructions.trim().length > 0) {
+    changeText += `\nDIRECTOR NOTES: ${extraInstructions.trim()}`;
+  }
+
+  // 5. ADAPT
+  let adaptText = '';
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    adaptText = isSunburst
+      ? `Harmonize skin tones, directional key lighting, and ambient light bounce to match target scene. Motivated specular highlights on skin pores without plastic smoothing. Seamless anatomical transition at hairline and neck. Natural hand grip around equipment with correct visible finger count according to pose and natural occlusion.`
+      : `Harmonize skin tones and light bounce to target scene lighting with clean natural hairline and neck transition. Natural hand grip.`;
+  } else if (plan.taskType === 'REPLACE_OBJECT') {
+    adaptText = isSunburst
+      ? `Hand grip and fingers naturally interacting with the new hardware: anatomically plausible hands, natural grip around the device, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting chassis surfaces.`
+      : `Hand grip naturally wrapped around new hardware with anatomically correct fingers and contact.`;
+  } else if (plan.taskType === 'CHANGE_ENVIRONMENT') {
+    adaptText = isSunburst
+      ? `Subtle motivated environmental light bounce on shoulders and silhouette edges consistent with new setting light sources, physically grounding subject without artificial halos or green-screen cut-and-paste artifacts.`
+      : `Subtle environmental light bounce on subject edges to physically ground in new environment without halos.`;
+  } else {
+    adaptText = isSunburst
+      ? `Anatomically plausible hands with natural grip, correct visible finger count according to pose and natural occlusion. Balanced optical falloff between subject and background.`
+      : `Anatomically correct hands with natural grip and authentic optical depth.`;
+  }
+
+  // 6. PRESERVE
+  let preserveText = '';
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    preserveText = isSunburst
+      ? `1. Master character body posture, head angle, 3D skull rotation, and eye gaze direction.\n2. Exact armor / clothing fabrics, metal finishes, weathered textures, and physical seams.\n3. Handheld props, equipment, and finger contact placement.\n4. Hair & beard styling: ${hairDesc}, ${beardDesc}.\n5. Target background setting and atmospheric depth.`
+      : `1. Character posture, skull angle, and gaze direction.\n2. Armor/clothing, held props, and natural hand grip.\n3. Hair and facial hair styling: ${hairDesc}, ${beardDesc}.\n4. Target background setting.`;
+  } else if (plan.taskType === 'REPLACE_OBJECT') {
+    preserveText = isSunburst
+      ? `1. Exact subject facial identity, true age, expression, and gaze direction from master photo.\n2. Subject clothing, body posture, and camera distance.\n3. Scene background, ambient lighting direction, and 16:9 framing.`
+      : `1. Subject identity, facial expression, and posture.\n2. Clothing, background setting, and lighting direction.`;
+  } else if (plan.taskType === 'CHANGE_ENVIRONMENT') {
+    preserveText = isSunburst
+      ? `1. Exact subject facial identity, true age, and composed facial expression.\n2. Subject body posture, clothing fabrics, and any held objects.\n3. Framing scale and camera distance from master photo.`
+      : `1. Subject facial identity, expression, and posture.\n2. Clothing and held items.`;
+  } else {
+    preserveText = isSunburst
+      ? `1. Natural human facial asymmetry, closed-mouth composed expression, and natural skin texture without plastic smoothing.\n2. Authentic physical materials and tactile textures.\n3. Grounded real-world scale and camera perspective.`
+      : `1. Natural facial asymmetry, closed-mouth expression, and skin texture.\n2. Physical materials and camera perspective.`;
+  }
+
+  // 7. ENVIRONMENT
+  let envText = '';
+  if (plan.environmentSource) {
+    envText = isSunburst
+      ? `Authentic environment integrated from scenario reference ("${plan.environmentSource.name}"), preserving real-world spatial architecture, perspective, and atmospheric depth.`
+      : `Environment integrated from reference ("${plan.environmentSource.name}").`;
+  } else if (plan.environmentOwner === 'USER') {
+    envText = isSunburst
+      ? `Grounded physical setting as explicitly requested ("${cleanIdea}"), avoiding generic clutter.`
+      : `Physical setting as explicitly described by user.`;
+  } else if (plan.targetImage) {
+    envText = isSunburst
+      ? `Exact background environment preserved from master photo ("${targetName}").`
+      : `Background preserved from master photo.`;
+  } else {
+    envText = isSunburst
+      ? `Clean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on primary subject without domestic clutter (no unrequested bedrooms, living rooms, sofas, desks or lamps).`
+      : `Clean minimalist backdrop with optical falloff, generous negative space, and zero domestic clutter.`;
+  }
+
+  // 8. COMPOSITION
+  const compText = isSunburst
+    ? `16:9 widescreen photographic framing (${arParam}). Clean figure-ground separation with bold subject silhouette optimized for instant readability at 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth. ${typographyDirective}`
+    : `16:9 widescreen framing (${arParam}). Clear visual hierarchy for 120px mobile readability with 35mm perspective. ${typographyDirective}`;
+
+  // 9. LIGHTING
+  const lightText = isSunburst
+    ? `Physically motivated illumination with clean directional key light, subtle natural fill, and soft realistic shadow falloff. Directional coherence across all elements. Zero unmotivated neon rim lights, laser glows, or synthetic halos.`
+    : `Motivated directional key light with natural shadow falloff. Zero neon rim light or synthetic glow.`;
+
+  // 10. AVOID
+  const avoidList = isSunburst
+    ? `face swap, face paste, flat frontal face pasted on angled head, distorted skull geometry, plastic waxy skin, beauty filter jaw slimming, open mouth screaming shock face, deformed hands, extra fingers, duplicated digits, intersecting hardware, floating embers, flying sparks, neon blue-purple wash, unmotivated rim light, domestic clutter (sofas, bedroom lamps, desks unless requested), ${CORE_ANTI_SLOP_AVOID.slice(0, 18).join(', ')}.`
+    : `face swap, face paste, flat face overlay, plastic skin, open mouth screaming face, extra fingers, neon glow, unmotivated rim light, domestic clutter, ${CORE_ANTI_SLOP_AVOID.slice(0, 12).join(', ')}.`;
+
+  return `GOAL:
+${goal}
+
+REFERENCE ROLES:
+${refRolesText}
+
+${targetSection}
+
+CHANGE:
+${changeText}
+
+ADAPT:
+${adaptText}
+
+PRESERVE:
+${preserveText}
+
+ENVIRONMENT:
+${envText}
+
+COMPOSITION:
+${compText}
+
+LIGHTING:
+${lightText}
+
+AVOID:
+${avoidList}`;
 }
 
 /**
@@ -1076,20 +1405,36 @@ NEGATIVE / STRICTLY AVOID:
 ${CORE_ANTI_SLOP_AVOID.slice(0, 25).join(', ')}.`;
   }
 
-  const audit = auditPromptProvenance(finalPrompt, plan, input.references);
-  finalPrompt = audit.cleanedPrompt;
+  const normalizedModel = normalizeTargetModel(input.targetModel);
 
-  if (input.targetModel === 'MIDJOURNEY') {
+  if (normalizedModel === 'OPENAI_GPT_IMAGE_2_5_SUNBURST') {
+    finalPrompt = buildOpenAIStructuredPrompt({
+      plan,
+      input,
+      variant: 'SUNBURST',
+      typographyDirective,
+      arParam
+    });
+  } else if (normalizedModel === 'OPENAI_GPT_IMAGE_2_5_FLARE') {
+    finalPrompt = buildOpenAIStructuredPrompt({
+      plan,
+      input,
+      variant: 'FLARE',
+      typographyDirective,
+      arParam
+    });
+  } else if (normalizedModel === 'MIDJOURNEY') {
     const arFlag = input.aspectRatio === '9:16' ? '--ar 9:16' : '--ar 16:9';
     const wantsRaw = (input.stylePreset === 'Natural' || input.stylePreset === 'Fotojornalismo') && input.realismLevel === 'Alto' && !/(cinemat|styliz|fantasy|cartoon|3d)/i.test(cleanIdea);
     finalPrompt = wantsRaw ? `${finalPrompt}\n\n${arFlag} --style raw` : `${finalPrompt}\n\n${arFlag}`;
-  } else if (input.targetModel === 'FLUX') {
+  } else if (normalizedModel === 'FLUX') {
     finalPrompt = `[Authentic photography] ${finalPrompt} shot on professional digital camera with 35mm focal length, clean optical perspective, tactile real-world materials.`;
-  } else if (input.targetModel === 'GEMINI') {
+  } else if (normalizedModel === 'GEMINI') {
     finalPrompt = `Google Gemini Imagen Prompt:\n${finalPrompt}\nDirective: Emphasize physical realism, grounded optical perspective, natural skin textures, and zero synthetic AI gloss.`;
-  } else if (input.targetModel === 'OPENAI') {
-    finalPrompt = `DALL-E 3 / GPT-4o Prompt:\n${finalPrompt}\nRule: Photo style, realistic camera shutter capture, natural skin texture, authentic human facial asymmetry, and accurate hardware geometry.`;
   }
+
+  const audit = auditPromptProvenance(finalPrompt, plan, input.references);
+  finalPrompt = audit.cleanedPrompt;
 
   const typographyPlan = buildTypographyPlan(
     thumbnailText,
@@ -1108,7 +1453,8 @@ ${CORE_ANTI_SLOP_AVOID.slice(0, 25).join(', ')}.`;
     cleanedPlan: {
       ...plan,
       unsupportedDetailsRemoved: audit.purged
-    }
+    },
+    outputMetadata: resolveOutputMetadata(input.targetModel, input.aspectRatio)
   };
 }
 
@@ -1437,7 +1783,8 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
       approachTitle: builderResult.approachTitle,
       approachIndex,
       typographyPlan: builderResult.typographyPlan,
-      scenePlan: builderResult.cleanedPlan
+      scenePlan: builderResult.cleanedPlan,
+      outputMetadata: builderResult.outputMetadata || resolveOutputMetadata(targetModel, aspectRatio)
     };
   }
 
@@ -1610,20 +1957,45 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
   const activeAvoidList = buildAntiSlopAvoid(cleanIdea + ' ' + (extraInstructions || ''));
   promptBody += `\n\nNEGATIVE / STRICTLY AVOID:\n${activeAvoidList.join(', ')}.`;
 
+  let typographyDirective = 'Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.';
+  if (textTreatment === 'SEM_TEXTO') {
+    typographyDirective = 'Do not render any text, characters, letters, subtitles or watermark.';
+  } else if (thumbnailText?.trim()) {
+    const posStr = reservedSpacePosition === 'ESQUERDA' ? 'left side' :
+      reservedSpacePosition === 'DIREITA' ? 'right side' :
+      reservedSpacePosition === 'SUPERIOR' ? 'upper top area' : 'lower bottom area';
+    typographyDirective = `Reserve clean, uncluttered negative space on the ${posStr} of the composition specifically for post-production typography ("${thumbnailText.trim()}"). Do not bake distorted AI typography directly into the pixels.`;
+  }
+
   // Model-specific adjustments (No hardcoded versions)
+  const normalizedModel = normalizeTargetModel(targetModel);
   let finalPrompt = promptBody;
 
-  if (targetModel === 'MIDJOURNEY') {
+  if (normalizedModel === 'OPENAI_GPT_IMAGE_2_5_SUNBURST') {
+    finalPrompt = buildOpenAIStructuredPrompt({
+      plan: scenePlan,
+      input,
+      variant: 'SUNBURST',
+      typographyDirective,
+      arParam: aspectRatio === '9:16' ? '9:16 vertical format' : '16:9 widescreen format'
+    });
+  } else if (normalizedModel === 'OPENAI_GPT_IMAGE_2_5_FLARE') {
+    finalPrompt = buildOpenAIStructuredPrompt({
+      plan: scenePlan,
+      input,
+      variant: 'FLARE',
+      typographyDirective,
+      arParam: aspectRatio === '9:16' ? '9:16 vertical format' : '16:9 widescreen format'
+    });
+  } else if (normalizedModel === 'MIDJOURNEY') {
     const arFlag = aspectRatio === '9:16' ? '--ar 9:16' : '--ar 16:9';
     // Regra 2: --style raw somente quando fizer sentido para a intenção visual (realismo/natural/fotojornalismo)
     const wantsRaw = (stylePreset === 'Natural' || stylePreset === 'Fotojornalismo') && realismLevel === 'Alto' && !/(cinemat|styliz|fantasy|cartoon|3d)/i.test(cleanIdea);
     finalPrompt = wantsRaw ? `${promptBody}\n\n${arFlag} --style raw` : `${promptBody}\n\n${arFlag}`;
-  } else if (targetModel === 'FLUX') {
+  } else if (normalizedModel === 'FLUX') {
     finalPrompt = `[Authentic photography] ${promptBody} shot on professional digital camera with 35mm focal length, clean optical perspective, tactile real-world materials.`;
-  } else if (targetModel === 'GEMINI') {
+  } else if (normalizedModel === 'GEMINI') {
     finalPrompt = `Google Gemini Imagen Prompt:\n${promptBody}\nDirective: Emphasize physical realism, grounded optical perspective, natural skin textures, and zero synthetic AI gloss.`;
-  } else if (targetModel === 'OPENAI') {
-    finalPrompt = `DALL-E 3 / GPT-4o Prompt:\n${promptBody}\nRule: Photo style, realistic camera shutter capture, natural skin texture, authentic human facial asymmetry, and accurate hardware geometry.`;
   }
 
   // Audit prompt through Provenance Guard to strip any unsupported defaults or leakage
@@ -1648,7 +2020,8 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
     scenePlan: {
       ...scenePlan,
       unsupportedDetailsRemoved: audit.purged
-    }
+    },
+    outputMetadata: resolveOutputMetadata(targetModel, aspectRatio)
   };
 }
 
