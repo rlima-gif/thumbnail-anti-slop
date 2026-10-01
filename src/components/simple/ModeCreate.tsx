@@ -331,7 +331,7 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
           rows={4}
           value={ideaDescription}
           onChange={e => setIdeaDescription(e.target.value)}
-          placeholder="Descreva sua thumbnail como falaria com uma pessoa...&#10;&#10;Ex: Eu sentado no sofá segurando o Legion Go. Quero mostrar que ele parece outro aparelho depois que troquei o sistema. Quero algo natural e sem neon."
+          placeholder="Descreva sua thumbnail como falaria com uma pessoa...&#10;&#10;Ex: Mostrando o Legion Go com o novo sistema instalado. Quero foco total no aparelho ligado e expressão autêntica, sem neon ou exageros."
           className="w-full bg-transparent text-sm font-sans text-zinc-100 placeholder:text-zinc-500 focus:outline-none resize-y leading-relaxed"
         />
 

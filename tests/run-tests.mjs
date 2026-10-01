@@ -825,4 +825,100 @@ console.log('\n19. Testando Novos Tipos de Referência, Isolamento de Atributos 
   console.log('  ✓ PLANO DE TIPOGRAFIA: Funções visuais, sugestões de fontes reais e mensagem limpa para ausência de texto validadas.');
 }
 
+// 20. Ausência de Viés de Ambiente Doméstico e Ordem de Autoridade de Cenário
+{
+  console.log('\n20. Testando Ausência de Viés de Ambiente Doméstico e Ordem de Autoridade de Cenário...');
+  const { generateSimpleThumbnail, analyzeThumbnailLocally } = await import('../src/lib/simpleEngine/engine.ts');
+
+  // Caso A: Gaming portátil SEM pedido explícito de sofá/sala (Não inventar quarto/sala/sofá)
+  const caseGamingNoSofa = generateSimpleThumbnail({
+    videoTitle: 'Testando o Steam Deck',
+    ideaDescription: 'Eu segurando o Steam Deck mostrando a performance.',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: true
+  });
+
+  const promptA = caseGamingNoSofa.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0].toLowerCase();
+  assert.ok(!promptA.includes('sofa'), 'NÃO deve inventar sofá sem pedido explícito');
+  assert.ok(!promptA.includes('living room'), 'NÃO deve inventar living room sem pedido explícito');
+  assert.ok(!promptA.includes('bedroom'), 'NÃO deve inventar bedroom sem pedido explícito');
+  assert.ok(!promptA.includes('desk lamp'), 'NÃO deve inventar desk lamp sem pedido explícito');
+  assert.ok(!promptA.includes('floor lamp'), 'NÃO deve inventar floor lamp sem pedido explícito');
+  assert.ok(!promptA.includes('cushions'), 'NÃO deve inventar almofadas de sofá sem pedido explícito');
+  assert.ok(
+    caseGamingNoSofa.finalPrompt.includes('Minimal neutral background') || caseGamingNoSofa.finalPrompt.includes('Clean minimalist background'),
+    'Deve adotar fundo limpo, minimalista ou neutro por padrão quando ambiente não for especificado'
+  );
+  console.log('  ✓ Nível 5 (Padrão): Gaming portátil sem sofá gera fundo neutro sem inventar sala, sofá ou abajur.');
+
+  // Caso B: Criador geral SEM especificação de ambiente
+  const caseCreatorGeneral = generateSimpleThumbnail({
+    videoTitle: 'Por que parei de usar o iPad',
+    ideaDescription: 'Eu falando diretamente com a câmera sobre a decisão.',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+
+  const promptB = caseCreatorGeneral.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0].toLowerCase();
+  assert.ok(!promptB.includes('living room'), 'Criador geral não deve ser colocado em sala de estar');
+  assert.ok(!promptB.includes('bedroom'), 'Criador geral não deve ser colocado em quarto');
+  assert.ok(!promptB.includes('sofa'), 'Criador geral não deve ser colocado em sofá');
+  assert.ok(!promptB.includes('computer desk'), 'Criador geral não deve inventar escrivaninha');
+  assert.ok(!promptB.includes('desk lamp'), 'Criador geral não deve inventar abajur');
+  console.log('  ✓ Nível 5 (Padrão): Criador geral sem ambiente especificado mantém fundo neutro e sem clichês domésticos.');
+
+  // Caso C: Pedido EXPLÍCITO de sofá (Autoridade Nível 2)
+  const caseExplicitSofa = generateSimpleThumbnail({
+    videoTitle: 'Jogando no sofá',
+    ideaDescription: 'Eu relaxando no sofá da sala jogando Nintendo Switch.',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: true
+  });
+
+  const promptC = caseExplicitSofa.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0].toLowerCase();
+  assert.ok(promptC.includes('sofa'), 'Pedido explícito de sofá DEVE ser respeitado');
+  assert.ok(promptC.includes('living room'), 'Pedido explícito de sala DEVE ser respeitado');
+  console.log('  ✓ Nível 2 (Explícito): Sofá e sala são mantidos quando solicitados explicitamente pelo usuário.');
+
+  // Caso D: Edição / Transferência de Imagem-Alvo (Autoridade Nível 1)
+  const auditResult = analyzeThumbnailLocally('Meu rosto olhando para a câmera');
+  assert.ok(auditResult.fixPrompt.includes('target image environment'), 'Fix prompt deve proteger o ambiente da imagem alvo');
+  console.log('  ✓ Nível 1 (Imagem-Alvo): Modo cirúrgico trava e preserva o ambiente da imagem de origem.');
+
+  // Caso E: Referência de Cenário (Autoridade Nível 3)
+  const caseSceneRef = generateSimpleThumbnail({
+    videoTitle: 'Vlog na Cafeteria',
+    ideaDescription: 'Eu experimentando um café novo.',
+    references: [
+      { id: 'ref-scene-cafe', name: 'Minha Cafeteria', url: 'https://example.com/cafe.jpg', role: 'CENÁRIO', scenarioMode: 'MEU_AMBIENTE' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+
+  assert.ok(caseSceneRef.finalPrompt.includes('Minha Cafeteria'), 'Referência de cenário deve ditar o ambiente');
+  assert.ok(caseSceneRef.finalPrompt.includes('Preserve spatial layout'), 'MEU AMBIENTE deve preservar o layout real');
+  console.log('  ✓ Nível 3 (Referência de Cenário): Referência de cenário dita o ambiente com prioridade.');
+}
+
 console.log('\n✅ TODOS OS TESTES PASSARAM COM SUCESSO! VALIDAÇÃO CONCLUÍDA.');
+

@@ -6,7 +6,8 @@ import type {
   AnalyzeThumbnailSimpleResult,
   VisualDirectionOutput,
   ReservedSpacePosition,
-  TextTreatment
+  TextTreatment,
+  SimpleReference
 } from '@/types/simple';
 
 // Internal Anti-Slop Safeguards grouped strictly by Section 8 requirements
@@ -132,7 +133,7 @@ export function translateVagueBuzzwords(text: string): string[] {
   }
 
   if (/profissional|high[\s-]end|pro\s*look/.test(lower)) {
-    decisions.push('Controlled physical lighting from believable practical room sources with natural falloff and authentic material textures');
+    decisions.push('Controlled physical lighting with motivated directional falloff and authentic material textures');
   }
 
   if (/cinematic/.test(lower)) {
@@ -142,22 +143,130 @@ export function translateVagueBuzzwords(text: string): string[] {
   return decisions;
 }
 
-// Helper to determine context-aware depth of field (Rule 2)
+// Helper for unicode-safe word/phrase boundary matching
+function matchBoundary(text: string, subPattern: string): boolean {
+  const re = new RegExp(`(?:^|[^\\p{L}\\p{N}])(?:${subPattern})(?:[^\\p{L}\\p{N}]|$)`, 'iu');
+  return re.test(text);
+}
+
+// Detects explicit environment request from user text (Rule: Authority order for environment)
+export function detectExplicitEnvironment(text: string): {
+  hasExplicitEnv: boolean;
+  type?: 'sofa' | 'living_room' | 'bedroom' | 'office' | 'desk' | 'studio' | 'workshop' | 'street' | 'nature';
+  descriptionEn?: string;
+  lightingEn?: string;
+} {
+  const lower = text.toLowerCase();
+
+  // 1. Sofa / Couch (Explicitly requested by user)
+  if (matchBoundary(lower, 'no\\s*sof[aá]|num\\s*sof[aá]|em\\s*cima\\s*do\\s*sof[aá]|sof[aá]|couch|on\\s*(?:a\\s*)?sofa|on\\s*(?:the\\s*)?couch')) {
+    return {
+      hasExplicitEnv: true,
+      type: 'sofa',
+      descriptionEn: 'Comfortable living room sofa with authentic fabric texture and natural cushions',
+      lightingEn: 'Warm motivated interior illumination from physical ambient room sources, balanced and natural'
+    };
+  }
+
+  // 2. Living Room
+  if (matchBoundary(lower, 'na\\s*sala(?:\\s*de\\s*estar)?|sala\\s*de\\s*estar|living\\s*room')) {
+    return {
+      hasExplicitEnv: true,
+      type: 'living_room',
+      descriptionEn: 'Authentic living room setting with natural interior architecture and decor',
+      lightingEn: 'Motivated interior illumination from physical room sources, grounded and balanced'
+    };
+  }
+
+  // 3. Bedroom
+  if (matchBoundary(lower, 'no\\s*quarto|num\\s*quarto|quarto|bedroom')) {
+    return {
+      hasExplicitEnv: true,
+      type: 'bedroom',
+      descriptionEn: 'Authentic bedroom interior with natural personal decor and grounded physical atmosphere',
+      lightingEn: 'Soft motivated room lighting with natural directional falloff'
+    };
+  }
+
+  // 4. Desk / Table / Workbench
+  if (matchBoundary(lower, 'na\\s*bancada|numa\\s*bancada|bancada|workbench')) {
+    return {
+      hasExplicitEnv: true,
+      type: 'workshop',
+      descriptionEn: 'Organized workbench with clean work surface and authentic tools',
+      lightingEn: 'Diffused high-CRI task lighting with soft natural shadows'
+    };
+  }
+
+  if (matchBoundary(lower, 'na\\s*mesa|numa\\s*mesa|mesa|on\\s*(?:a\\s*)?desk|on\\s*(?:the\\s*)?desk|on\\s*(?:a\\s*)?table|on\\s*(?:the\\s*)?table|desk')) {
+    return {
+      hasExplicitEnv: true,
+      type: 'desk',
+      descriptionEn: 'Clean neutral table surface with soft optical falloff',
+      lightingEn: 'Diffused task illumination with natural soft shadow falloff'
+    };
+  }
+
+  // 5. Office
+  if (matchBoundary(lower, 'no\\s*escrit[oó]rio|num\\s*escrit[oó]rio|escrit[oó]rio|office')) {
+    return {
+      hasExplicitEnv: true,
+      type: 'office',
+      descriptionEn: 'Authentic office space with professional background elements and depth',
+      lightingEn: 'Even motivated office ambient illumination with soft directional key'
+    };
+  }
+
+  // 6. Studio
+  if (matchBoundary(lower, 'no\\s*est[uú]dio|num\\s*est[uú]dio|est[uú]dio|studio')) {
+    return {
+      hasExplicitEnv: true,
+      type: 'studio',
+      descriptionEn: 'Professional studio background with deliberate tonal separation and clean depth',
+      lightingEn: 'Controlled studio key and fill lighting with natural shadow gradation'
+    };
+  }
+
+  // 7. Street / Urban
+  if (matchBoundary(lower, 'na\\s*rua|na\\s*avenida|na\\s*cidade|cen[aá]rio\\s*urbano|street|city')) {
+    return {
+      hasExplicitEnv: true,
+      type: 'street',
+      descriptionEn: 'Authentic outdoor urban street background with realistic architectural depth',
+      lightingEn: 'Natural outdoor daylight with environmental bounce and atmospheric falloff'
+    };
+  }
+
+  // 8. Nature / Outdoors
+  if (matchBoundary(lower, 'na\\s*praia|no\\s*mar|no\\s*campo|na\\s*floresta|no\\s*parque|na\\s*montanha|outdoors?|nature|beach|forest')) {
+    return {
+      hasExplicitEnv: true,
+      type: 'nature',
+      descriptionEn: 'Authentic natural outdoor environment with organic depth and textures',
+      lightingEn: 'Natural open-air daylight with realistic environmental shadow falloff'
+    };
+  }
+
+  return { hasExplicitEnv: false };
+}
+
+// Helper to determine context-aware depth of field
 export function determineDepthOfField(idea: string, approachIndex: number): string {
-  const lower = idea.toLowerCase();
-  const roomMatters = /sof[aá]|quarto|sala|mesa|escrit[oó]rio|oficina|est[uú]dio|loja|rua|cen[aá]rio|parede|ambiente|workshop|room|desk|living/i.test(lower);
+  const explicitEnv = detectExplicitEnvironment(idea);
 
   if (approachIndex === 1) {
     // Hero close-up on object
     return 'natural optical separation softly isolating the foreground subject while preserving the secondary presence behind it';
   }
 
-  if (roomMatters) {
-    // When the room/environment matters, preserve background readability
-    return 'balanced optical depth that preserves the lived-in environmental context and room details without distracting from the subject';
+  if (explicitEnv.hasExplicitEnv) {
+    if (explicitEnv.type === 'sofa' || explicitEnv.type === 'living_room') {
+      return 'balanced optical depth that preserves the lived-in environmental context without distracting from the subject';
+    }
+    return 'balanced optical depth that preserves environmental context without distracting from the subject';
   }
 
-  return 'natural photographic depth of field with organic optical falloff';
+  return 'natural photographic depth of field with organic optical falloff, softly defocusing the background to prioritize subject readability';
 }
 
 // Interprets user intent with fidelity to the idea and genuine diversity across approaches
@@ -165,7 +274,8 @@ export function interpretUserIntent(
   title: string,
   idea: string,
   approachIndex = 0,
-  hasPersonOverride?: boolean
+  hasPersonOverride?: boolean,
+  references: SimpleReference[] = []
 ): {
   subjectEn: string;
   contextEn: string;
@@ -183,23 +293,44 @@ export function interpretUserIntent(
   const personKeywords = /(^|\b)(eu|meu\s*rosto|minha\s*rea[çc][ãa]o|pessoa|homem|mulher|criador|cara|apresentador|youtuber|selfie|jogador)(\b|$)/i;
   const hasPerson = hasPersonOverride !== undefined ? hasPersonOverride : personKeywords.test(combined);
 
+  // Environment authority order resolution
+  const explicitEnv = detectExplicitEnvironment(combined);
+  const sceneRefs = (references || []).filter(r => r.role === 'CENÁRIO');
+  const myEnvRef = sceneRefs.find(r => r.scenarioMode !== 'REFERENCIA_AMBIENTE');
+  const refEnvRef = sceneRefs.find(r => r.scenarioMode === 'REFERENCIA_AMBIENTE');
+
+  const hasExplicitEnv = explicitEnv.hasExplicitEnv || sceneRefs.length > 0;
+  const resolvedContextEn = myEnvRef
+    ? `Authentic physical location from the reference photo (${myEnvRef.name}), preserving spatial structure and recognizable real-world environmental features`
+    : refEnvRef
+    ? `Atmospheric background inspired by the environment mood reference (${refEnvRef.name}), adopting general density, materials, and tonal character without copying geometry`
+    : explicitEnv.hasExplicitEnv
+    ? explicitEnv.descriptionEn!
+    : 'Clean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on the primary subject without domestic room clutter';
+
+  const resolvedLightingEn = myEnvRef
+    ? 'Physically motivated illumination matching the authentic sources of the referenced location, with natural shadow falloff'
+    : explicitEnv.hasExplicitEnv
+    ? explicitEnv.lightingEn!
+    : 'Clean motivated key illumination with soft natural shadow falloff, emphasizing genuine physical textures and form without artificial glare';
+
   // Specific Archetype 1: Side-by-Side Comparison (No person, e.g. "Um console antigo ao lado de um console moderno")
   const isSideBySide = /(ao\s*lado\s*de|comparando|compara[çc][ãa]o|vs\b|versus|lado\s*a\s*lado|antigo.*moderno|antigo.*novo|evolu[çc][ãa]o)/i.test(combined) && !hasPerson;
   if (isSideBySide) {
     return {
       approachTitle: 'Comparação Geracional Lado a Lado',
       hasPerson: false,
-      subjectEn: 'Direct physical side-by-side comparison of a vintage retro gaming console next to a sleek modern gaming console resting on a clean neutral tabletop, showcasing generational evolution of industrial design',
-      contextEn: 'Clean neutral tabletop surface with subtle matte slate or wooden grain, calm background with soft natural falloff',
-      lightingEn: 'Natural soft side window light grazing both consoles evenly, highlighting material contrasts and textures without artificial digital glare',
+      subjectEn: 'Direct physical side-by-side comparison of a vintage retro gaming console next to a sleek modern gaming console resting on a clean neutral surface, showcasing generational evolution of industrial design',
+      contextEn: 'Clean neutral studio surface with subtle matte slate finish, calm background with soft natural optical falloff',
+      lightingEn: 'Soft balanced directional key lighting grazing both consoles evenly, highlighting material contrasts and textures without artificial digital glare',
       compositionEn: 'Balanced 16:9 side-by-side composition with generous negative space and clear silhouette recognition at 120px mobile scale',
       expressionEn: 'None (pure object comparison scene without human presence)',
       directionPt: {
         ideia: 'Contraste histórico e estético entre duas eras: o design clássico justaposto ao moderno em um enquadramento direto e equilibrado.',
         foco: 'A justaposição física direta entre o console antigo e o moderno, evidenciando as diferenças de formato, portas e acabamentos.',
-        composicao: 'Enquadramento 16:9 limpo dividindo o espaço em proporção harmônica sobre a mesa, com espaço negativo para rápida leitura visual.',
+        composicao: 'Enquadramento 16:9 limpo dividindo o espaço em proporção harmônica sobre a superfície neutra, com espaço negativo para rápida leitura visual.',
         expressao: 'Nenhuma (cena puramente comparativa de objetos sem presença humana).',
-        visual: 'Luz natural lateral revelando a textura e o desgaste do plástico retrô em contraste com o acabamento fosco contemporâneo.'
+        visual: 'Luz direcional suave revelando a textura e o desgaste do plástico retrô em contraste com o acabamento fosco contemporâneo.'
       }
     };
   }
@@ -210,51 +341,60 @@ export function interpretUserIntent(
     return {
       approachTitle: 'Frustração Humana e Produto Danificado',
       hasPerson: true,
-      subjectEn: 'The creator sitting at a normal domestic table, looking down thoughtfully at a visibly broken and cracked physical product with sincere quiet disappointment',
-      contextEn: 'Authentic everyday home room or workshop desk with realistic domestic details and grounded atmosphere',
-      lightingEn: 'Subdued practical overhead domestic lamp light with natural shadow falloff across the tabletop',
+      subjectEn: 'The creator looking down thoughtfully at a visibly broken and cracked physical product with sincere quiet disappointment',
+      contextEn: hasExplicitEnv
+        ? resolvedContextEn
+        : 'Minimal neutral background with soft optical falloff, keeping undivided focus on the subject and the damaged product',
+      lightingEn: hasExplicitEnv
+        ? resolvedLightingEn
+        : 'Subdued atmospheric directional lighting with natural shadow falloff, emphasizing the physical damage and tactile textures without artificial glare',
       compositionEn: 'Two-tier depth framing establishing visual narrative tension between the cracked foreground product and the creator downcast gaze in the midground',
       expressionEn: 'Authentic quiet disappointment, subtle downcast eyes, furrowed brow, closed mouth, sincere human emotional gravity without theatrical shouting',
       directionPt: {
         ideia: 'Narrativa humana de frustração honesta: o criador confronta o produto quebrado sem histeria ou melodrama.',
-        foco: 'A reação contida do criador em conexão direta com o produto danificado em primeiro plano sobre a mesa.',
-        composicao: 'Plano médio fechado com o produto danificado em destaque na mesa e o criador ao fundo observando desapontado.',
+        foco: 'A reação contida do criador em conexão direta com o produto danificado em primeiro plano.',
+        composicao: 'Plano médio fechado com o produto danificado em destaque no primeiro plano e o criador observando desapontado com fundo limpo.',
         expressao: 'Desapontamento sincero e contido: sobrancelhas ligeiramente franzidas, olhar compenetrado, lábios fechados. Proibido qualquer grito ou careta de choque.',
-        visual: 'Iluminação intimista de ambiente doméstico com sombras suaves, destacando a gravidade do momento e a textura tátil do dano no produto.'
+        visual: 'Iluminação sóbria e focada com sombras suaves, destacando a gravidade do momento e a textura tátil do dano no produto.'
       }
     };
   }
 
-  // Specific Archetype 3: Opened Laptop / Hardware Teardown on Desk (No person, e.g. "Notebook aberto na mesa mostrando uma diferença de hardware")
+  // Specific Archetype 3: Opened Laptop / Hardware Teardown (No person, e.g. "Notebook aberto na mesa mostrando uma diferença de hardware")
   const isOpenedNotebook = (/(notebook|laptop).*aberto/i.test(combined) || (/(notebook|laptop|hardware|pe[çc]a|circuito)/i.test(combined) && !hasPerson));
   if (isOpenedNotebook) {
     return {
       approachTitle: 'Bancada Técnica / Hardware Aberto',
       hasPerson: false,
-      subjectEn: 'An opened laptop resting on a clean wooden work desk, chassis lower panel removed to clearly reveal internal cooling hardware and motherboard components',
-      contextEn: 'Authentic everyday work desk with organized precision repair tools and clean matte surface',
-      lightingEn: 'Diffused neutral desk lamp illumination with natural soft shadow falloff, eliminating specularity on electronic components',
+      subjectEn: 'An opened laptop chassis resting on a clean neutral work surface, lower panel removed to clearly reveal internal cooling hardware and motherboard components',
+      contextEn: hasExplicitEnv
+        ? resolvedContextEn
+        : 'Clean neutral work surface with soft optical falloff, keeping undivided focus on the internal components',
+      lightingEn: hasExplicitEnv
+        ? resolvedLightingEn
+        : 'Diffused neutral high-CRI task illumination with natural soft shadow falloff, eliminating specularity on electronic components',
       compositionEn: 'Clean angled medium close-up focused on the specific hardware difference, maintaining clean silhouette and legible spatial orientation',
       expressionEn: 'None (pure technical hardware inspection)',
       directionPt: {
-        ideia: 'Comparação técnica de hardware: o notebook aberto na mesa revelando os detalhes internos reais de engenharia.',
-        foco: 'A área interna aberta do notebook e a diferença de hardware exposta com nitidez sobre a mesa.',
-        composicao: 'Enquadramento em ângulo técnico de 45 graus sobre a mesa de trabalho, permitindo leitura imediata da peça de hardware.',
+        ideia: 'Comparação técnica de hardware: o notebook aberto revelando os detalhes internos reais de engenharia.',
+        foco: 'A área interna aberta do notebook e a diferença de hardware exposta com nitidez.',
+        composicao: 'Enquadramento em ângulo técnico de 45 graus sobre a superfície de trabalho, permitindo leitura imediata da peça de hardware.',
         expressao: 'Nenhuma (cena focada puramente em objeto técnico sem presença humana).',
-        visual: 'Iluminação de luminária de mesa difusa com alto CRI, sem pontos de reflexo cegantes na tela ou nos componentes.'
+        visual: 'Iluminação difusa de alto CRI sem pontos de reflexo cegantes na tela ou nos componentes.'
       }
     };
   }
 
-  // Specific Archetype 4: Gaming Handheld in Domestic Living Room (Person on Couch, e.g. "Eu no sofá mostrando meu Legion Go depois de trocar o sistema")
-  const isGamingCouch = /(sof[aá]|legion|steam\s*deck|switch|rog\s*ally|jogando)/i.test(combined) && hasPerson;
+  // Specific Archetype 4: Gaming Handheld in Domestic Living Room (ONLY when sofa/living room is EXPLICITLY requested by user)
+  const hasExplicitSofa = /(sof[aá]|couch|living\s*room|sala\s*de\s*estar)/i.test(combined);
+  const isGamingCouch = hasExplicitSofa && hasPerson;
   if (isGamingCouch) {
     return {
       approachTitle: 'Cumplicidade no Sofá / Gaming Autêntico',
       hasPerson: true,
       subjectEn: 'The creator sitting comfortably on an authentic living room sofa, holding the handheld gaming console naturally toward the camera with both hands',
-      contextEn: 'Cozy real living room with authentic sofa fabric, home cushions, and lived-in domestic decor without artificial studio polish',
-      lightingEn: 'Warm motivated light from a living room floor lamp combined with soft natural daylight, zero unmotivated RGB neon',
+      contextEn: 'Comfortable real living room sofa with authentic fabric texture, natural cushions, and lived-in domestic context without artificial studio polish',
+      lightingEn: 'Warm motivated interior illumination from physical living room sources combined with soft natural daylight, zero unmotivated RGB neon',
       compositionEn: 'Conversational eye-level medium framing with balanced optical depth preserving living room context readability',
       expressionEn: 'Relaxed confidence and subtle satisfaction, direct engaging gaze toward viewer or down at screen, natural closed mouth',
       directionPt: {
@@ -267,14 +407,43 @@ export function interpretUserIntent(
     };
   }
 
+  // Specific Archetype: Creator with Handheld / Tech Gadget (When NO sofa or room is explicitly requested)
+  const isTechWithPerson = isTech && hasPerson;
+  if (isTechWithPerson && !hasExplicitSofa) {
+    return {
+      approachTitle: 'Foco no Hardware & Apresentação Direta',
+      hasPerson: true,
+      subjectEn: 'The creator holding the handheld device naturally toward the camera with anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact',
+      contextEn: hasExplicitEnv
+        ? resolvedContextEn
+        : 'Minimal neutral background with soft optical falloff, keeping undivided focus on the device and creator without domestic room clutter',
+      lightingEn: hasExplicitEnv
+        ? resolvedLightingEn
+        : 'Clean motivated directional key lighting with soft natural shadow falloff, emphasizing true matte chassis textures and screen content without artificial glare or unmotivated RGB neon',
+      compositionEn: 'Engaging eye-level medium framing with crisp figure-ground separation and clean negative space',
+      expressionEn: 'Composed authentic engagement with calm curiosity and natural focus, closed mouth',
+      directionPt: {
+        ideia: 'Apresentação direta e autêntica do dispositivo: foco no hardware e na experiência real sem clichês.',
+        foco: 'O dispositivo em primeiro plano com tela nítida e a presença humana como âncora natural.',
+        composicao: 'Plano médio na altura dos olhos, enquadramento centrado e fundo desimpedido para leitura rápida no feed.',
+        expressao: 'Expressão humana calma e focada, olhar atento com lábios fechados. Sem caretas ou exageros.',
+        visual: 'Iluminação motivada limpa com sombras suaves. Cores fiéis e acabamentos autênticos sem néon ou cenários forçados.'
+      }
+    };
+  }
+
   // General Scene Archetype: General Tech Teardown (No person)
   if (!hasPerson && isTech) {
     return {
       approachTitle: 'Bancada Técnica de Precisão',
       hasPerson: false,
-      subjectEn: 'Clean high-precision technical workbench shot of the disassembled device with exposed internal circuitry, clean ribbon cables, and specialized repair tools arranged nearby',
-      contextEn: 'Orderly repair laboratory bench with authentic tools, hex drivers, and precision tweezers on an anti-static work mat',
-      lightingEn: 'Even, bright laboratory task lighting with realistic soft shadow falloff beneath the chassis',
+      subjectEn: 'Clean high-precision technical surface shot of the disassembled device with exposed internal circuitry, clean ribbon cables, and specialized repair tools arranged nearby',
+      contextEn: hasExplicitEnv
+        ? resolvedContextEn
+        : 'Orderly technical bench with authentic tools, hex drivers, and precision tweezers on an anti-static work mat',
+      lightingEn: hasExplicitEnv
+        ? resolvedLightingEn
+        : 'Even, bright laboratory task lighting with realistic soft shadow falloff beneath the chassis',
       compositionEn: 'Balanced overhead 45-degree angle with the opened device as the commanding centerpiece and tools providing context',
       expressionEn: 'None (pure technical hardware inspection)',
       directionPt: {
@@ -293,8 +462,12 @@ export function interpretUserIntent(
       approachTitle: 'Atmosfera e Textura Espacial',
       hasPerson: false,
       subjectEn: 'Atmospheric scene of the weathered structure with tactile cracked concrete, creeping moss, decaying foliage, and authentic environmental aging',
-      contextEn: 'Grounded real-world outdoor location with authentic atmospheric depth, honest moss texture, and organic shadows',
-      lightingEn: 'Subdued natural daylight filtering through the trees, creating deep realistic shadows without fake digital mist',
+      contextEn: hasExplicitEnv
+        ? resolvedContextEn
+        : 'Grounded real-world outdoor location with authentic atmospheric depth, honest moss texture, and organic shadows',
+      lightingEn: hasExplicitEnv
+        ? resolvedLightingEn
+        : 'Subdued natural daylight filtering through the trees, creating deep realistic shadows without fake digital mist',
       compositionEn: 'Intentional 16:9 framing guiding the eye directly to the shadowy central opening with generous negative space',
       expressionEn: 'None (pure environmental discovery)',
       directionPt: {
@@ -315,9 +488,13 @@ export function interpretUserIntent(
     return {
       approachTitle: 'Tensão Psicológica e Desabafo Autêntico',
       hasPerson: true,
-      subjectEn: 'The creator seated in front of a dark computer desk, looking thoughtfully toward the screen with authentic emotional gravity, natural facial asymmetry, and organic skin texture',
-      contextEn: 'Authentic darkened home room, subtle workstation setup with ambient desk lamp in background',
-      lightingEn: 'Subdued directional illumination motivated by the computer monitor glow casting natural soft shadows across the face',
+      subjectEn: 'The creator looking thoughtfully toward the camera with authentic emotional gravity, natural facial asymmetry, and organic skin texture',
+      contextEn: hasExplicitEnv
+        ? resolvedContextEn
+        : 'Minimal atmospheric background with deep optical falloff and clean negative space, keeping total focus on human emotion',
+      lightingEn: hasExplicitEnv
+        ? resolvedLightingEn
+        : 'Subdued directional portrait key light with soft shadow falloff across the face, conveying intimacy and emotional weight',
       compositionEn: 'Medium close-up leaving thoughtful negative space, clean figure-ground separation for instant legibility',
       expressionEn: 'Deep contemplative concern and authentic emotional composure, closed mouth, sincere brow without exaggerated theatrical shouting',
       directionPt: {
@@ -325,12 +502,12 @@ export function interpretUserIntent(
         foco: 'A expressão facial autêntica e a tensão emocional do criador conduzem todo o impacto da imagem.',
         composicao: 'Plano fechado com enquadramento intimista, mantendo espaço para a respiração do olhar sem elementos concorrentes.',
         expressao: 'Tensão psicológica real, olhar compenetrado ou desabafo genuíno com lábios fechados. Sem caretas ou melodrama.',
-        visual: 'Iluminação sutil de baixa intensidade com queda suave de sombras e textura fotográfica natural.'
+        visual: 'Iluminação intimista de baixa intensidade com queda suave de sombras e textura fotográfica natural.'
       }
     };
   }
 
-  // General Scene Archetype: Conversational Creator in Real Room
+  // General Scene Archetype: Conversational Creator (Object Focus)
   if (approach === 1) {
     return {
       approachTitle: 'Foco no Objeto / Hardware em Primeiro Plano',
@@ -338,16 +515,20 @@ export function interpretUserIntent(
       subjectEn: isTech
         ? 'Close foreground shot of the authentic physical device held with both hands, clearly showing the screen, natural thumb position on control stick, matte chassis texture, and real button geometry'
         : 'Foreground hero focus on the primary physical object with authentic real-world texture and material finish',
-      contextEn: 'Real lived-in room environment, natural domestic setting with authentic furniture textures',
-      lightingEn: 'Believable warm interior lighting from a nearby practical desk lamp, casting soft natural directional light across the surface with realistic shadow falloff',
+      contextEn: hasExplicitEnv
+        ? resolvedContextEn
+        : 'Clean neutral background with soft optical falloff, keeping the foreground subject as the commanding centerpiece without domestic room clutter',
+      lightingEn: hasExplicitEnv
+        ? resolvedLightingEn
+        : 'Motivated directional key light with gentle wrap-around illumination and soft natural shadow falloff across the surface',
       compositionEn: 'Dominant foreground subject occupying the lower-left two-thirds of the frame, with the person visible slightly in the background to anchor human scale',
       expressionEn: 'Creator visible in the background with a calm, subtle look of genuine curiosity and satisfaction, eyes focused on the device',
       directionPt: {
         ideia: 'O objeto físico é o protagonista indiscutível. A imagem valoriza o acabamento e desperta o desejo de entender a novidade.',
         foco: 'O hardware/produto domina o primeiro plano com nitidez; o criador aparece como âncora humana no fundo.',
-        composicao: 'Objeto em primeiro plano ocupando posição de destaque, enquadramento limpo e fundo organizado.',
+        composicao: 'Objeto em primeiro plano ocupando posição de destaque, enquadramento limpo com separação figura-fundo imediata.',
         expressao: 'Satisfação contida e olhar atento. Sem caretas exageradas ou boca aberta.',
-        visual: 'Luz direcional de abajur real revelando o acabamento fosco. Zero neon aleatório, zero partículas flutuantes.'
+        visual: 'Luz direcional motivada revelando o acabamento fosco e materiais reais. Zero néon aleatório, zero partículas flutuantes.'
       }
     };
   }
@@ -356,18 +537,22 @@ export function interpretUserIntent(
     approachTitle: 'Equilíbrio Narrativo / Cumplicidade com o Espectador',
     hasPerson: true,
     subjectEn: isTech
-      ? 'A person sitting comfortably on a real living room sofa, holding the device toward the camera with anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact'
-      : 'A person seated in a natural, believable room posture, holding or presenting the primary subject with genuine ease',
-    contextEn: 'Cozy real apartment living room with authentic sofa cushions and natural home decor',
-    lightingEn: 'Warm interior illumination from a living room floor lamp combined with soft ambient daylight bounce, grounded in real physical sources',
-    compositionEn: 'Eye-level conversational angle, crisp separation of subject from the room through natural optical perspective',
+      ? 'A person naturally presenting the device toward the camera with anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact'
+      : 'A person presenting the primary subject with genuine ease and natural composed posture',
+    contextEn: hasExplicitEnv
+      ? resolvedContextEn
+      : 'Clean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on the primary subject without domestic room clutter',
+    lightingEn: hasExplicitEnv
+      ? resolvedLightingEn
+      : 'Clean motivated key illumination with soft natural shadow falloff, emphasizing genuine physical textures and form without artificial glare',
+    compositionEn: 'Eye-level conversational angle, crisp separation of subject from background through natural optical perspective',
     expressionEn: 'Direct engaging look toward the viewer with a subtle, confident smirk conveying genuine satisfaction without shouting',
     directionPt: {
       ideia: 'Cumplicidade direta com o espectador: uma conversa honesta sobre algo que realmente funcionou.',
       foco: 'Equilíbrio entre a pessoa e o dispositivo: o produto é visível e claro, enquanto a presença humana valida a história.',
-      composicao: 'Plano médio na altura dos olhos, enquadramento estável e postura relaxada no sofá.',
+      composicao: 'Plano médio na altura dos olhos, enquadramento estável e postura natural, com fundo limpo para rápida leitura visual.',
       expressao: 'Sorriso sutil de satisfação. Fisionomia humana natural e expressiva.',
-      visual: 'Ambiente crível com iluminação acolhedora de abajur e luz de janela. Textura natural de tecidos e materiais.'
+      visual: 'Iluminação limpa e equilibrada com sombras suaves. Cores fiéis e texturas naturais sem néon, sem artifícios e sem cenários inventados.'
     }
   };
 }
@@ -406,7 +591,7 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
     directionPt,
     approachTitle,
     hasPerson
-  } = interpretUserIntent(videoTitle, ideaDescription, approachIndex, hasPersonRef ? true : undefined);
+  } = interpretUserIntent(videoTitle, ideaDescription, approachIndex, hasPersonRef ? true : undefined, references);
 
   // Context-aware depth of field
   const depthOfField = determineDepthOfField(ideaDescription || videoTitle, approachIndex);
@@ -497,7 +682,7 @@ SUBJECT & FRAMING: ${subjectEn}. ${compositionEn}.`;
     promptBody += `\nHUMAN EXPRESSION: ${expressionEn}.`;
   }
 
-  promptBody += `\nLIGHTING: ${lightingEn}. Light sources are physically motivated within the room.
+  promptBody += `\nLIGHTING: ${lightingEn}. Light sources are physically motivated and grounded in the scene.
 ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible materials with matte finishes.`;
 
   if (buzzwordDecisions.length > 0) {
@@ -669,7 +854,7 @@ export function improvePrompt(input: ImprovePromptInput): ImprovePromptResult {
   // 2. Neon replacement
   if (/neon/i.test(cleaned)) {
     cleaned = cleaned.replace(/neon\s*(lighting|glow|colors?|lights?|blue\s*and\s*purple|purple\s*and\s*blue)?/gi, '');
-    changes.push('Substituído o néon roxo/azul genérico por iluminação motivada crível de ambiente real (luz quente de abajur e brilho suave de monitor).');
+    changes.push('Substituído o néon roxo/azul genérico por iluminação motivada crível com contraste natural.');
   }
 
   // 3. Rim light & outer glow
@@ -715,7 +900,7 @@ export function improvePrompt(input: ImprovePromptInput): ImprovePromptResult {
   // Build reconstructed, grounded prompt based on understood intent
   const cleanSubject = cleaned.replace(/\s+/g, ' ').trim();
   const subjectDescription = isGaming && hasFace
-    ? 'A gaming creator seated in an authentic domestic room gaming setup, naturally focused on a modern gaming console held with both hands'
+    ? 'A creator naturally focused on a modern gaming console held with both hands'
     : cleanSubject || 'A compelling hero subject with authentic real-world presence and clean silhouette';
 
   const handsHardwareDirective = isGaming || isTech
@@ -728,8 +913,8 @@ export function improvePrompt(input: ImprovePromptInput): ImprovePromptResult {
 
   const improvedPrompt = `High-impact photographic YouTube thumbnail, 16:9 widescreen format.
 SUBJECT & FRAMING: ${subjectDescription}. Clean figure-ground separation with bold silhouette for instant readability at 120px mobile size.${handsHardwareDirective}${expressionDirective}
-LIGHTING: Motivated physical illumination from realistic room practicals (warm desk lamp and subtle ambient screen bounce) with soft natural shadow falloff.
-OPTICAL DEPTH: Balanced photographic perspective with 35mm lens, preserving room context and spatial realism without forced blur.
+LIGHTING: Motivated physical illumination with clean directional key light and soft natural shadow falloff.
+OPTICAL DEPTH: Balanced photographic perspective with 35mm lens, preserving authentic spatial depth and subject clarity without forced blur.
 TEXTURES: Authentic tactile materials, true matte finishes, natural skin texture, physical fabric and surfaces.
 STRICTLY AVOID: ${CORE_ANTI_SLOP_AVOID.slice(0, 18).join(', ')}.`;
 
@@ -767,7 +952,7 @@ CHANGE:
 
 PRESERVE:
 1. Exact device industrial geometry, chassis proportions, ports, vents, and button layout.
-2. Desk work surface, tool arrangement, and physical materials.
+2. Work surface, tool arrangement, and physical materials.
 3. Camera framing, 45-degree angle, and 16:9 composition.
 
 AVOID:
@@ -791,7 +976,7 @@ warped chassis, fictional ports, glowing outline, rubbery buttons, excessive HDR
       fixPrompt: `SURGICAL INPAINTING / CORRECTION PROMPT:
 
 CHANGE:
-1. Tone down artificial rim lighting along shoulders and hair; blend naturally with ambient room light falloff.
+1. Tone down artificial rim lighting along shoulders and hair; blend naturally with ambient key light falloff.
 2. Replace smoothed plastic skin texture with natural skin texture and organic facial asymmetry, avoiding waxy smoothing.
 3. Slightly soften background contrast so the primary foreground subject stands out with clear figure-ground separation.
 
@@ -799,7 +984,7 @@ PRESERVE:
 1. Exact facial identity, authentic eye direction, hairline, and subtle expression.
 2. Subject pose, clothing, and body posture.
 3. Hand placement and natural grip on any held object.
-4. Camera framing and core spatial composition.
+4. Camera framing, core spatial composition, and exact target image environment unless explicitly requested to change.
 
 AVOID:
 plastic waxy skin, beauty filter jaw slimming, cartoon saturation, generic shocked expression, changing facial identity.`
@@ -822,13 +1007,13 @@ plastic waxy skin, beauty filter jaw slimming, cartoon saturation, generic shock
     fixPrompt: `SURGICAL INPAINTING / CORRECTION PROMPT:
 
 CHANGE:
-1. Tone down artificial rim lighting on edges; blend naturally with ambient room light falloff.
+1. Tone down artificial rim lighting on edges; blend naturally with ambient scene light falloff.
 2. Rebalance local contrast so the primary subject commands visual hierarchy over the background.
 3. Soften peripheral elements to maintain clean figure-ground separation at mobile scale.
 
 PRESERVE:
 1. Exact subject pose, identity, and physical placement.
-2. Core spatial composition and 16:9 framing.
+2. Core spatial composition, 16:9 framing, and target image environment.
 3. Authentic product geometry and tactile material finishes.
 
 AVOID:
