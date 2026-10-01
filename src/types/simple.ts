@@ -23,15 +23,26 @@ export type TargetModel =
   | 'GERAL'
   | 'OPENAI_GPT_IMAGE_2_5_SUNBURST'
   | 'OPENAI_GPT_IMAGE_2_5_FLARE'
+  | 'GOOGLE_NANO_BANANA_2'
+  | 'GOOGLE_NANO_BANANA_PRO'
+  | 'MIDJOURNEY_V8_2'
+  | 'MIDJOURNEY_NIJI_7'
+  | 'FLUX_2_MAX'
+  | 'FLUX_2_PRO'
+  | 'FLUX_2_FLEX'
+  | 'FLUX_2_KLEIN'
+  | 'OPENAI'
   | 'GEMINI'
+  | 'GOOGLE_IMAGEN'
   | 'MIDJOURNEY'
-  | 'FLUX'
-  | 'OPENAI'; // Deprecated legacy alias for backward compatibility
+  | 'FLUX';
 
 export type OpenAIImageQuality = 'auto' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
+export type ModelProvider = 'GENERAL' | 'OPENAI' | 'GOOGLE' | 'MIDJOURNEY' | 'BLACK_FOREST_LABS';
+
 export interface ImageOutputMetadata {
-  modelId: 'gpt-image-2.5-sunburst' | 'gpt-image-2.5-flare' | string;
+  modelId: string;
   targetModel: TargetModel;
   aspectRatioHint: string;
   quality: OpenAIImageQuality | string;
@@ -40,9 +51,20 @@ export interface ImageOutputMetadata {
 
 export interface TargetModelConfig {
   id: TargetModel;
-  apiModelId?: string;
+  provider: ModelProvider;
+  providerGroup: string;
   displayName: string;
+  family: string;
+  apiModelId?: string;
+  modelId?: string;
   description: string;
+  promptStyle: 'neutral' | 'structured_contract' | 'natural_multireference' | 'concise_visual' | 'direct_natural_positive';
+  supportsEditing: boolean;
+  supportsReferences: boolean;
+  supportsMultipleReferences: boolean;
+  supportsTypography: boolean;
+  negativePromptMode: 'standard' | 'strict_avoid' | 'none' | 'positive_conversion';
+  legacyAliases?: string[];
   aspectRatio16_9Hint?: string;
   aspectRatio9_16Hint?: string;
   supportedQualities?: OpenAIImageQuality[];
@@ -51,14 +73,26 @@ export interface TargetModelConfig {
 
 export function normalizeTargetModel(model?: string | null): TargetModel {
   if (!model) return 'GERAL';
-  if (model === 'OPENAI') return 'OPENAI_GPT_IMAGE_2_5_SUNBURST';
+  const m = model.trim().toUpperCase();
+  if (m === 'OPENAI') return 'OPENAI_GPT_IMAGE_2_5_SUNBURST';
+  if (m === 'GEMINI' || m === 'GOOGLE_IMAGEN' || m === 'GOOGLE GEMINI IMAGE' || m === 'GOOGLE GEMINI IMAGEN') {
+    return 'GOOGLE_NANO_BANANA_2';
+  }
+  if (m === 'MIDJOURNEY') return 'MIDJOURNEY_V8_2';
+  if (m === 'FLUX' || m === 'FLUX (ULTRA-DETALHES FOTO)' || m === 'FLUX_ULTRA') return 'FLUX_2_MAX';
+
   const valid: TargetModel[] = [
     'GERAL',
     'OPENAI_GPT_IMAGE_2_5_SUNBURST',
     'OPENAI_GPT_IMAGE_2_5_FLARE',
-    'GEMINI',
-    'MIDJOURNEY',
-    'FLUX'
+    'GOOGLE_NANO_BANANA_2',
+    'GOOGLE_NANO_BANANA_PRO',
+    'MIDJOURNEY_V8_2',
+    'MIDJOURNEY_NIJI_7',
+    'FLUX_2_MAX',
+    'FLUX_2_PRO',
+    'FLUX_2_FLEX',
+    'FLUX_2_KLEIN'
   ];
   if (valid.includes(model as TargetModel)) return model as TargetModel;
   return 'GERAL';
@@ -67,14 +101,36 @@ export function normalizeTargetModel(model?: string | null): TargetModel {
 export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
   GERAL: {
     id: 'GERAL',
-    displayName: 'Geral (Compatível com todos)',
-    description: 'Prompt limpo e agnóstico de provedor para qualquer gerador moderno.'
+    provider: 'GENERAL',
+    providerGroup: 'GERAL',
+    displayName: 'Geral — Compatível com todos',
+    family: 'General',
+    description: 'Prompt limpo e agnóstico de provedor para qualquer gerador moderno.',
+    promptStyle: 'neutral',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'standard',
+    aspectRatio16_9Hint: '16:9',
+    aspectRatio9_16Hint: '9:16'
   },
   OPENAI_GPT_IMAGE_2_5_SUNBURST: {
     id: 'OPENAI_GPT_IMAGE_2_5_SUNBURST',
-    apiModelId: 'gpt-image-2.5-sunburst',
+    provider: 'OPENAI',
+    providerGroup: 'OPENAI',
     displayName: 'OpenAI — GPT Image 2.5 Sunburst',
+    family: 'GPT Image 2.5',
+    apiModelId: 'gpt-image-2.5-sunburst',
+    modelId: 'gpt-image-2.5-sunburst',
     description: 'Máxima fidelidade para thumbnails exigentes, preservação estrita de identidade, produtos e edições precisas.',
+    promptStyle: 'structured_contract',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'strict_avoid',
+    legacyAliases: ['OPENAI'],
     aspectRatio16_9Hint: '3840x2160',
     aspectRatio9_16Hint: '2160x3840',
     supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'],
@@ -82,38 +138,274 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
   },
   OPENAI_GPT_IMAGE_2_5_FLARE: {
     id: 'OPENAI_GPT_IMAGE_2_5_FLARE',
-    apiModelId: 'gpt-image-2.5-flare',
+    provider: 'OPENAI',
+    providerGroup: 'OPENAI',
     displayName: 'OpenAI — GPT Image 2.5 Flare',
+    family: 'GPT Image 2.5',
+    apiModelId: 'gpt-image-2.5-flare',
+    modelId: 'gpt-image-2.5-flare',
     description: 'Geração rápida e eficiente para thumbnails diárias e experimentação iterativa.',
+    promptStyle: 'structured_contract',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'strict_avoid',
     aspectRatio16_9Hint: '2048x1152',
     aspectRatio9_16Hint: '1152x2048',
     supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh'],
     defaultQuality: 'auto'
   },
-  GEMINI: {
-    id: 'GEMINI',
-    displayName: 'Google Gemini Image',
-    description: 'Otimizado para fidelidade física, perspectiva óptica natural e zero plastificação.'
+  GOOGLE_NANO_BANANA_2: {
+    id: 'GOOGLE_NANO_BANANA_2',
+    provider: 'GOOGLE',
+    providerGroup: 'GOOGLE',
+    displayName: 'Google — Nano Banana 2',
+    family: 'Nano Banana',
+    apiModelId: 'gemini-3.1-flash-image',
+    modelId: 'gemini-3.1-flash-image',
+    description: 'Geração e edição ágil com múltiplas referências, consistência de personagem e tipografia nítida.',
+    promptStyle: 'natural_multireference',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'standard',
+    legacyAliases: ['GEMINI', 'GOOGLE_IMAGEN'],
+    aspectRatio16_9Hint: '2048x1152',
+    aspectRatio9_16Hint: '1152x2048',
+    supportedQualities: ['auto', 'high'],
+    defaultQuality: 'auto'
   },
-  MIDJOURNEY: {
-    id: 'MIDJOURNEY',
-    displayName: 'Midjourney',
-    description: 'Com parâmetros de proporção (--ar) e --style raw sob demanda.'
+  GOOGLE_NANO_BANANA_PRO: {
+    id: 'GOOGLE_NANO_BANANA_PRO',
+    provider: 'GOOGLE',
+    providerGroup: 'GOOGLE',
+    displayName: 'Google — Nano Banana Pro',
+    family: 'Nano Banana',
+    apiModelId: 'gemini-3-pro-image',
+    modelId: 'gemini-3-pro-image',
+    description: 'Composições profissionais difíceis, alta fidelidade de detalhes e cenas carregadas de referências.',
+    promptStyle: 'natural_multireference',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'standard',
+    aspectRatio16_9Hint: '3840x2160',
+    aspectRatio9_16Hint: '2160x3840',
+    supportedQualities: ['auto', 'high', 'max'],
+    defaultQuality: 'high'
   },
-  FLUX: {
-    id: 'FLUX',
-    displayName: 'FLUX',
-    description: 'Otimizado para textura tátil profissional e perspectiva óptica 35mm.'
+  MIDJOURNEY_V8_2: {
+    id: 'MIDJOURNEY_V8_2',
+    provider: 'MIDJOURNEY',
+    providerGroup: 'MIDJOURNEY',
+    displayName: 'Midjourney — V8.2',
+    family: 'Midjourney',
+    apiModelId: 'v8.2',
+    modelId: 'v8.2',
+    description: 'Prompt visual conciso com proporção (--ar) e parâmetros atuais da versão 8.2.',
+    promptStyle: 'concise_visual',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: false,
+    negativePromptMode: 'none',
+    legacyAliases: ['MIDJOURNEY'],
+    aspectRatio16_9Hint: '--ar 16:9',
+    aspectRatio9_16Hint: '--ar 9:16'
+  },
+  MIDJOURNEY_NIJI_7: {
+    id: 'MIDJOURNEY_NIJI_7',
+    provider: 'MIDJOURNEY',
+    providerGroup: 'MIDJOURNEY',
+    displayName: 'Midjourney — Niji 7',
+    family: 'Niji',
+    apiModelId: 'niji-7',
+    modelId: 'niji-7',
+    description: 'Tratamentos ilustrados, anime, mangá e composição visual com estética oriental refinada.',
+    promptStyle: 'concise_visual',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: false,
+    negativePromptMode: 'none',
+    aspectRatio16_9Hint: '--ar 16:9',
+    aspectRatio9_16Hint: '--ar 9:16'
+  },
+  FLUX_2_MAX: {
+    id: 'FLUX_2_MAX',
+    provider: 'BLACK_FOREST_LABS',
+    providerGroup: 'BLACK FOREST LABS',
+    displayName: 'FLUX.2 Max',
+    family: 'FLUX.2',
+    apiModelId: 'flux-2-max',
+    modelId: 'flux-2-max',
+    description: 'Saída fotográfica de máxima qualidade, seguimento estrito de instruções e texturas realistas.',
+    promptStyle: 'direct_natural_positive',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'positive_conversion',
+    legacyAliases: ['FLUX'],
+    aspectRatio16_9Hint: '3840x2160',
+    aspectRatio9_16Hint: '2160x3840',
+    supportedQualities: ['auto', 'high', 'max'],
+    defaultQuality: 'high'
+  },
+  FLUX_2_PRO: {
+    id: 'FLUX_2_PRO',
+    provider: 'BLACK_FOREST_LABS',
+    providerGroup: 'BLACK FOREST LABS',
+    displayName: 'FLUX.2 Pro',
+    family: 'FLUX.2',
+    apiModelId: 'flux-2-pro',
+    modelId: 'flux-2-pro',
+    description: 'Equilíbrio ideal entre velocidade e qualidade para fluxos profissionais do dia a dia.',
+    promptStyle: 'direct_natural_positive',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'positive_conversion',
+    aspectRatio16_9Hint: '2048x1152',
+    aspectRatio9_16Hint: '1152x2048',
+    supportedQualities: ['auto', 'high'],
+    defaultQuality: 'auto'
+  },
+  FLUX_2_FLEX: {
+    id: 'FLUX_2_FLEX',
+    provider: 'BLACK_FOREST_LABS',
+    providerGroup: 'BLACK FOREST LABS',
+    displayName: 'FLUX.2 Flex',
+    family: 'FLUX.2',
+    apiModelId: 'flux-2-flex',
+    modelId: 'flux-2-flex',
+    description: 'Controle refinado e renderização tipográfica precisa diretamente na composição da imagem.',
+    promptStyle: 'direct_natural_positive',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'positive_conversion',
+    aspectRatio16_9Hint: '2048x1152',
+    aspectRatio9_16Hint: '1152x2048',
+    supportedQualities: ['auto', 'high'],
+    defaultQuality: 'auto'
+  },
+  FLUX_2_KLEIN: {
+    id: 'FLUX_2_KLEIN',
+    provider: 'BLACK_FOREST_LABS',
+    providerGroup: 'BLACK FOREST LABS',
+    displayName: 'FLUX.2 Klein',
+    family: 'FLUX.2',
+    apiModelId: 'flux-2-klein',
+    modelId: 'flux-2-klein',
+    description: 'Iteração rápida, prévias imediatas e menor latência de geração.',
+    promptStyle: 'direct_natural_positive',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'positive_conversion',
+    aspectRatio16_9Hint: '1536x864',
+    aspectRatio9_16Hint: '864x1536',
+    supportedQualities: ['auto', 'low', 'medium'],
+    defaultQuality: 'auto'
   },
   OPENAI: {
     id: 'OPENAI',
-    apiModelId: 'gpt-image-2.5-sunburst',
+    provider: 'OPENAI',
+    providerGroup: 'OPENAI',
     displayName: 'OpenAI (Legado)',
+    family: 'GPT Image 2.5',
+    apiModelId: 'gpt-image-2.5-sunburst',
+    modelId: 'gpt-image-2.5-sunburst',
     description: 'Redirecionado automaticamente para GPT Image 2.5 Sunburst.',
+    promptStyle: 'structured_contract',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'strict_avoid',
     aspectRatio16_9Hint: '3840x2160',
     aspectRatio9_16Hint: '2160x3840',
     supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'],
     defaultQuality: 'high'
+  },
+  GEMINI: {
+    id: 'GEMINI',
+    provider: 'GOOGLE',
+    providerGroup: 'GOOGLE',
+    displayName: 'Google Gemini Image (Legado)',
+    family: 'Nano Banana',
+    apiModelId: 'gemini-3.1-flash-image',
+    modelId: 'gemini-3.1-flash-image',
+    description: 'Redirecionado automaticamente para Google Nano Banana 2.',
+    promptStyle: 'natural_multireference',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'standard',
+    aspectRatio16_9Hint: '2048x1152',
+    aspectRatio9_16Hint: '1152x2048'
+  },
+  GOOGLE_IMAGEN: {
+    id: 'GOOGLE_IMAGEN',
+    provider: 'GOOGLE',
+    providerGroup: 'GOOGLE',
+    displayName: 'Google Imagen (Legado)',
+    family: 'Nano Banana',
+    apiModelId: 'gemini-3.1-flash-image',
+    modelId: 'gemini-3.1-flash-image',
+    description: 'Redirecionado automaticamente para Google Nano Banana 2.',
+    promptStyle: 'natural_multireference',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'standard',
+    aspectRatio16_9Hint: '2048x1152',
+    aspectRatio9_16Hint: '1152x2048'
+  },
+  MIDJOURNEY: {
+    id: 'MIDJOURNEY',
+    provider: 'MIDJOURNEY',
+    providerGroup: 'MIDJOURNEY',
+    displayName: 'Midjourney (Legado)',
+    family: 'Midjourney',
+    apiModelId: 'v8.2',
+    modelId: 'v8.2',
+    description: 'Redirecionado automaticamente para Midjourney V8.2.',
+    promptStyle: 'concise_visual',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: false,
+    negativePromptMode: 'none',
+    aspectRatio16_9Hint: '--ar 16:9',
+    aspectRatio9_16Hint: '--ar 9:16'
+  },
+  FLUX: {
+    id: 'FLUX',
+    provider: 'BLACK_FOREST_LABS',
+    providerGroup: 'BLACK FOREST LABS',
+    displayName: 'FLUX (Legado)',
+    family: 'FLUX.2',
+    apiModelId: 'flux-2-max',
+    modelId: 'flux-2-max',
+    description: 'Redirecionado automaticamente para FLUX.2 Max.',
+    promptStyle: 'direct_natural_positive',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'positive_conversion',
+    aspectRatio16_9Hint: '3840x2160',
+    aspectRatio9_16Hint: '2160x3840'
   }
 };
 

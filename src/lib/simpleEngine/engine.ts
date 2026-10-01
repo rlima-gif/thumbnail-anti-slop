@@ -13,74 +13,364 @@ import type {
   AttributeOwner,
   ProvenanceOrigin,
   TargetModel,
-  ImageOutputMetadata,
-  OpenAIImageQuality
+  TargetModelConfig,
+  ImageOutputMetadata
 } from '@/types/simple';
+
 export function normalizeTargetModel(model?: string | null): TargetModel {
   if (!model) return 'GERAL';
-  if (model === 'OPENAI') return 'OPENAI_GPT_IMAGE_2_5_SUNBURST';
+  const m = model.trim().toUpperCase();
+  if (m === 'GERAL') return 'GERAL';
+
+  // OpenAI
+  if (m === 'OPENAI_GPT_IMAGE_2_5_SUNBURST' || m === 'GPT-IMAGE-2.5-SUNBURST' || m === 'SUNBURST') return 'OPENAI_GPT_IMAGE_2_5_SUNBURST';
+  if (m === 'OPENAI_GPT_IMAGE_2_5_FLARE' || m === 'GPT-IMAGE-2.5-FLARE' || m === 'FLARE') return 'OPENAI_GPT_IMAGE_2_5_FLARE';
+  if (m === 'OPENAI' || m === 'DALL-E 3' || m === 'DALLE3' || m === 'GPT-4O') return 'OPENAI_GPT_IMAGE_2_5_SUNBURST';
+
+  // Google
+  if (m === 'GOOGLE_NANO_BANANA_2' || m === 'NANO_BANANA_2' || m === 'GEMINI-3.1-FLASH-IMAGE' || m === 'NANO BANANA 2') return 'GOOGLE_NANO_BANANA_2';
+  if (m === 'GOOGLE_NANO_BANANA_PRO' || m === 'NANO_BANANA_PRO' || m === 'GEMINI-3-PRO-IMAGE' || m === 'NANO BANANA PRO') return 'GOOGLE_NANO_BANANA_PRO';
+  if (m === 'GEMINI' || m === 'GOOGLE_IMAGEN' || m === 'IMAGEN' || m === 'GOOGLE' || m === 'GOOGLE GEMINI IMAGE' || m === 'GOOGLE GEMINI IMAGEN') {
+    return 'GOOGLE_NANO_BANANA_2';
+  }
+
+  // Midjourney
+  if (m === 'MIDJOURNEY_V8_2' || m === 'V8.2' || m === 'V8_2' || m === 'MIDJOURNEY_V8') return 'MIDJOURNEY_V8_2';
+  if (m === 'MIDJOURNEY_NIJI_7' || m === 'NIJI_7' || m === 'NIJI 7' || m === 'NIJI') return 'MIDJOURNEY_NIJI_7';
+  if (m === 'MIDJOURNEY') return 'MIDJOURNEY_V8_2';
+
+  // FLUX
+  if (m === 'FLUX_2_MAX' || m === 'FLUX-2-MAX' || m === 'FLUX 2 MAX') return 'FLUX_2_MAX';
+  if (m === 'FLUX_2_PRO' || m === 'FLUX-2-PRO' || m === 'FLUX 2 PRO') return 'FLUX_2_PRO';
+  if (m === 'FLUX_2_FLEX' || m === 'FLUX-2-FLEX' || m === 'FLUX 2 FLEX') return 'FLUX_2_FLEX';
+  if (m === 'FLUX_2_KLEIN' || m === 'FLUX-2-KLEIN' || m === 'FLUX 2 KLEIN') return 'FLUX_2_KLEIN';
+  if (m === 'FLUX' || m === 'FLUX (ULTRA-DETALHES FOTO)' || m === 'FLUX_ULTRA' || m === 'FLUX ULTRA') return 'FLUX_2_MAX';
+
   const valid: TargetModel[] = [
     'GERAL',
     'OPENAI_GPT_IMAGE_2_5_SUNBURST',
     'OPENAI_GPT_IMAGE_2_5_FLARE',
-    'GEMINI',
-    'MIDJOURNEY',
-    'FLUX'
+    'GOOGLE_NANO_BANANA_2',
+    'GOOGLE_NANO_BANANA_PRO',
+    'MIDJOURNEY_V8_2',
+    'MIDJOURNEY_NIJI_7',
+    'FLUX_2_MAX',
+    'FLUX_2_PRO',
+    'FLUX_2_FLEX',
+    'FLUX_2_KLEIN'
   ];
-  if (valid.includes(model as TargetModel)) return model as TargetModel;
+  if (valid.includes(m as TargetModel)) return m as TargetModel;
   return 'GERAL';
 }
 
-export const TARGET_MODEL_CONFIGS = {
+export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
   GERAL: {
-    id: 'GERAL' as TargetModel,
-    displayName: 'Geral (Compatível com todos)',
-    description: 'Prompt limpo e agnóstico de provedor para qualquer gerador moderno.'
+    id: 'GERAL',
+    provider: 'GENERAL',
+    providerGroup: 'GERAL',
+    displayName: 'Geral — Compatível com todos',
+    family: 'General',
+    description: 'Prompt limpo e agnóstico de provedor para qualquer gerador moderno.',
+    promptStyle: 'neutral',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'standard',
+    aspectRatio16_9Hint: '16:9',
+    aspectRatio9_16Hint: '9:16'
   },
   OPENAI_GPT_IMAGE_2_5_SUNBURST: {
-    id: 'OPENAI_GPT_IMAGE_2_5_SUNBURST' as TargetModel,
-    apiModelId: 'gpt-image-2.5-sunburst',
+    id: 'OPENAI_GPT_IMAGE_2_5_SUNBURST',
+    provider: 'OPENAI',
+    providerGroup: 'OPENAI',
     displayName: 'OpenAI — GPT Image 2.5 Sunburst',
+    family: 'GPT Image 2.5',
+    apiModelId: 'gpt-image-2.5-sunburst',
+    modelId: 'gpt-image-2.5-sunburst',
     description: 'Máxima fidelidade para thumbnails exigentes, preservação estrita de identidade, produtos e edições precisas.',
+    promptStyle: 'structured_contract',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'strict_avoid',
+    legacyAliases: ['OPENAI'],
     aspectRatio16_9Hint: '3840x2160',
     aspectRatio9_16Hint: '2160x3840',
-    supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'] as OpenAIImageQuality[],
-    defaultQuality: 'high' as OpenAIImageQuality
+    supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'],
+    defaultQuality: 'high'
   },
   OPENAI_GPT_IMAGE_2_5_FLARE: {
-    id: 'OPENAI_GPT_IMAGE_2_5_FLARE' as TargetModel,
-    apiModelId: 'gpt-image-2.5-flare',
+    id: 'OPENAI_GPT_IMAGE_2_5_FLARE',
+    provider: 'OPENAI',
+    providerGroup: 'OPENAI',
     displayName: 'OpenAI — GPT Image 2.5 Flare',
+    family: 'GPT Image 2.5',
+    apiModelId: 'gpt-image-2.5-flare',
+    modelId: 'gpt-image-2.5-flare',
     description: 'Geração rápida e eficiente para thumbnails diárias e experimentação iterativa.',
+    promptStyle: 'structured_contract',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'strict_avoid',
     aspectRatio16_9Hint: '2048x1152',
     aspectRatio9_16Hint: '1152x2048',
-    supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh'] as OpenAIImageQuality[],
-    defaultQuality: 'auto' as OpenAIImageQuality
+    supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh'],
+    defaultQuality: 'auto'
   },
-  GEMINI: {
-    id: 'GEMINI' as TargetModel,
-    displayName: 'Google Gemini Image',
-    description: 'Otimizado para fidelidade física, perspectiva óptica natural e zero plastificação.'
+  GOOGLE_NANO_BANANA_2: {
+    id: 'GOOGLE_NANO_BANANA_2',
+    provider: 'GOOGLE',
+    providerGroup: 'GOOGLE',
+    displayName: 'Google — Nano Banana 2',
+    family: 'Nano Banana',
+    apiModelId: 'gemini-3.1-flash-image',
+    modelId: 'gemini-3.1-flash-image',
+    description: 'Geração e edição ágil com múltiplas referências, consistência de personagem e tipografia nítida.',
+    promptStyle: 'natural_multireference',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'standard',
+    legacyAliases: ['GEMINI', 'GOOGLE_IMAGEN'],
+    aspectRatio16_9Hint: '2048x1152',
+    aspectRatio9_16Hint: '1152x2048',
+    supportedQualities: ['auto', 'high'],
+    defaultQuality: 'auto'
   },
-  MIDJOURNEY: {
-    id: 'MIDJOURNEY' as TargetModel,
-    displayName: 'Midjourney',
-    description: 'Com parâmetros de proporção (--ar) e --style raw sob demanda.'
-  },
-  FLUX: {
-    id: 'FLUX' as TargetModel,
-    displayName: 'FLUX',
-    description: 'Otimizado para textura tátil profissional e perspectiva óptica 35mm.'
-  },
-  OPENAI: {
-    id: 'OPENAI' as TargetModel,
-    apiModelId: 'gpt-image-2.5-sunburst',
-    displayName: 'OpenAI (Legado)',
-    description: 'Redirecionado automaticamente para GPT Image 2.5 Sunburst.',
+  GOOGLE_NANO_BANANA_PRO: {
+    id: 'GOOGLE_NANO_BANANA_PRO',
+    provider: 'GOOGLE',
+    providerGroup: 'GOOGLE',
+    displayName: 'Google — Nano Banana Pro',
+    family: 'Nano Banana',
+    apiModelId: 'gemini-3-pro-image',
+    modelId: 'gemini-3-pro-image',
+    description: 'Composições profissionais difíceis, alta fidelidade de detalhes e cenas carregadas de referências.',
+    promptStyle: 'natural_multireference',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'standard',
     aspectRatio16_9Hint: '3840x2160',
     aspectRatio9_16Hint: '2160x3840',
-    supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'] as OpenAIImageQuality[],
-    defaultQuality: 'high' as OpenAIImageQuality
+    supportedQualities: ['auto', 'high', 'max'],
+    defaultQuality: 'high'
+  },
+  MIDJOURNEY_V8_2: {
+    id: 'MIDJOURNEY_V8_2',
+    provider: 'MIDJOURNEY',
+    providerGroup: 'MIDJOURNEY',
+    displayName: 'Midjourney — V8.2',
+    family: 'Midjourney',
+    apiModelId: 'v8.2',
+    modelId: 'v8.2',
+    description: 'Prompt visual conciso com proporção (--ar) e parâmetros atuais da versão 8.2.',
+    promptStyle: 'concise_visual',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: false,
+    negativePromptMode: 'none',
+    legacyAliases: ['MIDJOURNEY'],
+    aspectRatio16_9Hint: '--ar 16:9',
+    aspectRatio9_16Hint: '--ar 9:16'
+  },
+  MIDJOURNEY_NIJI_7: {
+    id: 'MIDJOURNEY_NIJI_7',
+    provider: 'MIDJOURNEY',
+    providerGroup: 'MIDJOURNEY',
+    displayName: 'Midjourney — Niji 7',
+    family: 'Niji',
+    apiModelId: 'niji-7',
+    modelId: 'niji-7',
+    description: 'Tratamentos ilustrados, anime, mangá e composição visual com estética oriental refinada.',
+    promptStyle: 'concise_visual',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: false,
+    negativePromptMode: 'none',
+    aspectRatio16_9Hint: '--ar 16:9',
+    aspectRatio9_16Hint: '--ar 9:16'
+  },
+  FLUX_2_MAX: {
+    id: 'FLUX_2_MAX',
+    provider: 'BLACK_FOREST_LABS',
+    providerGroup: 'BLACK FOREST LABS',
+    displayName: 'FLUX.2 Max',
+    family: 'FLUX.2',
+    apiModelId: 'flux-2-max',
+    modelId: 'flux-2-max',
+    description: 'Saída fotográfica de máxima qualidade, seguimento estrito de instruções e texturas realistas.',
+    promptStyle: 'direct_natural_positive',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'positive_conversion',
+    legacyAliases: ['FLUX'],
+    aspectRatio16_9Hint: '3840x2160',
+    aspectRatio9_16Hint: '2160x3840',
+    supportedQualities: ['auto', 'high', 'max'],
+    defaultQuality: 'high'
+  },
+  FLUX_2_PRO: {
+    id: 'FLUX_2_PRO',
+    provider: 'BLACK_FOREST_LABS',
+    providerGroup: 'BLACK FOREST LABS',
+    displayName: 'FLUX.2 Pro',
+    family: 'FLUX.2',
+    apiModelId: 'flux-2-pro',
+    modelId: 'flux-2-pro',
+    description: 'Equilíbrio ideal entre velocidade e qualidade para fluxos profissionais do dia a dia.',
+    promptStyle: 'direct_natural_positive',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'positive_conversion',
+    aspectRatio16_9Hint: '2048x1152',
+    aspectRatio9_16Hint: '1152x2048',
+    supportedQualities: ['auto', 'high'],
+    defaultQuality: 'auto'
+  },
+  FLUX_2_FLEX: {
+    id: 'FLUX_2_FLEX',
+    provider: 'BLACK_FOREST_LABS',
+    providerGroup: 'BLACK FOREST LABS',
+    displayName: 'FLUX.2 Flex',
+    family: 'FLUX.2',
+    apiModelId: 'flux-2-flex',
+    modelId: 'flux-2-flex',
+    description: 'Controle refinado e renderização tipográfica precisa diretamente na composição da imagem.',
+    promptStyle: 'direct_natural_positive',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'positive_conversion',
+    aspectRatio16_9Hint: '2048x1152',
+    aspectRatio9_16Hint: '1152x2048',
+    supportedQualities: ['auto', 'high'],
+    defaultQuality: 'auto'
+  },
+  FLUX_2_KLEIN: {
+    id: 'FLUX_2_KLEIN',
+    provider: 'BLACK_FOREST_LABS',
+    providerGroup: 'BLACK FOREST LABS',
+    displayName: 'FLUX.2 Klein',
+    family: 'FLUX.2',
+    apiModelId: 'flux-2-klein',
+    modelId: 'flux-2-klein',
+    description: 'Iteração rápida, prévias imediatas e menor latência de geração.',
+    promptStyle: 'direct_natural_positive',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'positive_conversion',
+    aspectRatio16_9Hint: '1536x864',
+    aspectRatio9_16Hint: '864x1536',
+    supportedQualities: ['auto', 'low', 'medium'],
+    defaultQuality: 'auto'
+  },
+  OPENAI: {
+    id: 'OPENAI',
+    provider: 'OPENAI',
+    providerGroup: 'OPENAI',
+    displayName: 'OpenAI (Legado)',
+    family: 'GPT Image 2.5',
+    apiModelId: 'gpt-image-2.5-sunburst',
+    modelId: 'gpt-image-2.5-sunburst',
+    description: 'Redirecionado automaticamente para GPT Image 2.5 Sunburst.',
+    promptStyle: 'structured_contract',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'strict_avoid',
+    aspectRatio16_9Hint: '3840x2160',
+    aspectRatio9_16Hint: '2160x3840',
+    supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh', 'max'],
+    defaultQuality: 'high'
+  },
+  GEMINI: {
+    id: 'GEMINI',
+    provider: 'GOOGLE',
+    providerGroup: 'GOOGLE',
+    displayName: 'Google Gemini Image (Legado)',
+    family: 'Nano Banana',
+    apiModelId: 'gemini-3.1-flash-image',
+    modelId: 'gemini-3.1-flash-image',
+    description: 'Redirecionado automaticamente para Google Nano Banana 2.',
+    promptStyle: 'natural_multireference',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'standard',
+    aspectRatio16_9Hint: '2048x1152',
+    aspectRatio9_16Hint: '1152x2048'
+  },
+  GOOGLE_IMAGEN: {
+    id: 'GOOGLE_IMAGEN',
+    provider: 'GOOGLE',
+    providerGroup: 'GOOGLE',
+    displayName: 'Google Imagen (Legado)',
+    family: 'Nano Banana',
+    apiModelId: 'gemini-3.1-flash-image',
+    modelId: 'gemini-3.1-flash-image',
+    description: 'Redirecionado automaticamente para Google Nano Banana 2.',
+    promptStyle: 'natural_multireference',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'standard',
+    aspectRatio16_9Hint: '2048x1152',
+    aspectRatio9_16Hint: '1152x2048'
+  },
+  MIDJOURNEY: {
+    id: 'MIDJOURNEY',
+    provider: 'MIDJOURNEY',
+    providerGroup: 'MIDJOURNEY',
+    displayName: 'Midjourney (Legado)',
+    family: 'Midjourney',
+    apiModelId: 'v8.2',
+    modelId: 'v8.2',
+    description: 'Redirecionado automaticamente para Midjourney V8.2.',
+    promptStyle: 'concise_visual',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: false,
+    negativePromptMode: 'none',
+    aspectRatio16_9Hint: '--ar 16:9',
+    aspectRatio9_16Hint: '--ar 9:16'
+  },
+  FLUX: {
+    id: 'FLUX',
+    provider: 'BLACK_FOREST_LABS',
+    providerGroup: 'BLACK FOREST LABS',
+    displayName: 'FLUX (Legado)',
+    family: 'FLUX.2',
+    apiModelId: 'flux-2-max',
+    modelId: 'flux-2-max',
+    description: 'Redirecionado automaticamente para FLUX.2 Max.',
+    promptStyle: 'direct_natural_positive',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'positive_conversion',
+    aspectRatio16_9Hint: '3840x2160',
+    aspectRatio9_16Hint: '2160x3840'
   }
 };
 
@@ -972,25 +1262,20 @@ export function resolveOutputMetadata(
   aspectRatio: '16:9' | '9:16' = '16:9'
 ): ImageOutputMetadata | undefined {
   const norm = normalizeTargetModel(targetModel);
-  if (norm === 'OPENAI_GPT_IMAGE_2_5_SUNBURST') {
-    return {
-      modelId: 'gpt-image-2.5-sunburst',
-      targetModel: 'OPENAI_GPT_IMAGE_2_5_SUNBURST',
-      aspectRatioHint: aspectRatio === '9:16' ? '2160x3840' : '3840x2160',
-      quality: 'high',
-      supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh', 'max']
-    };
-  }
-  if (norm === 'OPENAI_GPT_IMAGE_2_5_FLARE') {
-    return {
-      modelId: 'gpt-image-2.5-flare',
-      targetModel: 'OPENAI_GPT_IMAGE_2_5_FLARE',
-      aspectRatioHint: aspectRatio === '9:16' ? '1152x2048' : '2048x1152',
-      quality: 'auto',
-      supportedQualities: ['auto', 'low', 'medium', 'high', 'xhigh']
-    };
-  }
-  return undefined;
+  const cfg = TARGET_MODEL_CONFIGS[norm];
+  if (!cfg || !cfg.modelId) return undefined;
+
+  const aspectHint = aspectRatio === '9:16'
+    ? (cfg.aspectRatio9_16Hint || '1152x2048')
+    : (cfg.aspectRatio16_9Hint || '2048x1152');
+
+  return {
+    modelId: cfg.modelId,
+    targetModel: norm,
+    aspectRatioHint: aspectHint,
+    quality: cfg.defaultQuality || 'auto',
+    supportedQualities: cfg.supportedQualities || ['auto', 'high']
+  };
 }
 
 /**
@@ -1226,6 +1511,397 @@ ${avoidList}`;
 }
 
 /**
+ * Options for Google prompt generation (Nano Banana 2 / Nano Banana Pro)
+ */
+export interface GooglePromptOptions {
+  plan: ScenePlan;
+  input: CreateThumbnailInput;
+  variant: 'BANANA_2' | 'BANANA_PRO';
+  typographyDirective: string;
+  arParam: string;
+}
+
+/**
+ * Builds prompt formatted for Google Gemini image models (Nano Banana 2 / Pro).
+ * Follows natural-language multi-reference instructions:
+ * - Numbered references (Image 1, Image 2, etc.)
+ * - WHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE
+ * - WHAT CHANGES
+ * - WHAT REMAINS / PRESERVE
+ * - Natural photographic directives without domestic room bias
+ * - Typography directive
+ */
+export function buildGooglePrompt({
+  plan,
+  input,
+  variant,
+  typographyDirective,
+  arParam
+}: GooglePromptOptions): string {
+  const cleanIdea = (input.ideaDescription || '').trim() || (input.videoTitle || '').trim();
+  const refs = input.references || [];
+  const targetName = plan.targetImage?.name || 'personagem mestre';
+  const idName = plan.identitySource?.name || 'foto de identidade';
+  const prodName = plan.productSource?.name || 'produto';
+  const envName = plan.environmentSource?.name || 'cenário';
+
+  const targetIdx = plan.targetImage ? (refs.findIndex(r => r.id === plan.targetImage?.id) + 1 || 1) : 1;
+  const idIdx = plan.identitySource ? (refs.findIndex(r => r.id === plan.identitySource?.id) + 1 || 1) : 1;
+  const prodIdx = plan.productSource ? (refs.findIndex(r => r.id === plan.productSource?.id) + 1 || 1) : 1;
+  const envIdx = plan.environmentSource ? (refs.findIndex(r => r.id === plan.environmentSource?.id) + 1 || 1) : 1;
+
+  // 1. Reference mapping
+  let refMapping = 'REFERENCE ROLES:\nNone (standalone visual composition generated from scratch).';
+  if (refs.length > 0) {
+    refMapping = `REFERENCE ROLES:\n` + refs.map((r, i) => `Image ${i + 1} = [Role: ${r.role}] "${r.name}"`).join('\n');
+  }
+
+  // 2. Attribute control mapping
+  let attributeControl = 'WHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE:\n';
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    attributeControl += `- Facial Identity: Image ${idIdx} ("${idName}") controls recognizable facial bone structure, true age, eye shape, and expressions.\n`;
+    attributeControl += `- Body & Master Structure: Image ${targetIdx} ("${targetName}") controls exact body posture, 3D skull angle, head tilt, armor/clothing fabrics, and equipment.\n`;
+    attributeControl += `- Hairstyle & Hair Texture: ${plan.hairOwner === 'TARGET' ? `Strictly controlled by Image ${targetIdx} ("${targetName}")` : `Controlled by Image ${idIdx} ("${idName}")`}.\n`;
+    attributeControl += `- Facial Hair / Beard: ${plan.beardOwner === 'TARGET' ? `Strictly controlled by Image ${targetIdx} ("${targetName}")` : plan.beardOwner === 'PERSON_REF' ? `Controlled by Image ${idIdx} ("${idName}")` : 'Clean natural finish consistent with character'}.\n`;
+    if (plan.environmentSource) {
+      attributeControl += `- Environment & Lighting: Image ${envIdx} ("${envName}") controls architectural setting and spatial atmosphere.\n`;
+    } else {
+      attributeControl += `- Environment & Lighting: Preserved from Image ${targetIdx} ("${targetName}").\n`;
+    }
+  } else if (plan.taskType === 'REPLACE_OBJECT') {
+    attributeControl += `- Subject & Background: Image ${targetIdx} ("${targetName}") controls person identity, posture, expression, framing, and environment.\n`;
+    attributeControl += `- Hardware / Product: Image ${prodIdx} ("${prodName}") controls exact hardware geometry, chassis, ports, buttons, and matte materials.\n`;
+  } else if (plan.taskType === 'CHANGE_ENVIRONMENT') {
+    attributeControl += `- Subject: Image ${targetIdx} ("${targetName}") controls subject identity, body posture, clothing, and props.\n`;
+    attributeControl += `- Environment: Image ${envIdx} ("${envName}") controls background architecture, spatial perspective, and lighting atmosphere.\n`;
+  } else {
+    attributeControl += refs.length > 0
+      ? `- Visual Elements: Controlled by provided references as primary visual anchors.\n`
+      : `- Visual Elements: Harmonious natural composition generated with realistic physical fidelity.\n`;
+  }
+
+  // 3. WHAT CHANGES
+  let whatChanges = 'WHAT CHANGES:\n';
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    whatChanges += `Reconstruct the target character's facial anatomy so that the character naturally embodies the recognizable identity of the individual in Image ${idIdx} ("${idName}"): authentic bone structure, eye shape, nose, mouth proportions, natural asymmetry, and true age. Reconstruct organically onto the target 3D skull angle without flat face pasting.`;
+  } else if (plan.taskType === 'REPLACE_OBJECT') {
+    whatChanges += `Replace the original held object with the exact physical hardware geometry, chassis proportions, ports, button seams, and tactile materials from Image ${prodIdx} ("${prodName}"). Adapt hand grip naturally around the device.`;
+  } else if (plan.taskType === 'CHANGE_ENVIRONMENT') {
+    whatChanges += `Replace the background environment entirely with the authentic architectural space, spatial depth, and lighting atmosphere from Image ${envIdx} ("${envName}"). Adapt subtle light bounce on subject shoulders.`;
+  } else {
+    whatChanges += `Establish complete photographic thumbnail composition based on: "${cleanIdea}".`;
+  }
+  if (input.extraInstructions && input.extraInstructions.trim().length > 0) {
+    whatChanges += `\nDIRECTOR NOTES: ${input.extraInstructions.trim()}`;
+  }
+
+  // 4. WHAT REMAINS / PRESERVE
+  let whatRemains = 'WHAT REMAINS:\n';
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    whatRemains += `1. Master character body posture, head rotation, eye gaze direction, and 16:9 framing.\n`;
+    whatRemains += `2. Exact armor finishes, physical fabrics, weathered textures, and physical seams from Image ${targetIdx} ("${targetName}").\n`;
+    whatRemains += `3. Handheld props and equipment held naturally with anatomically plausible hands and correct visible finger count.\n`;
+    whatRemains += `4. Hairstyle and facial hair strictly preserved from target character master.\n`;
+    whatRemains += `5. Target background setting and directional lighting coherence.`;
+  } else if (plan.taskType === 'REPLACE_OBJECT') {
+    whatRemains += `1. Person facial identity, expression, gaze direction, and body posture from master photo.\n`;
+    whatRemains += `2. Person clothing and camera distance.\n`;
+    whatRemains += `3. Original background setting and ambient lighting direction.`;
+  } else if (plan.taskType === 'CHANGE_ENVIRONMENT') {
+    whatRemains += `1. Exact subject facial identity, true age, and composed expression.\n`;
+    whatRemains += `2. Subject body posture, clothing, and any held objects.\n`;
+    whatRemains += `3. Framing scale and camera distance.`;
+  } else {
+    whatRemains += `1. Composed human expression with closed mouth and natural skin texture without plastic smoothing.\n`;
+    whatRemains += `2. Grounded real-world scale and authentic physical materials.\n`;
+    whatRemains += `3. Clean optical separation with generous negative space.`;
+  }
+
+  // 5. PHOTOGRAPHIC DIRECTIVES
+  const fidelityNote = variant === 'BANANA_PRO' ? ' Maximum micro-contrast rendering with multi-reference fidelity.' : '';
+  const photoDirectives = `PHOTOGRAPHIC DIRECTIVES:
+16:9 widescreen format (${arParam}). 35mm lens perspective preserving authentic spatial depth. Directed visual storytelling with bold subject silhouette optimized for 120px mobile thumbnail scale. Motivated physical lighting with natural directional key light and soft shadow falloff. Zero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic clutter (no bedrooms, sofas, desks, or lamps).${fidelityNote}`;
+
+  // 6. TYPOGRAPHY
+  const typoSection = `TYPOGRAPHY:
+${typographyDirective}`;
+
+  return `SCENE:
+${cleanIdea}
+
+${refMapping}
+
+${attributeControl}
+${whatChanges}
+
+${whatRemains}
+
+${photoDirectives}
+
+${typoSection}`;
+}
+
+/**
+ * Options for Midjourney prompt generation (V8.2 / Niji 7)
+ */
+export interface MidjourneyPromptOptions {
+  plan: ScenePlan;
+  input: CreateThumbnailInput;
+  variant: 'V8_2' | 'NIJI_7';
+}
+
+/**
+ * Builds concise visual prompt for Midjourney (V8.2 / Niji 7).
+ * Strips verbose internal engine syntax (HAIR OWNER, TASK, contract labels).
+ * Emits --ar 16:9 or --ar 9:16.
+ * Emits --v 8.2 or --niji 7.
+ * Applies --style raw only when justified on V8.2 (never on Niji 7).
+ */
+export function buildMidjourneyPrompt({
+  plan,
+  input,
+  variant
+}: MidjourneyPromptOptions): string {
+  const cleanIdea = (input.ideaDescription || '').trim() || (input.videoTitle || '').trim();
+  const arFlag = input.aspectRatio === '9:16' ? '--ar 9:16' : '--ar 16:9';
+  const targetName = plan.targetImage?.name || 'target character';
+  const idName = plan.identitySource?.name || 'reference person';
+  const prodName = plan.productSource?.name || 'hardware device';
+  const envName = plan.environmentSource?.name || 'environment';
+
+  let visualText = '';
+
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    const hairDesc = plan.hairOwner === 'TARGET'
+      ? `preserving the target character's authentic hairstyle, hair texture, and volume from "${targetName}"`
+      : `with natural hairstyle from "${idName}"`;
+    const beardDesc = plan.beardOwner === 'TARGET'
+      ? `and exact facial hair from "${targetName}"`
+      : '';
+
+    visualText = `Photographic YouTube thumbnail, ${cleanIdea}, featuring the person from "${idName}" organically embodied as the character from "${targetName}", ${hairDesc} ${beardDesc}, wearing the exact heavy worn armor and costume, holding the map naturally with anatomically plausible hands. Grounded realism, motivated directional physical lighting, 35mm lens perspective, sharp subject focus with clean separation, authentic textures without plastic smoothing`;
+  } else if (plan.taskType === 'REPLACE_OBJECT') {
+    visualText = `Photographic YouTube thumbnail, ${cleanIdea}, featuring the creator holding the physical hardware device from "${prodName}" with natural plausible hand grip, authentic chassis seams, ports, and buttons, natural composed facial expression, motivated lighting matching the scene, 35mm lens perspective, tactile matte materials`;
+  } else if (plan.taskType === 'CHANGE_ENVIRONMENT') {
+    visualText = `Photographic YouTube thumbnail, ${cleanIdea}, subject from "${targetName}" naturally integrated into the architectural setting of "${envName}", subtle motivated environmental light bounce on shoulders and silhouette edges, authentic spatial depth, 35mm perspective, clean negative space`;
+  } else {
+    visualText = `Photographic YouTube thumbnail, ${cleanIdea}, compelling hero presentation with clean silhouette and immediate readability at 120px mobile thumbnail scale, natural composed human expression with closed mouth, motivated directional physical key light with soft shadow falloff, 35mm lens perspective, authentic tactile textures, generous negative space`;
+  }
+
+  if (variant === 'NIJI_7') {
+    return `${visualText}\n\n${arFlag} --niji 7`;
+  }
+
+  // Midjourney V8.2
+  const wantsRaw = (input.stylePreset === 'Natural' || input.stylePreset === 'Fotojornalismo') &&
+    input.realismLevel === 'Alto' &&
+    !/(cinemat|styliz|fantasy|cartoon|3d|anime|manga)/i.test(cleanIdea);
+
+  return wantsRaw
+    ? `${visualText}\n\n${arFlag} --style raw --v 8.2`
+    : `${visualText}\n\n${arFlag} --v 8.2`;
+}
+
+/**
+ * Options for FLUX prompt generation (Max, Pro, Flex, Klein)
+ */
+export interface FluxPromptOptions {
+  plan: ScenePlan;
+  input: CreateThumbnailInput;
+  variant: 'MAX' | 'PRO' | 'FLEX' | 'KLEIN';
+  typographyDirective: string;
+  arParam: string;
+}
+
+/**
+ * Builds direct natural-language prompt for FLUX.2 models (Max / Pro / Flex / Klein).
+ * Uses explicit multi-reference sourcing.
+ * Converts generic negatives into positive desired states.
+ * Keeps hard preservation constraints concise.
+ */
+export function buildFluxPrompt({
+  plan,
+  input,
+  variant,
+  typographyDirective,
+  arParam
+}: FluxPromptOptions): string {
+  const cleanIdea = (input.ideaDescription || '').trim() || (input.videoTitle || '').trim();
+  const refs = input.references || [];
+  const targetName = plan.targetImage?.name || 'target character';
+  const idName = plan.identitySource?.name || 'identity photo';
+  const prodName = plan.productSource?.name || 'product reference';
+  const envName = plan.environmentSource?.name || 'scenery reference';
+
+  const targetIdx = plan.targetImage ? (refs.findIndex(r => r.id === plan.targetImage?.id) + 1 || 1) : 1;
+  const idIdx = plan.identitySource ? (refs.findIndex(r => r.id === plan.identitySource?.id) + 1 || 1) : 1;
+  const prodIdx = plan.productSource ? (refs.findIndex(r => r.id === plan.productSource?.id) + 1 || 1) : 1;
+  const envIdx = plan.environmentSource ? (refs.findIndex(r => r.id === plan.environmentSource?.id) + 1 || 1) : 1;
+
+  let directDescription = '';
+
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    const hairPreserve = plan.hairOwner === 'TARGET'
+      ? `preserving the target character's authentic hairstyle and hair texture from Image ${targetIdx} ("${targetName}")`
+      : `with personal hairstyle from Image ${idIdx} ("${idName}")`;
+    const beardPreserve = plan.beardOwner === 'TARGET'
+      ? `and exact facial hair from Image ${targetIdx}`
+      : '';
+
+    directDescription = `Use the person from Image ${idIdx} ("${idName}") for facial identity. Use Image ${targetIdx} ("${targetName}") as the structural target for body posture, 3D skull angle, head tilt, armor fabrics, and physical equipment. Reconstruct the facial anatomy organically to match Image ${idIdx}'s authentic bone structure, eye shape, and true age, while strictly ${hairPreserve} ${beardPreserve}, and hands holding the map with natural plausible grip and correct visible finger count.`;
+  } else if (plan.taskType === 'REPLACE_OBJECT') {
+    directDescription = `Use Image ${targetIdx} ("${targetName}") as master anchor for person facial identity, expression, pose, and background environment. Use Image ${prodIdx} ("${prodName}") for the exact physical hardware geometry, chassis proportions, ports, buttons, and matte textures. Adapt hand grip naturally around the new hardware with correct visible finger count.`;
+  } else if (plan.taskType === 'CHANGE_ENVIRONMENT') {
+    directDescription = `Preserve the subject from Image ${targetIdx} ("${targetName}") including exact facial identity, composed expression, clothing, and body posture. Integrate the authentic background architecture and spatial atmosphere from Image ${envIdx} ("${envName}") with matching directional light bounce.`;
+  } else {
+    directDescription = `Photographic YouTube thumbnail, ${cleanIdea}. Subject presented with bold silhouette and clear optical separation optimized for 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth.`;
+  }
+
+  const variantNote = variant === 'MAX' ? ' Maximum photographic detail and strict instruction following.' : '';
+  const positiveAttributes = `POSITIVE VISUAL ATTRIBUTES:
+- Natural skin texture with realistic pores, authentic tonal variation, and zero plastic smoothing.
+- Physically motivated illumination with clean directional key light and soft natural shadow falloff.
+- Restrained believable human expression appropriate to the scene with closed mouth.
+- Controlled optical separation with a readable background and generous negative space.
+- Anatomically plausible hands with natural grip and correct visible finger count according to pose.
+- 35mm digital camera perspective (${arParam}) with tactile physical materials.${variantNote}`;
+
+  let preservationConstraints = 'PRESERVATION CONSTRAINTS:\n';
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    preservationConstraints += `Do not alter the target character armor, physical equipment, hairstyle, facial hair, body posture, or background setting. Zero synthetic AI gloss or plastic face paste.`;
+  } else if (plan.taskType === 'REPLACE_OBJECT') {
+    preservationConstraints += `Do not alter person facial identity, clothing, background environment, or scene lighting. Zero deformed hardware geometry.`;
+  } else if (plan.taskType === 'CHANGE_ENVIRONMENT') {
+    preservationConstraints += `Do not alter subject facial identity, clothing, or body posture. Zero artificial halo around edges.`;
+  } else {
+    preservationConstraints += `Zero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic room clutter (no bedrooms, living rooms, sofas, desks, or lamps).`;
+  }
+
+  const typographySection = `TYPOGRAPHY:
+${typographyDirective}`;
+
+  return `SCENE INSTRUCTION:
+${directDescription}
+
+${positiveAttributes}
+
+${preservationConstraints}
+
+${typographySection}`;
+}
+
+/**
+ * Options for central prompt renderer
+ */
+export interface RenderPromptOptions {
+  plan: ScenePlan;
+  input: CreateThumbnailInput;
+  basePrompt: string;
+  typographyDirective: string;
+  arParam: string;
+}
+
+/**
+ * Central prompt dispatcher that renders model-specific prompt formats.
+ */
+export function renderPromptForTargetModel(options: RenderPromptOptions): string {
+  const { plan, input, basePrompt, typographyDirective, arParam } = options;
+  const normalizedModel = normalizeTargetModel(input.targetModel);
+
+  switch (normalizedModel) {
+    case 'OPENAI_GPT_IMAGE_2_5_SUNBURST':
+      return buildOpenAIStructuredPrompt({
+        plan,
+        input,
+        variant: 'SUNBURST',
+        typographyDirective,
+        arParam
+      });
+
+    case 'OPENAI_GPT_IMAGE_2_5_FLARE':
+      return buildOpenAIStructuredPrompt({
+        plan,
+        input,
+        variant: 'FLARE',
+        typographyDirective,
+        arParam
+      });
+
+    case 'GOOGLE_NANO_BANANA_2':
+      return buildGooglePrompt({
+        plan,
+        input,
+        variant: 'BANANA_2',
+        typographyDirective,
+        arParam
+      });
+
+    case 'GOOGLE_NANO_BANANA_PRO':
+      return buildGooglePrompt({
+        plan,
+        input,
+        variant: 'BANANA_PRO',
+        typographyDirective,
+        arParam
+      });
+
+    case 'MIDJOURNEY_V8_2':
+      return buildMidjourneyPrompt({
+        plan,
+        input,
+        variant: 'V8_2'
+      });
+
+    case 'MIDJOURNEY_NIJI_7':
+      return buildMidjourneyPrompt({
+        plan,
+        input,
+        variant: 'NIJI_7'
+      });
+
+    case 'FLUX_2_MAX':
+      return buildFluxPrompt({
+        plan,
+        input,
+        variant: 'MAX',
+        typographyDirective,
+        arParam
+      });
+
+    case 'FLUX_2_PRO':
+      return buildFluxPrompt({
+        plan,
+        input,
+        variant: 'PRO',
+        typographyDirective,
+        arParam
+      });
+
+    case 'FLUX_2_FLEX':
+      return buildFluxPrompt({
+        plan,
+        input,
+        variant: 'FLEX',
+        typographyDirective,
+        arParam
+      });
+
+    case 'FLUX_2_KLEIN':
+      return buildFluxPrompt({
+        plan,
+        input,
+        variant: 'KLEIN',
+        typographyDirective,
+        arParam
+      });
+
+    case 'GERAL':
+    default:
+      return basePrompt;
+  }
+}
+
+/**
  * 6. PROMPT BUILDER: Builds the generation prompt based on the ScenePlan.
  */
 export function buildPromptFromScenePlan(
@@ -1405,33 +2081,13 @@ NEGATIVE / STRICTLY AVOID:
 ${CORE_ANTI_SLOP_AVOID.slice(0, 25).join(', ')}.`;
   }
 
-  const normalizedModel = normalizeTargetModel(input.targetModel);
-
-  if (normalizedModel === 'OPENAI_GPT_IMAGE_2_5_SUNBURST') {
-    finalPrompt = buildOpenAIStructuredPrompt({
-      plan,
-      input,
-      variant: 'SUNBURST',
-      typographyDirective,
-      arParam
-    });
-  } else if (normalizedModel === 'OPENAI_GPT_IMAGE_2_5_FLARE') {
-    finalPrompt = buildOpenAIStructuredPrompt({
-      plan,
-      input,
-      variant: 'FLARE',
-      typographyDirective,
-      arParam
-    });
-  } else if (normalizedModel === 'MIDJOURNEY') {
-    const arFlag = input.aspectRatio === '9:16' ? '--ar 9:16' : '--ar 16:9';
-    const wantsRaw = (input.stylePreset === 'Natural' || input.stylePreset === 'Fotojornalismo') && input.realismLevel === 'Alto' && !/(cinemat|styliz|fantasy|cartoon|3d)/i.test(cleanIdea);
-    finalPrompt = wantsRaw ? `${finalPrompt}\n\n${arFlag} --style raw` : `${finalPrompt}\n\n${arFlag}`;
-  } else if (normalizedModel === 'FLUX') {
-    finalPrompt = `[Authentic photography] ${finalPrompt} shot on professional digital camera with 35mm focal length, clean optical perspective, tactile real-world materials.`;
-  } else if (normalizedModel === 'GEMINI') {
-    finalPrompt = `Google Gemini Imagen Prompt:\n${finalPrompt}\nDirective: Emphasize physical realism, grounded optical perspective, natural skin textures, and zero synthetic AI gloss.`;
-  }
+  finalPrompt = renderPromptForTargetModel({
+    plan,
+    input,
+    basePrompt: finalPrompt,
+    typographyDirective,
+    arParam
+  });
 
   const audit = auditPromptProvenance(finalPrompt, plan, input.references);
   finalPrompt = audit.cleanedPrompt;
@@ -1967,36 +2623,14 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
     typographyDirective = `Reserve clean, uncluttered negative space on the ${posStr} of the composition specifically for post-production typography ("${thumbnailText.trim()}"). Do not bake distorted AI typography directly into the pixels.`;
   }
 
-  // Model-specific adjustments (No hardcoded versions)
-  const normalizedModel = normalizeTargetModel(targetModel);
-  let finalPrompt = promptBody;
-
-  if (normalizedModel === 'OPENAI_GPT_IMAGE_2_5_SUNBURST') {
-    finalPrompt = buildOpenAIStructuredPrompt({
-      plan: scenePlan,
-      input,
-      variant: 'SUNBURST',
-      typographyDirective,
-      arParam: aspectRatio === '9:16' ? '9:16 vertical format' : '16:9 widescreen format'
-    });
-  } else if (normalizedModel === 'OPENAI_GPT_IMAGE_2_5_FLARE') {
-    finalPrompt = buildOpenAIStructuredPrompt({
-      plan: scenePlan,
-      input,
-      variant: 'FLARE',
-      typographyDirective,
-      arParam: aspectRatio === '9:16' ? '9:16 vertical format' : '16:9 widescreen format'
-    });
-  } else if (normalizedModel === 'MIDJOURNEY') {
-    const arFlag = aspectRatio === '9:16' ? '--ar 9:16' : '--ar 16:9';
-    // Regra 2: --style raw somente quando fizer sentido para a intenção visual (realismo/natural/fotojornalismo)
-    const wantsRaw = (stylePreset === 'Natural' || stylePreset === 'Fotojornalismo') && realismLevel === 'Alto' && !/(cinemat|styliz|fantasy|cartoon|3d)/i.test(cleanIdea);
-    finalPrompt = wantsRaw ? `${promptBody}\n\n${arFlag} --style raw` : `${promptBody}\n\n${arFlag}`;
-  } else if (normalizedModel === 'FLUX') {
-    finalPrompt = `[Authentic photography] ${promptBody} shot on professional digital camera with 35mm focal length, clean optical perspective, tactile real-world materials.`;
-  } else if (normalizedModel === 'GEMINI') {
-    finalPrompt = `Google Gemini Imagen Prompt:\n${promptBody}\nDirective: Emphasize physical realism, grounded optical perspective, natural skin textures, and zero synthetic AI gloss.`;
-  }
+  // Model-specific adjustments rendered via central dispatcher
+  let finalPrompt = renderPromptForTargetModel({
+    plan: scenePlan,
+    input,
+    basePrompt: promptBody,
+    typographyDirective,
+    arParam: aspectRatio === '9:16' ? '9:16 vertical format' : '16:9 widescreen format'
+  });
 
   // Audit prompt through Provenance Guard to strip any unsupported defaults or leakage
   const audit = auditPromptProvenance(finalPrompt, scenePlan, references);

@@ -1423,7 +1423,7 @@ console.log('\n23. Testando Novos Alvos OpenAI 2026: GPT Image 2.5 Sunburst, Fla
   assert.equal(normalizeTargetModel('OPENAI'), 'OPENAI_GPT_IMAGE_2_5_SUNBURST', 'TEST 23.1: "OPENAI" legado migra para SUNBURST');
   assert.equal(normalizeTargetModel('OPENAI_GPT_IMAGE_2_5_SUNBURST'), 'OPENAI_GPT_IMAGE_2_5_SUNBURST');
   assert.equal(normalizeTargetModel('OPENAI_GPT_IMAGE_2_5_FLARE'), 'OPENAI_GPT_IMAGE_2_5_FLARE');
-  assert.equal(normalizeTargetModel('MIDJOURNEY'), 'MIDJOURNEY');
+  assert.equal(normalizeTargetModel('MIDJOURNEY'), 'MIDJOURNEY_V8_2', 'TEST 23.1: "MIDJOURNEY" legado migra para MIDJOURNEY_V8_2');
   assert.equal(normalizeTargetModel('GERAL'), 'GERAL');
   assert.equal(normalizeTargetModel(null), 'GERAL');
   assert.equal(TARGET_MODEL_CONFIGS.OPENAI_GPT_IMAGE_2_5_SUNBURST.apiModelId, 'gpt-image-2.5-sunburst');
@@ -1527,6 +1527,144 @@ console.log('\n23. Testando Novos Alvos OpenAI 2026: GPT Image 2.5 Sunburst, Fla
   assert.ok(!geralResult.finalPrompt.includes('GOAL:'), 'GERAL mantém formato limpo e neutro');
   assert.ok(geralResult.finalPrompt.includes('Photographic YouTube thumbnail'), 'GERAL mantém cabeçalho fotográfico padrão');
   console.log('  ✓ TEST 23.5: TargetModel "GERAL" permanece 100% agnóstico e limpo.');
+}
+
+// 24. Testando Modernização de Modelos Alvo 2026: Google Nano Banana, Midjourney V8.2/Niji 7 e FLUX.2
+console.log('\n24. Testando Modernização de Modelos Alvo 2026: Google Nano Banana, Midjourney V8.2/Niji 7 e FLUX.2...');
+{
+  const {
+    generateSimpleThumbnail,
+    normalizeTargetModel,
+    TARGET_MODEL_CONFIGS
+  } = await import('../src/lib/simpleEngine/engine.ts');
+
+  // TEST 24.1: Migrações Legadas de Google, Midjourney e FLUX
+  assert.equal(normalizeTargetModel('GEMINI'), 'GOOGLE_NANO_BANANA_2', 'Legacy GEMINI -> GOOGLE_NANO_BANANA_2');
+  assert.equal(normalizeTargetModel('GOOGLE_IMAGEN'), 'GOOGLE_NANO_BANANA_2', 'Legacy GOOGLE_IMAGEN -> GOOGLE_NANO_BANANA_2');
+  assert.equal(normalizeTargetModel('Google Gemini Image'), 'GOOGLE_NANO_BANANA_2', 'Legacy text -> GOOGLE_NANO_BANANA_2');
+  assert.equal(normalizeTargetModel('MIDJOURNEY'), 'MIDJOURNEY_V8_2', 'Legacy MIDJOURNEY -> MIDJOURNEY_V8_2');
+  assert.equal(normalizeTargetModel('FLUX'), 'FLUX_2_MAX', 'Legacy FLUX -> FLUX_2_MAX');
+  assert.equal(normalizeTargetModel('FLUX Ultra'), 'FLUX_2_MAX', 'Legacy FLUX Ultra -> FLUX_2_MAX');
+  assert.equal(normalizeTargetModel('FLUX_2_PRO'), 'FLUX_2_PRO', 'Direct FLUX_2_PRO normalization');
+  assert.equal(normalizeTargetModel('MIDJOURNEY_NIJI_7'), 'MIDJOURNEY_NIJI_7', 'Direct NIJI_7 normalization');
+  assert.equal(normalizeTargetModel('GOOGLE_NANO_BANANA_PRO'), 'GOOGLE_NANO_BANANA_PRO', 'Direct BANANA_PRO normalization');
+  console.log('  ✓ TEST 24.1: Migrações legadas e normalizações transparentes para Google, Midjourney e FLUX validadas.');
+
+  // TEST 24.2: Catálogo Central de Modelos 2026 (TARGET_MODEL_CONFIGS)
+  assert.equal(TARGET_MODEL_CONFIGS.GOOGLE_NANO_BANANA_2.apiModelId, 'gemini-3.1-flash-image');
+  assert.equal(TARGET_MODEL_CONFIGS.GOOGLE_NANO_BANANA_PRO.apiModelId, 'gemini-3-pro-image');
+  assert.equal(TARGET_MODEL_CONFIGS.MIDJOURNEY_V8_2.apiModelId, 'v8.2');
+  assert.equal(TARGET_MODEL_CONFIGS.MIDJOURNEY_NIJI_7.apiModelId, 'niji-7');
+  assert.equal(TARGET_MODEL_CONFIGS.FLUX_2_MAX.apiModelId, 'flux-2-max');
+  assert.equal(TARGET_MODEL_CONFIGS.FLUX_2_PRO.apiModelId, 'flux-2-pro');
+  assert.equal(TARGET_MODEL_CONFIGS.FLUX_2_FLEX.apiModelId, 'flux-2-flex');
+  assert.equal(TARGET_MODEL_CONFIGS.FLUX_2_KLEIN.apiModelId, 'flux-2-klein');
+  console.log('  ✓ TEST 24.2: Catálogo de modelos 2026 contém todos os provedores e identificadores de API corretos.');
+
+  // Shared Crimson Desert Test Input
+  const crimsonInput = {
+    videoTitle: 'Crimson Desert Gameplay Avançado',
+    ideaDescription: 'Adapte meu rosto no guerreiro do jogo mantendo o cabelo, barba e armadura dele segurando o mapa no cenário da montanha.',
+    references: [
+      { id: 'ref-me', name: 'Minha Foto', role: 'PESSOA', url: 'https://example.com/me.jpg' },
+      { id: 'ref-crimson', name: 'Personagem Crimson Desert', role: 'IMAGEM_ALVO', url: 'https://example.com/crimson.jpg' },
+      { id: 'ref-scen', name: 'Cenário da Montanha', role: 'CENÁRIO', url: 'https://example.com/mountain.jpg' }
+    ],
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: true,
+    preserveProduct: false
+  };
+
+  // TEST 24.3: Google Nano Banana 2 — Multi-Reference, Atributos Numerados, WHAT CHANGES e WHAT REMAINS
+  const googleResult = generateSimpleThumbnail({
+    ...crimsonInput,
+    targetModel: 'GOOGLE_NANO_BANANA_2'
+  });
+  const googlePrompt = googleResult.finalPrompt;
+  assert.ok(googlePrompt.includes('REFERENCE ROLES:'), 'Google prompt deve conter REFERENCE ROLES:');
+  assert.ok(googlePrompt.includes('Image 1 ='), 'Google prompt deve enumerar Image 1');
+  assert.ok(googlePrompt.includes('Image 2 ='), 'Google prompt deve enumerar Image 2');
+  assert.ok(googlePrompt.includes('WHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE:'), 'Google prompt deve conter mapeamento de controle');
+  assert.ok(googlePrompt.includes('WHAT CHANGES:'), 'Google prompt deve conter WHAT CHANGES:');
+  assert.ok(googlePrompt.includes('WHAT REMAINS:'), 'Google prompt deve conter WHAT REMAINS:');
+  assert.ok(googlePrompt.includes('PHOTOGRAPHIC DIRECTIVES:'), 'Google prompt deve conter PHOTOGRAPHIC DIRECTIVES:');
+  assert.equal(googleResult.outputMetadata?.modelId, 'gemini-3.1-flash-image');
+  assert.equal(googleResult.outputMetadata?.aspectRatioHint, '2048x1152');
+  console.log('  ✓ TEST 24.3: Google Nano Banana 2 validado com referências numeradas, controle de atributos e seções WHAT CHANGES/REMAINS.');
+
+  // TEST 24.4: Midjourney V8.2 e Niji 7 — Visual Conciso, Sem Sintaxe Interna, Parâmetros Corretos
+  const mjV8Result = generateSimpleThumbnail({
+    ...crimsonInput,
+    targetModel: 'MIDJOURNEY_V8_2'
+  });
+  const mjPrompt = mjV8Result.finalPrompt;
+  assert.ok(!mjPrompt.includes('HAIR OWNER:'), 'Midjourney V8.2 NÃO deve conter tokens de contrato interno como HAIR OWNER');
+  assert.ok(!mjPrompt.includes('TASK: IDENTITY_TRANSFER'), 'Midjourney V8.2 NÃO deve conter TASK:');
+  assert.ok(!mjPrompt.includes('GOAL:'), 'Midjourney V8.2 NÃO deve conter seções GOAL:');
+  assert.ok(!mjPrompt.includes('NEGATIVE / STRICTLY AVOID:'), 'Midjourney V8.2 NÃO deve conter lista de AVOID:');
+  assert.ok(mjPrompt.includes('--ar 16:9'), 'Midjourney V8.2 deve conter --ar 16:9');
+  assert.ok(mjPrompt.includes('--v 8.2'), 'Midjourney V8.2 deve conter --v 8.2');
+  assert.ok(!mjPrompt.includes('--v 6'), 'Midjourney V8.2 NÃO deve conter --v 6');
+  assert.ok(!mjPrompt.includes('--v 7'), 'Midjourney V8.2 NÃO deve conter --v 7');
+  assert.equal(mjV8Result.outputMetadata?.modelId, 'v8.2');
+
+  const mjNijiResult = generateSimpleThumbnail({
+    videoTitle: 'Anime Fight Scene',
+    ideaDescription: 'Guerreiro de anime com katana luminosa',
+    references: [],
+    targetModel: 'MIDJOURNEY_NIJI_7',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto'
+  });
+  assert.ok(mjNijiResult.finalPrompt.includes('--niji 7'), 'Midjourney Niji 7 deve conter --niji 7');
+  assert.ok(!mjNijiResult.finalPrompt.includes('--style raw'), 'Midjourney Niji 7 NUNCA deve incluir --style raw');
+  assert.equal(mjNijiResult.outputMetadata?.modelId, 'niji-7');
+  console.log('  ✓ TEST 24.4: Midjourney V8.2 (--v 8.2) e Niji 7 (--niji 7) validados com prompt visual conciso e sem sintaxe interna.');
+
+  // TEST 24.5: FLUX.2 Max — Instrução Natural Direta com Sourcing de Referências e Conversão Positiva
+  const fluxResult = generateSimpleThumbnail({
+    ...crimsonInput,
+    targetModel: 'FLUX_2_MAX'
+  });
+  const fluxPrompt = fluxResult.finalPrompt;
+  assert.ok(fluxPrompt.includes('SCENE INSTRUCTION:'), 'FLUX prompt deve conter SCENE INSTRUCTION:');
+  assert.ok(fluxPrompt.includes('Use the person from Image 1'), 'FLUX prompt deve indicar person source Image 1');
+  assert.ok(fluxPrompt.includes('Use Image 2 ("Personagem Crimson Desert") as the structural target'), 'FLUX prompt deve indicar structural target Image 2');
+  assert.ok(fluxPrompt.includes('POSITIVE VISUAL ATTRIBUTES:'), 'FLUX prompt deve conter POSITIVE VISUAL ATTRIBUTES:');
+  assert.ok(fluxPrompt.toLowerCase().includes('natural skin texture with realistic pores'), 'FLUX prompt deve converter negativos para atributos positivos');
+  assert.ok(fluxPrompt.includes('PRESERVATION CONSTRAINTS:'), 'FLUX prompt deve conter PRESERVATION CONSTRAINTS:');
+  assert.ok(!fluxPrompt.includes('floating embers, flying sparks, neon blue-purple wash'), 'FLUX prompt NÃO deve despejar lista genérica de slop');
+  assert.equal(fluxResult.outputMetadata?.modelId, 'flux-2-max');
+  assert.equal(fluxResult.outputMetadata?.aspectRatioHint, '3840x2160');
+  console.log('  ✓ TEST 24.5: FLUX.2 Max validado com multi-reference sourcing direto e conversão de negativos em atributos positivos.');
+
+  // TEST 24.6: Consistência Semântica Idêntica Cross-Provider (Crimson Desert Test 24)
+  const allProviders = [
+    'GERAL',
+    'OPENAI_GPT_IMAGE_2_5_SUNBURST',
+    'GOOGLE_NANO_BANANA_2',
+    'MIDJOURNEY_V8_2',
+    'FLUX_2_MAX'
+  ];
+
+  for (const prov of allProviders) {
+    const res = generateSimpleThumbnail({
+      ...crimsonInput,
+      targetModel: prov
+    });
+    // Semântica de propriedade de atributos estritamente preservada
+    assert.equal(res.scenePlan.taskType, 'IDENTITY_TRANSFER', `${prov}: taskType deve ser IDENTITY_TRANSFER`);
+    assert.equal(res.scenePlan.hairOwner, 'TARGET', `${prov}: hairOwner deve ser TARGET`);
+    assert.equal(res.scenePlan.beardOwner, 'TARGET', `${prov}: beardOwner deve ser TARGET`);
+    assert.equal(res.scenePlan.environmentOwner, 'SCENARIO_REF', `${prov}: environmentOwner deve ser SCENARIO_REF`);
+    assert.equal(res.scenePlan.targetImage?.id, 'ref-crimson', `${prov}: targetImage id correto`);
+    assert.equal(res.scenePlan.identitySource?.id, 'ref-me', `${prov}: identitySource id correto`);
+    assert.equal(res.scenePlan.environmentSource?.id, 'ref-scen', `${prov}: environmentSource id correto`);
+  }
+  console.log('  ✓ TEST 24.6: Consistência semântica de autoridade (Crimson Desert) idêntica em todos os 5 provedores com estilo adaptado.');
 }
 
 console.log('\n✅ TODOS OS TESTES PASSARAM COM SUCESSO! VALIDAÇÃO CONCLUÍDA.');
