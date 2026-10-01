@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAIProvider } from '@/lib/ai/provider';
 import { analyzeThumbnailLocally } from '@/lib/simpleEngine/engine';
+import { getVisualDirector, getVisualAuditor } from '@/lib/ai/orchestrator';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,14 +13,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const provider = getAIProvider();
-    const status = await provider.getStatus();
+    const { director, providerName: dirProvider } = getVisualDirector();
 
-    if (status.configured && provider.name === 'openai') {
+    if (director && director.isConfigured()) {
       try {
-        const apiKey = process.env.OPENAI_API_KEY!;
-        const visionModel = process.env.OPENAI_VISION_MODEL || 'gpt-4o';
-
+        const apiKey = dirProvider === 'openai' ? process.env.OPENAI_API_KEY! : process.env.GEMINI_API_KEY!;
         const systemPrompt = `You are an exacting visual director auditing a YouTube thumbnail for visual quality, narrative clarity, and synthetic AI slop.
 
 CRITICAL MANDATES:
@@ -38,40 +35,113 @@ Output strictly valid JSON:
   "fixPrompt": "SURGICAL INPAINTING PROMPT:\\n\\nCHANGE:\\n1. ...\\n\\nPRESERVE:\\n1. ...\\n\\nAVOID:\\n..."
 }`;
 
-        const messages = [
-          { role: 'system', content: systemPrompt },
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: `Audit this YouTube thumbnail.${videoTitle ? ` Video Title: "${videoTitle}".` : ''}`
-              },
-              {
-                type: 'image_url',
-                image_url: { url: image, detail: 'high' }
-              }
-            ]
+        let parsed: {
+          functioning?: string[];
+          aiLooking?: string[];
+          topProblem?: string;
+          fixPrompt?: string;
+        } | null = null;
+
+        if (dirProvider === 'openai') {
+          const model = process.env.OPENAI_MODEL || process.env.OPENAI_VISION_MODEL || 'gpt-4o';
+          const messages = [
+            { role: 'system', content: systemPrompt },
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: `Audit this YouTube thumbnail.${videoTitle ? ` Video Title: "${videoTitle}".` : ''}`
+                },
+                {
+                  type: 'image_url',
+                  image_url: { url: image, detail: 'high' }
+                }
+              ]
+            }
+          ];
+
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model,
+              messages,
+              response_format: { type: 'json_object' },
+              temperature: 0.3
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            parsed = JSON.parse(data.choices[0].message.content);
           }
-        ];
+        } else if (dirProvider === 'gemini') {
+          const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+          let mimeType = 'image/png';
+          let base64Data = image;
+          if (image.startsWith('data:')) {
+            const match = image.match(/^data:([^;]+);base64,(.+)$/);
+            if (match) {
+              mimeType = match[1];
+              base64Data = match[2];
+            }
+          }
 
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model: visionModel,
-            messages,
-            response_format: { type: 'json_object' },
-            temperature: 0.4
-          })
-        });
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    role: 'user',
+                    parts: [
+                      { text: `${systemPrompt}\n\nAudit this YouTube thumbnail.${videoTitle ? ` Video Title: "${videoTitle}".` : ''}` },
+                      { inlineData: { mimeType, data: base64Data } }
+                    ]
+                  }
+                ],
+                generationConfig: {
+                  temperature: 0.3,
+                  responseMimeType: 'application/json'
+                }
+              })
+            }
+          );
 
-        if (response.ok) {
-          const data = await response.json();
-          const parsed = JSON.parse(data.choices[0].message.content);
+          if (response.ok) {
+            const data = await response.json();
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) parsed = JSON.parse(rawText);
+          }
+        }
+
+        if (parsed) {
+          // Optional second auditor (Gemini) cross-check if OpenAI was the primary director
+          const { auditor } = getVisualAuditor(dirProvider);
+          if (auditor && auditor.isConfigured()) {
+            try {
+              const auditResult = await auditor.audit({
+                imageToAudit: image,
+                videoTitle,
+                references: []
+              });
+              if (auditResult.referenceLeakageRisks && auditResult.referenceLeakageRisks.length > 0) {
+                parsed.aiLooking = [
+                  ...(parsed.aiLooking || []),
+                  ...auditResult.referenceLeakageRisks.map(r => `Risco detectado pelo auditor: ${r}`)
+                ].slice(0, 4);
+              }
+            } catch {
+              // Auditor error is non-fatal
+            }
+          }
+
           return NextResponse.json({
             isLocal: false,
             functioning: parsed.functioning || [],
@@ -81,11 +151,11 @@ Output strictly valid JSON:
           });
         }
       } catch (err) {
-        console.warn('Multimodal vision call failed, using local audit:', err);
+        console.warn('Multimodal vision audit failed, falling back to local heuristic:', err);
       }
     }
 
-    // Local heuristic fallback
+    // Local deterministic fallback
     const localResult = analyzeThumbnailLocally(videoTitle);
     return NextResponse.json({
       ...localResult,

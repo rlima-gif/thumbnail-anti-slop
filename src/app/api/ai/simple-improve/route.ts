@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAIProvider } from '@/lib/ai/provider';
 import { improvePrompt } from '@/lib/simpleEngine/engine';
-import { ImprovePromptInput } from '@/types/simple';
+import { getVisualDirector } from '@/lib/ai/orchestrator';
+import type { ImprovePromptInput } from '@/types/simple';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,14 +10,12 @@ export async function POST(req: NextRequest) {
       ...rawBody,
       rawPrompt: rawBody.rawPrompt || rawBody.prompt || ''
     };
-    const provider = getAIProvider();
-    const status = await provider.getStatus();
 
-    if (status.configured && provider.name === 'openai') {
+    const { director, providerName: dirProvider } = getVisualDirector();
+
+    if (director && director.isConfigured()) {
       try {
-        const apiKey = process.env.OPENAI_API_KEY!;
-        const model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o-mini';
-
+        const apiKey = dirProvider === 'openai' ? process.env.OPENAI_API_KEY! : process.env.GEMINI_API_KEY!;
         const systemPrompt = `You are an elite photographic prompt doctor and anti-slop purifier for image models (Midjourney, FLUX, DALL-E).
 Your job is to take an AI slop prompt loaded with cliches and rewrite it into a masterclass of visual direction.
 
@@ -36,26 +34,63 @@ Output strictly JSON with:
   "improvedPrompt": "The refined English photographic prompt"
 }`;
 
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: `Original Prompt:\n${body.rawPrompt}` }
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.7
-          })
-        });
+        let parsed: { changes?: string[]; improvedPrompt?: string } | null = null;
 
-        if (response.ok) {
-          const data = await response.json();
-          const parsed = JSON.parse(data.choices[0].message.content);
+        if (dirProvider === 'openai') {
+          const model = process.env.OPENAI_TEXT_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini';
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: `Original Prompt:\n${body.rawPrompt}` }
+              ],
+              response_format: { type: 'json_object' },
+              temperature: 0.5
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            parsed = JSON.parse(data.choices[0].message.content);
+          }
+        } else if (dirProvider === 'gemini') {
+          const model = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+          const response = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [
+                  {
+                    role: 'user',
+                    parts: [
+                      { text: `${systemPrompt}\n\nOriginal Prompt:\n${body.rawPrompt}` }
+                    ]
+                  }
+                ],
+                generationConfig: {
+                  temperature: 0.5,
+                  responseMimeType: 'application/json'
+                }
+              })
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) parsed = JSON.parse(rawText);
+          }
+        }
+
+        if (parsed) {
           return NextResponse.json({
             isLocal: false,
             changes: parsed.changes || [],

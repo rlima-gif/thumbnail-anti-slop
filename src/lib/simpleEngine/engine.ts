@@ -508,7 +508,7 @@ export function resolveAttributeOwnership(
   let environmentOwner: AttributeOwner = 'NONE';
   let lightingOwner: AttributeOwner = 'INFERRED';
   let compositionOwner: AttributeOwner = 'INFERRED';
-  let styleOwner: AttributeOwner = resolved.styleSource ? 'STYLE_REF' : 'NONE';
+  const styleOwner: AttributeOwner = resolved.styleSource ? 'STYLE_REF' : 'NONE';
 
   if (taskType === 'IDENTITY_TRANSFER') {
     faceOwner = resolved.identitySource ? 'PERSON_REF' : 'USER';

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Wand2, Copy, Check, Sparkles, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Wand2, Copy, Check, Sparkles, CheckCircle2 } from 'lucide-react';
 import { ImprovePromptResult } from '@/types/simple';
 import { improvePrompt } from '@/lib/simpleEngine/engine';
 import { saveSimpleHistoryItem } from '@/lib/simpleEngine/history';

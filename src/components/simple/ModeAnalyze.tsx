@@ -9,8 +9,7 @@ import {
   Wand2,
   Copy,
   Check,
-  ShieldCheck,
-  RefreshCw
+  ShieldCheck
 } from 'lucide-react';
 import { AnalyzeThumbnailSimpleResult } from '@/types/simple';
 import { analyzeThumbnailLocally } from '@/lib/simpleEngine/engine';

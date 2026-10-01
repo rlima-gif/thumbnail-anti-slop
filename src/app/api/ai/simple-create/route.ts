@@ -1,9 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAIProvider } from '@/lib/ai/provider';
-import { generateSimpleThumbnail, buildTypographyPlan, detectTechHardware, buildScenePlan, auditPromptProvenance } from '@/lib/simpleEngine/engine';
-import { CreateThumbnailInput } from '@/types/simple';
+import {
+  generateSimpleThumbnail,
+  buildScenePlan,
+  buildPromptFromScenePlan,
+  auditPromptProvenance
+} from '@/lib/simpleEngine/engine';
+import {
+  getVisualDirector,
+  getVisualAuditor,
+  mapReferencesToDirectorInput,
+  reconcileDirectorWithLocalRules
+} from '@/lib/ai/orchestrator';
+import type { CreateThumbnailInput } from '@/types/simple';
+import type { DirectorResult, AuditorResult } from '@/lib/ai/types';
 
 export async function POST(req: NextRequest) {
+  const startTime = Date.now();
   try {
     const rawBody = await req.json();
     const body: CreateThumbnailInput = {
@@ -12,139 +24,146 @@ export async function POST(req: NextRequest) {
       videoTitle: rawBody.videoTitle || '',
       references: rawBody.references || []
     };
-    const provider = getAIProvider();
-    const status = await provider.getStatus();
 
-    // Build internal ScenePlan first (Local Engine = Guardian)
-    const scenePlan = buildScenePlan(body, body.approachIndex || 0);
+    // 1. LOCAL INITIAL CLASSIFICATION & BASELINE SCENE PLAN
+    const localScenePlan = buildScenePlan(body, body.approachIndex || 0);
 
-    // For surgical edits / identity transfer, local engine contracts are strictly authoritative
-    if (
-      scenePlan.taskType === 'IDENTITY_TRANSFER' ||
-      scenePlan.taskType === 'REPLACE_OBJECT' ||
-      scenePlan.taskType === 'CHANGE_ENVIRONMENT'
-    ) {
-      const localResult = generateSimpleThumbnail(body);
+    // 2. MULTIMODAL AI DIRECTOR (if configured and references warrant multimodal analysis)
+    const { director, providerName: dirProvider } = getVisualDirector();
+    let directorResult: DirectorResult | null = null;
+    let directorLatencyMs: number | undefined;
+
+    const hasImages = (body.references || []).length > 0;
+    const shouldInvokeDirector = Boolean(director && director.isConfigured() && hasImages);
+
+    if (shouldInvokeDirector && director) {
+      const dirStart = Date.now();
+      try {
+        const directorRefs = mapReferencesToDirectorInput(body.references);
+        directorResult = await director.analyze({
+          userIdea: body.ideaDescription,
+          videoTitle: body.videoTitle,
+          thumbnailText: body.thumbnailText,
+          taskType: localScenePlan.taskType,
+          references: directorRefs,
+          approachIndex: body.approachIndex
+        });
+        directorLatencyMs = Date.now() - dirStart;
+      } catch (err: unknown) {
+        console.warn('AI Director call failed or timed out, gracefully falling back to local engine:', err instanceof Error ? err.message : err);
+        directorResult = null;
+      }
+    }
+
+    // 3. LOCAL AUTHORITY / PROVENANCE GUARD (Merge Policy — Section 11)
+    // Deterministic reconciliation: User intent > Reference roles > Target master > Local rules > AI facts
+    const reconciledPlan = reconcileDirectorWithLocalRules(directorResult, localScenePlan, body);
+
+    // 4. PROMPT BUILDER
+    const builderResult = buildPromptFromScenePlan(reconciledPlan, body, body.approachIndex || 0);
+
+    // 5. LOCAL FINAL VALIDATOR & PROVENANCE AUDIT
+    const audit = auditPromptProvenance(builderResult.finalPrompt, reconciledPlan, body.references);
+    let finalCleanedPrompt = audit.cleanedPrompt;
+
+    // 6. OPTIONAL SECOND VISUAL AUDITOR (Gemini) — Section 19-25
+    const { auditor, providerName: audProvider } = getVisualAuditor(dirProvider);
+    let auditorResult: AuditorResult | null = null;
+    let auditorLatencyMs: number | undefined;
+
+    const shouldInvokeAuditor = Boolean(
+      auditor &&
+      auditor.isConfigured() &&
+      hasImages &&
+      (reconciledPlan.taskType === 'IDENTITY_TRANSFER' ||
+       reconciledPlan.taskType === 'REPLACE_OBJECT' ||
+       reconciledPlan.taskType === 'CHANGE_ENVIRONMENT' ||
+       (body.references && body.references.length >= 2))
+    );
+
+    if (shouldInvokeAuditor && auditor) {
+      const audStart = Date.now();
+      try {
+        const directorRefs = mapReferencesToDirectorInput(body.references);
+        auditorResult = await auditor.audit({
+          taskType: reconciledPlan.taskType,
+          userIdea: body.ideaDescription,
+          videoTitle: body.videoTitle,
+          references: directorRefs,
+          scenePlan: reconciledPlan,
+          proposedPrompt: finalCleanedPrompt
+        });
+        auditorLatencyMs = Date.now() - audStart;
+
+        // Auditor cannot rewrite prompt, but checks leakage risks (Section 20, 23)
+        if (auditorResult.referenceLeakageRisks && auditorResult.referenceLeakageRisks.length > 0) {
+          for (const risk of auditorResult.referenceLeakageRisks) {
+            const riskLower = risk.toLowerCase();
+            if (riskLower.includes('bedroom') || riskLower.includes('room') || riskLower.includes('sofa') || riskLower.includes('desk lamp')) {
+              // Ensure no domestic tokens leaked into the prompt
+              finalCleanedPrompt = finalCleanedPrompt.replace(/(a\s+)?(domestic\s+)?(bedroom|living\s+room|sofa|work\s+desk|desk\s+lamp)/gi, 'neutral clean backdrop');
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Second Visual Auditor non-fatal error:', err);
+        auditorResult = null;
+      }
+    }
+
+    // Combine any removed details or warnings
+    const allPurged = [
+      ...(audit.purged || []),
+      ...(reconciledPlan.unsupportedDetailsRemoved || [])
+    ];
+
+    const responsePayload = {
+      isLocal: directorResult === null,
+      direction: builderResult.directionPt,
+      finalPrompt: finalCleanedPrompt,
+      approachTitle: builderResult.approachTitle,
+      approachIndex: body.approachIndex || 0,
+      typographyPlan: builderResult.typographyPlan,
+      scenePlan: {
+        ...reconciledPlan,
+        unsupportedDetailsRemoved: allPurged
+      },
+      // Development debug data (Section 31)
+      ...(process.env.NODE_ENV !== 'production'
+        ? {
+            debugInfo: {
+              directorUsed: Boolean(directorResult),
+              directorProvider: directorResult ? dirProvider : 'none',
+              directorLatencyMs,
+              directorConfidence: directorResult?.confidence,
+              auditorUsed: Boolean(auditorResult),
+              auditorProvider: auditorResult ? audProvider : 'none',
+              auditorLatencyMs,
+              taskType: reconciledPlan.taskType,
+              targetImageId: reconciledPlan.targetImage?.id,
+              identitySourceId: reconciledPlan.identitySource?.id,
+              removedUnsupportedDetails: allPurged,
+              totalTimeMs: Date.now() - startTime
+            }
+          }
+        : {})
+    };
+
+    return NextResponse.json(responsePayload);
+  } catch (error) {
+    console.error('Error in /api/ai/simple-create:', error);
+    // Ultimate deterministic safety net
+    try {
+      const localResult = generateSimpleThumbnail(await req.json());
       return NextResponse.json({
         ...localResult,
         isLocal: true
       });
+    } catch {
+      return NextResponse.json(
+        { error: 'Falha ao processar solicitação de thumbnail.' },
+        { status: 500 }
+      );
     }
-
-    // If server AI is configured, enhance with LLM interpretation
-    if (status.configured && provider.name === 'openai') {
-      try {
-        const apiKey = process.env.OPENAI_API_KEY!;
-        const model = process.env.OPENAI_TEXT_MODEL || 'gpt-4o-mini';
-
-        const systemPrompt = `You are a world-class visual director specializing in honest, authentic, high-impact YouTube thumbnails.
-Your job is to convert a creator's plain conversational idea into a razor-sharp 5-point visual direction and an English image generation prompt.
-
-CORE PRINCIPLES:
-1. ENVIRONMENT AUTHORITY ORDER (CRITICAL):
-   - 1st: Target image environment (in edits/identity transfer, preserve exactly unless explicitly asked to change)
-   - 2nd: Explicit user description (if user explicitly writes a location like "no sofá", "na rua", "no estúdio")
-   - 3rd: Scenario/environment reference (CENÁRIO references)
-   - 4th: Environment strictly required by the concept
-   - 5th: Otherwise: NO INVENTED ENVIRONMENT. Keep background minimal, neutral, abstract, cropped, contextual, or unspecified.
-   Do NOT add bedrooms, living rooms, sofas, desks, windows, lamps, gaming rooms, streamer setups, or generic offices unless explicitly requested or supported by a reference.
-   Do NOT turn "natural" into "domestic interior".
-   Do NOT turn "realistic" into "room with window light".
-   Do NOT turn "gaming" into "RGB gaming room".
-   Do NOT turn "tech" into "desk setup".
-2. TRANSLATE VAGUE ADJECTIVES: When user says "epic", "viral", or "high CTR", translate that into a larger primary subject, clear silhouette, and simplified background — NOT into neon, outer glow, or saturated clutter.
-3. DEPTH OF FIELD IS CONTEXTUAL: Do NOT pick f/2.0 or shallow depth of field automatically. If a background environment was explicitly requested, preserve its readability; otherwise use natural falloff.
-4. NATURAL SKIN, NO PORE OBSESSION: Enforce natural skin texture, authentic eye shape, bone structure, natural asymmetry, and true age. Avoid plastic waxy smoothing and artificial beauty filters. Do NOT obsess over hyper-detailed pores.
-5. HARDWARE & HANDS: If holding a device/console/phone, enforce anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, physically believable hand-to-object contact, and zero button or chassis fusion. Strict physical geometry.
-6. NO UNMOTIVATED CLICHES: Zero unmotivated neon or glowing outlines. Zero generic shocked expression or open mouth screams. Zero random arrows, circles, floating particles, fire, or embers unless specifically requested.
-7. TYPOGRAPHY: If text is provided, treat it as exact text (no translation, no extra words). Never invent fake gaming fonts. If generating without text or reserving space, reserve clean negative space for later typography.
-
-Output strictly valid JSON with this exact schema:
-{
-  "direction": {
-    "ideia": "Frase curta em português resumindo a premissa central",
-    "foco": "O que domina a atenção e o que é secundário",
-    "composicao": "Enquadramento, ângulo e separação visual",
-    "expressao": "Emoção e expressão facial humana autêntica (sem caretas)",
-    "visual": "Iluminação motivada, cores e texturas reais"
-  },
-  "finalPrompt": "English prompt for image generation with subject, lighting source, environment, textures and negative avoid tokens"
-}
-`;
-
-        const userPrompt = `Video Title: ${body.videoTitle || 'Untitled'}
-User Idea: ${body.ideaDescription || ''}
-Thumbnail Text: ${body.thumbnailText || 'None'}
-Text Treatment: ${body.textTreatment || 'AUTO'}
-Reserved Space: ${body.reserveSpaceForText ? body.reservedSpacePosition : 'None'}
-Specific Font: ${body.fontName || 'None'}
-Approach Number: ${body.approachIndex || 0}
-Target Model: ${body.targetModel || 'GERAL'}
-References Count: ${(body.references || []).length}
-Reference Roles: ${(body.references || []).map(r => `${r.name}: ${r.role}`).join(', ')}`;
-
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${apiKey}`
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: userPrompt }
-            ],
-            response_format: { type: 'json_object' },
-            temperature: 0.7
-          })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const parsed = JSON.parse(data.choices[0].message.content);
-          const isTech = detectTechHardware(`${body.videoTitle} ${body.ideaDescription}`);
-
-          // Provenance Guard on AI-generated prompt
-          const audit = auditPromptProvenance(parsed.finalPrompt, scenePlan, body.references);
-
-          const typographyPlan = buildTypographyPlan(
-            body.thumbnailText,
-            isTech,
-            body.fontName,
-            body.reservedSpacePosition,
-            body.stylePreset,
-            body.textTreatment
-          );
-          return NextResponse.json({
-            isLocal: false,
-            direction: parsed.direction,
-            finalPrompt: audit.cleanedPrompt,
-            approachTitle: body.approachIndex === 1 ? 'Foco no Objeto / Hardware' : body.approachIndex === 2 ? 'Tensão Documental' : 'Equilíbrio Narrativo',
-            approachIndex: body.approachIndex || 0,
-            typographyPlan,
-            scenePlan: {
-              ...scenePlan,
-              unsupportedDetailsRemoved: audit.purged
-            }
-          });
-        }
-      } catch (err) {
-        console.warn('AI call failed, falling back to local engine:', err);
-      }
-    }
-
-    // Deterministic fallback via local engine
-    const localResult = generateSimpleThumbnail(body);
-    return NextResponse.json({
-      ...localResult,
-      isLocal: true
-    });
-  } catch (error) {
-    console.error('Error in /api/ai/simple-create:', error);
-    return NextResponse.json(
-      { error: 'Falha ao processar solicitação de thumbnail.' },
-      { status: 500 }
-    );
   }
 }
