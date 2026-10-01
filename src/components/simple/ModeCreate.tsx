@@ -30,6 +30,7 @@ const ALL_ROLES: SimpleReferenceRole[] = [
   'PESSOA',
   'PRODUTO',
   'CENÁRIO',
+  'IMAGEM_ALVO',
   'ESTILO',
   'COMPOSIÇÃO',
   'TIPOGRAFIA',
@@ -40,6 +41,7 @@ const ROLE_MICROCOPY: Record<SimpleReferenceRole, string> = {
   PESSOA: 'Preserva traços, rosto e aparência real.',
   PRODUTO: 'Preserva formato, botões e detalhes reais do objeto.',
   CENÁRIO: 'Ambiente ou espaço importante para a cena.',
+  IMAGEM_ALVO: 'Estrutura mestre da edição (pose, personagem, enquadramento).',
   ESTILO: 'Apenas cores, iluminação e linguagem visual.',
   COMPOSIÇÃO: 'Apenas enquadramento e posição dos elementos.',
   TIPOGRAFIA: 'Referência de fonte e tratamento do texto.',
@@ -129,6 +131,12 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
       chips.push('+ Cenário');
     }
 
+    const hasTargetInText = /(adapte|personagem|character|alvo|target|crimson|substitua|troque\s*o)/i.test(combined);
+    const hasTargetRef = references.some(r => r.role === 'IMAGEM_ALVO' || r.isTarget);
+    if (hasTargetInText && !hasTargetRef) {
+      chips.push('+ Imagem-alvo');
+    }
+
     return chips;
   }, [videoTitle, ideaDescription, references]);
 
@@ -142,7 +150,9 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
         const url = e.target?.result as string;
         const nameLower = file.name.toLowerCase();
         let role: SimpleReferenceRole = 'OUTRA';
-        if (nameLower.includes('face') || nameLower.includes('rosto') || nameLower.includes('me') || nameLower.includes('eu')) {
+        if (nameLower.includes('alvo') || nameLower.includes('target') || nameLower.includes('personagem') || nameLower.includes('character') || nameLower.includes('crimson')) {
+          role = 'IMAGEM_ALVO';
+        } else if (nameLower.includes('face') || nameLower.includes('rosto') || nameLower.includes('me') || nameLower.includes('eu')) {
           role = 'PESSOA';
           setPreserveFace(true);
         } else if (nameLower.includes('legion') || nameLower.includes('console') || nameLower.includes('produto') || nameLower.includes('phone') || nameLower.includes('hardware')) {

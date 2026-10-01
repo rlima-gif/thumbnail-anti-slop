@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAIProvider } from '@/lib/ai/provider';
-import { generateSimpleThumbnail, buildTypographyPlan, detectTechHardware } from '@/lib/simpleEngine/engine';
+import { generateSimpleThumbnail, buildTypographyPlan, detectTechHardware, buildScenePlan, auditPromptProvenance } from '@/lib/simpleEngine/engine';
 import { CreateThumbnailInput } from '@/types/simple';
 
 export async function POST(req: NextRequest) {
@@ -14,6 +14,22 @@ export async function POST(req: NextRequest) {
     };
     const provider = getAIProvider();
     const status = await provider.getStatus();
+
+    // Build internal ScenePlan first (Local Engine = Guardian)
+    const scenePlan = buildScenePlan(body, body.approachIndex || 0);
+
+    // For surgical edits / identity transfer, local engine contracts are strictly authoritative
+    if (
+      scenePlan.taskType === 'IDENTITY_TRANSFER' ||
+      scenePlan.taskType === 'REPLACE_OBJECT' ||
+      scenePlan.taskType === 'CHANGE_ENVIRONMENT'
+    ) {
+      const localResult = generateSimpleThumbnail(body);
+      return NextResponse.json({
+        ...localResult,
+        isLocal: true
+      });
+    }
 
     // If server AI is configured, enhance with LLM interpretation
     if (status.configured && provider.name === 'openai') {
@@ -88,6 +104,10 @@ Reference Roles: ${(body.references || []).map(r => `${r.name}: ${r.role}`).join
           const data = await response.json();
           const parsed = JSON.parse(data.choices[0].message.content);
           const isTech = detectTechHardware(`${body.videoTitle} ${body.ideaDescription}`);
+
+          // Provenance Guard on AI-generated prompt
+          const audit = auditPromptProvenance(parsed.finalPrompt, scenePlan, body.references);
+
           const typographyPlan = buildTypographyPlan(
             body.thumbnailText,
             isTech,
@@ -99,10 +119,14 @@ Reference Roles: ${(body.references || []).map(r => `${r.name}: ${r.role}`).join
           return NextResponse.json({
             isLocal: false,
             direction: parsed.direction,
-            finalPrompt: parsed.finalPrompt,
+            finalPrompt: audit.cleanedPrompt,
             approachTitle: body.approachIndex === 1 ? 'Foco no Objeto / Hardware' : body.approachIndex === 2 ? 'Tensão Documental' : 'Equilíbrio Narrativo',
             approachIndex: body.approachIndex || 0,
-            typographyPlan
+            typographyPlan,
+            scenePlan: {
+              ...scenePlan,
+              unsupportedDetailsRemoved: audit.purged
+            }
           });
         }
       } catch (err) {

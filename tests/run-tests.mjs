@@ -920,5 +920,237 @@ console.log('\n19. Testando Novos Tipos de Referência, Isolamento de Atributos 
   console.log('  ✓ Nível 3 (Referência de Cenário): Referência de cenário dita o ambiente com prioridade.');
 }
 
+// 21. Motor de Raciocínio, Roteador de Intenção, Reconstrução de Identidade e Caso Crimson Desert (Seções 1 a 47)
+{
+  console.log('\n21. Testando Motor de Raciocínio, Roteador de Intenção, Reconstrução de Identidade e Caso Crimson Desert...');
+  const {
+    generateSimpleThumbnail,
+    classifyTask,
+    resolveTargetAndSources,
+    resolveAttributeOwnership,
+    buildScenePlan,
+    auditPromptProvenance
+  } = await import('../src/lib/simpleEngine/engine.ts');
+
+  // TEST 1: Quarto explícito solicitado pelo usuário (deve ser permitido)
+  const test1 = generateSimpleThumbnail({
+    videoTitle: 'Testando no meu quarto',
+    ideaDescription: 'Eu no meu quarto segurando um Legion Go.',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: true
+  });
+  const t1Prompt = test1.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0].toLowerCase();
+  assert.ok(t1Prompt.includes('bedroom'), 'TEST 1: Quarto explicitamente solicitado DEVE ser permitido no prompt');
+  console.log('  ✓ TEST 1: Pedido explícito de quarto ("no meu quarto") é respeitado e preservado.');
+
+  // TEST 2: Sem ambiente especificado (NÃO inventar quarto, sofá, mesa ou abajur)
+  const test2 = generateSimpleThumbnail({
+    videoTitle: 'Testando o console portátil',
+    ideaDescription: 'Eu segurando um Legion Go.',
+    references: [],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: true
+  });
+  const t2Prompt = test2.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0].toLowerCase();
+  assert.ok(!t2Prompt.includes('room'), 'TEST 2: NÃO deve inventar room');
+  assert.ok(!t2Prompt.includes('bedroom'), 'TEST 2: NÃO deve inventar bedroom');
+  assert.ok(!t2Prompt.includes('sofa'), 'TEST 2: NÃO deve inventar sofa');
+  assert.ok(!t2Prompt.includes('desk lamp'), 'TEST 2: NÃO deve inventar desk lamp');
+  console.log('  ✓ TEST 2: Ausência de ambiente não inventa quarto, sofá, mesa ou abajur.');
+
+  // TEST 3: REGRESSÃO EXATA CRIMSON DESERT (Seção 7, 8, 9, 31, 51, 52)
+  const testCrimson = generateSimpleThumbnail({
+    videoTitle: 'Crimson Desert DLC Gameplay e Novidades',
+    ideaDescription: 'É um vídeo sobre Crimson Desert DLC e eu estou ansioso. Adapte meu rosto no personagem do jogo. Mantenha o cabelo e o visual do personagem, ele segurando o mapa, e vou fornecer o cenário usado no fundo.',
+    references: [
+      { id: 'ref-me', name: 'Minha Foto', role: 'PESSOA', url: 'https://example.com/me.jpg' },
+      { id: 'ref-char', name: 'Personagem Crimson Desert', role: 'IMAGEM_ALVO', url: 'https://example.com/char.jpg' },
+      { id: 'ref-bg', name: 'Cenário do Jogo', role: 'CENÁRIO', url: 'https://example.com/scene.jpg' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: true,
+    preserveProduct: false
+  });
+
+  assert.strictEqual(testCrimson.scenePlan.taskType, 'IDENTITY_TRANSFER', 'TEST 3: Tarefa deve ser IDENTITY_TRANSFER');
+  assert.strictEqual(testCrimson.scenePlan.targetImage.name, 'Personagem Crimson Desert', 'TEST 3: Target master deve ser o personagem');
+  assert.strictEqual(testCrimson.scenePlan.identitySource.name, 'Minha Foto', 'TEST 3: Identity source deve ser a foto do usuário');
+  assert.strictEqual(testCrimson.scenePlan.environmentSource.name, 'Cenário do Jogo', 'TEST 3: Environment source deve ser o cenário fornecido');
+  assert.strictEqual(testCrimson.scenePlan.hairOwner, 'TARGET', 'TEST 3: Cabelo deve pertencer ao alvo');
+  assert.strictEqual(testCrimson.scenePlan.beardOwner, 'TARGET', 'TEST 3: Barba/visual deve pertencer ao alvo');
+  assert.strictEqual(testCrimson.scenePlan.faceOwner, 'PERSON_REF', 'TEST 3: Rosto deve pertencer à referência do usuário');
+  assert.strictEqual(testCrimson.scenePlan.productOwner, 'NONE', 'TEST 3: Product owner deve ser NONE (sem produto)');
+
+  const crimsonPositive = testCrimson.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0];
+  const crimsonPositiveLower = crimsonPositive.toLowerCase();
+
+  assert.ok(testCrimson.finalPrompt.includes('TASK: IDENTITY_TRANSFER'), 'TEST 3: Prompt deve declarar tarefa IDENTITY_TRANSFER');
+  assert.ok(testCrimson.finalPrompt.includes('ANATOMICAL RECONSTRUCTION — NOT A FACE PASTE'), 'TEST 3: Deve exigir reconstrução anatômica');
+  assert.ok(crimsonPositive.includes('Holding the map'), 'TEST 3: Deve manter personagem segurando o mapa');
+  assert.ok(crimsonPositive.includes('Personagem Crimson Desert'), 'TEST 3: Deve citar a estrutura mestre do personagem');
+  assert.ok(crimsonPositive.includes('Cenário do Jogo'), 'TEST 3: Deve citar o cenário integrado');
+  assert.ok(crimsonPositive.includes('Minha Foto'), 'TEST 3: Deve citar a fonte de identidade');
+  assert.ok(!crimsonPositiveLower.includes('device teardown'), 'TEST 3: NÃO deve incluir device teardown');
+  assert.ok(!crimsonPositiveLower.includes('desk lamp'), 'TEST 3: NÃO deve incluir desk lamp');
+  assert.ok(!crimsonPositiveLower.includes('domestic room'), 'TEST 3: NÃO deve incluir domestic room');
+  assert.ok(!crimsonPositiveLower.includes('living room'), 'TEST 3: NÃO deve incluir living room');
+  assert.ok(!crimsonPositiveLower.includes('sofa'), 'TEST 3: NÃO deve incluir sofa');
+  assert.ok(!crimsonPositiveLower.includes('physical product hero'), 'TEST 3: NÃO deve inventar produto físico');
+  assert.ok(!crimsonPositiveLower.includes('paste the user'), 'TEST 3: NÃO deve usar face-paste');
+  console.log('  ✓ TEST 3: Regressão exata Crimson Desert validada com sucesso absoluto (reconstrução anatômica, sem móveis domésticos e sem device hero).');
+
+  // TEST 4: Referência de PESSOA contém quarto -> Quarto não deve vazar para o prompt (Section 17)
+  const testLeakPerson = generateSimpleThumbnail({
+    videoTitle: 'Vlog na montanha',
+    ideaDescription: 'Eu contemplando o horizonte na montanha.',
+    references: [
+      { id: 'ref-selfie', name: 'Selfie no Quarto com Cama', role: 'PESSOA', url: 'https://example.com/selfie.jpg' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: true,
+    preserveProduct: false
+  });
+  const t4Prompt = testLeakPerson.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0].toLowerCase();
+  assert.ok(!t4Prompt.includes('bed'), 'TEST 4: Cama da foto de perfil NÃO deve vazar');
+  assert.ok(!t4Prompt.includes('bedroom wall'), 'TEST 4: Parede do quarto NÃO deve vazar');
+  console.log('  ✓ TEST 4: Referência de PESSOA isolada sem vazamento de mobília ou quarto do fundo.');
+
+  // TEST 5: Referência de PRODUTO contém estúdio -> Estúdio não deve vazar para o prompt
+  const testLeakProduct = generateSimpleThumbnail({
+    videoTitle: 'Celular no parque',
+    ideaDescription: 'Smartphone apoiado no gramado do parque.',
+    references: [
+      { id: 'ref-phone', name: 'Foto de Estúdio com Ciclorama', role: 'PRODUTO', url: 'https://example.com/phone.jpg' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: true
+  });
+  const t5Prompt = testLeakProduct.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0].toLowerCase();
+  assert.ok(!t5Prompt.includes('studio cyclorama'), 'TEST 5: Ciclorama de estúdio do produto NÃO deve vazar');
+  console.log('  ✓ TEST 5: Referência de PRODUTO isolada sem vazamento de ciclorama ou estúdio.');
+
+  // TEST 6: Referência de ESTILO contém mulher de jaqueta vermelha -> Mulher não deve vazar
+  const testLeakStyle = generateSimpleThumbnail({
+    videoTitle: 'Carro na estrada',
+    ideaDescription: 'Um carro esportivo clássico na estrada ao pôr do sol.',
+    references: [
+      { id: 'ref-art', name: 'Arte conceitual com mulher de jaqueta vermelha', role: 'ESTILO', url: 'https://example.com/art.jpg' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  const t6Prompt = testLeakStyle.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0].toLowerCase();
+  assert.ok(!t6Prompt.includes('woman in red jacket'), 'TEST 6: Mulher de jaqueta da referência de estilo NÃO deve vazar');
+  console.log('  ✓ TEST 6: Referência de ESTILO isolada sem vazamento de sujeito ou roupas.');
+
+  // TEST 7: Referência de COMPOSIÇÃO contém moto -> Moto não deve vazar
+  const testLeakComp = generateSimpleThumbnail({
+    videoTitle: 'Retrato dramático',
+    ideaDescription: 'Um guerreiro nórdico em primeiro plano.',
+    references: [
+      { id: 'ref-comp', name: 'Foto de enquadramento com motocicleta', role: 'COMPOSIÇÃO', url: 'https://example.com/moto.jpg' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false
+  });
+  const t7Prompt = testLeakComp.finalPrompt.split('NEGATIVE / STRICTLY AVOID:')[0].toLowerCase();
+  assert.ok(!t7Prompt.includes('motorcycle'), 'TEST 7: Motocicleta da referência de composição NÃO deve vazar');
+  console.log('  ✓ TEST 7: Referência de COMPOSIÇÃO isolada sem importação de objeto.');
+
+  // TEST 8: Substituição de Objeto (Section 32)
+  const testObjReplace = generateSimpleThumbnail({
+    videoTitle: 'Novo Console',
+    ideaDescription: 'Troque o console da primeira foto pelo da segunda.',
+    references: [
+      { id: 'ref-base', name: 'Criador segurando Switch', role: 'IMAGEM_ALVO', url: 'https://example.com/switch.jpg' },
+      { id: 'ref-new', name: 'Steam Deck OLED', role: 'PRODUTO', url: 'https://example.com/deck.jpg' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: true
+  });
+  assert.strictEqual(testObjReplace.scenePlan.taskType, 'REPLACE_OBJECT', 'TEST 8: Tarefa deve ser REPLACE_OBJECT');
+  assert.ok(testObjReplace.finalPrompt.includes('TASK: REPLACE_OBJECT'), 'TEST 8: Prompt deve ser REPLACE_OBJECT');
+  assert.ok(testObjReplace.finalPrompt.includes('Steam Deck OLED'), 'TEST 8: Deve citar o novo hardware');
+  assert.ok(testObjReplace.finalPrompt.includes('Person facial identity'), 'TEST 8: Deve preservar pessoa da base');
+  console.log('  ✓ TEST 8: Substituição de objeto troca apenas o hardware sem reconstruir a cena inteira.');
+
+  // TEST 9: Substituição de Cenário (Section 33)
+  const testEnvReplace = generateSimpleThumbnail({
+    videoTitle: 'Novo Fundo',
+    ideaDescription: 'Troque o fundo pelo cenário da segunda imagem.',
+    references: [
+      { id: 'ref-p', name: 'Foto do Apresentador', role: 'IMAGEM_ALVO', url: 'https://example.com/pres.jpg' },
+      { id: 'ref-env', name: 'Cenário Espacial Futurista', role: 'CENÁRIO', url: 'https://example.com/space.jpg' }
+    ],
+    targetModel: 'GERAL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: true,
+    preserveProduct: false
+  });
+  assert.strictEqual(testEnvReplace.scenePlan.taskType, 'CHANGE_ENVIRONMENT', 'TEST 9: Tarefa deve ser CHANGE_ENVIRONMENT');
+  assert.ok(testEnvReplace.finalPrompt.includes('TASK: CHANGE_ENVIRONMENT'), 'TEST 9: Prompt deve ser CHANGE_ENVIRONMENT');
+  assert.ok(testEnvReplace.finalPrompt.includes('Cenário Espacial Futurista'), 'TEST 9: Deve incorporar o novo cenário');
+  console.log('  ✓ TEST 9: Substituição de cenário transporta o fundo preservando o sujeito e a pose.');
+
+  // TEST 10: Titularidade de Cabelo Independente (Section 10)
+  const hairOwn = resolveAttributeOwnership('IDENTITY_TRANSFER', 'Use my face but keep target hair', {
+    targetImage: { id: '1', name: 'Alvo', role: 'IMAGEM_ALVO', url: '' },
+    identitySource: { id: '2', name: 'Eu', role: 'PESSOA', url: '' }
+  });
+  assert.strictEqual(hairOwn.hairOwner, 'TARGET', 'TEST 10: Cabelo deve pertencer ao alvo');
+  assert.strictEqual(hairOwn.faceOwner, 'PERSON_REF', 'TEST 10: Rosto deve pertencer à referência');
+  console.log('  ✓ TEST 10: Titularidade de cabelo resolvida independentemente do rosto.');
+
+  // TEST 11: Titularidade de Barba Independente (Section 10)
+  const beardOwn = resolveAttributeOwnership('IDENTITY_TRANSFER', 'Use my face and my beard but keep target hair', {
+    targetImage: { id: '1', name: 'Alvo', role: 'IMAGEM_ALVO', url: '' },
+    identitySource: { id: '2', name: 'Eu', role: 'PESSOA', url: '' }
+  });
+  assert.strictEqual(beardOwn.beardOwner, 'PERSON_REF', 'TEST 11: Barba deve pertencer à foto do usuário');
+  assert.strictEqual(beardOwn.hairOwner, 'TARGET', 'TEST 11: Cabelo deve pertencer ao alvo');
+  assert.strictEqual(beardOwn.faceOwner, 'PERSON_REF', 'TEST 11: Rosto deve pertencer à foto do usuário');
+  console.log('  ✓ TEST 11: Barba e cabelo com donos distintos e independentes validados.');
+
+  // TEST 12: Semântica de Reconstrução Anatômica vs Face Paste (Section 8, 9, 53)
+  const test12Prompt = testCrimson.finalPrompt;
+  assert.ok(test12Prompt.includes('Reconstruct the target character\'s facial anatomy'), 'TEST 12: Deve conter reconstrução anatômica');
+  assert.ok(test12Prompt.includes('Strictly adapt the facial features to the target character\'s 3D skull geometry'), 'TEST 12: Deve adaptar para geometria 3D do crânio');
+  assert.ok(test12Prompt.includes('Do NOT paste a flat or frontal face'), 'TEST 12: Deve proibir expressamente colar rosto frontal');
+  console.log('  ✓ TEST 12: Semântica de reconstrução facial anatômica validada sem vestígio de face-paste.');
+}
+
 console.log('\n✅ TODOS OS TESTES PASSARAM COM SUCESSO! VALIDAÇÃO CONCLUÍDA.');
 

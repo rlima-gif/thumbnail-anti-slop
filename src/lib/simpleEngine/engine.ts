@@ -7,7 +7,11 @@ import type {
   VisualDirectionOutput,
   ReservedSpacePosition,
   TextTreatment,
-  SimpleReference
+  SimpleReference,
+  TaskType,
+  ScenePlan,
+  AttributeOwner,
+  ProvenanceOrigin
 } from '@/types/simple';
 
 // Internal Anti-Slop Safeguards grouped strictly by Section 8 requirements
@@ -269,6 +273,845 @@ export function determineDepthOfField(idea: string, approachIndex: number): stri
   return 'natural photographic depth of field with organic optical falloff, softly defocusing the background to prioritize subject readability';
 }
 
+export interface TaskClassificationResult {
+  taskType: TaskType;
+  confidence: number;
+  reasoning: string;
+}
+
+/**
+ * 1. INTENT ROUTER: Deterministically classifies what the user actually wants to achieve.
+ */
+export function classifyTask(
+  title: string,
+  idea: string,
+  references: SimpleReference[] = []
+): TaskClassificationResult {
+  const combined = `${title} ${idea}`.trim().toLowerCase();
+
+  const hasTargetRef = references.some(r => r.role === 'IMAGEM_ALVO' || r.isTarget);
+  const hasPersonRef = references.some(r => r.role === 'PESSOA');
+  const hasProductRef = references.some(r => r.role === 'PRODUTO');
+  const hasSceneRef = references.some(r => r.role === 'CENÁRIO');
+  const hasStyleRef = references.some(r => r.role === 'ESTILO');
+  const hasCompRef = references.some(r => r.role === 'COMPOSIÇÃO');
+
+  const characterRef = references.find(r =>
+    /(personagem|character|alvo|target|crimson|heroi|hero|protagonista)/i.test(r.name)
+  );
+
+  // 1. IDENTITY TRANSFER: Adapting user's face/identity into a target character or master image
+  const identityTransferPatterns = [
+    /(adapte|coloc(ar|que)|troque|substitu(ir|a)|transfer(ir|a))\s*(o|meu)?\s*(rosto|face|identidade)\s*(n[oa]|para\s*o|em|into|onto)/i,
+    /(meu\s*rosto\s*n[oa]|minha\s*face\s*n[oa]|adapt\s*my\s*face|put\s*my\s*face|transfer\s*identity|swap\s*face)/i,
+    /(adapte|colocar?|botar?)\s*me\s*no\s*personagem/i,
+    /(rosto\s*(no|nesse)\s*personagem|face\s*on\s*character)/i,
+    /(adapt.*into.*character|put.*face.*character)/i
+  ];
+
+  const matchesIdentityTransfer = identityTransferPatterns.some(p => p.test(combined));
+  if (matchesIdentityTransfer || (hasPersonRef && (hasTargetRef || characterRef) && /(rosto|face|personagem|character)/i.test(combined))) {
+    return {
+      taskType: 'IDENTITY_TRANSFER',
+      confidence: 0.95,
+      reasoning: 'O usuário deseja adaptar/reconstruir sua identidade facial em um personagem ou imagem-alvo estrutural.'
+    };
+  }
+
+  // 2. REPLACE OBJECT: Replacing an object/device in an existing photo/master with another object
+  const replaceObjectPatterns = [
+    /(troqu?e|substitu[ia]|mude|replace|swap)\s*(o|a|o\s*meu|o\s*produto|o\s*console|o\s*aparelho|o\s*objeto)\s*(pel[oa]|por|com|for|with)/i,
+    /(trocar|troque)\s*.*(pela\s*segunda|pelo\s*segundo|da\s*segunda\s*foto|da\s*outra\s*imagem|pelo\s*console|pelo\s*produto)/i,
+    /(substitua|substituir)\s*o\s*aparelho/i,
+    /(troque|substitua|replace)\s*o\s*(console|aparelho|hardware|produto|dispositivo)/i
+  ];
+  if (replaceObjectPatterns.some(p => p.test(combined)) || (hasProductRef && hasTargetRef && /(trocar|troque|replace|substitua)/i.test(combined))) {
+    return {
+      taskType: 'REPLACE_OBJECT',
+      confidence: 0.9,
+      reasoning: 'O usuário deseja substituir um objeto específico na imagem preservando a cena, pose e ambiente mestre.'
+    };
+  }
+
+  // 3. CHANGE ENVIRONMENT: Replacing background while keeping subject
+  const changeEnvironmentPatterns = [
+    /(troqu?e|mude|altere|substitu[ia]|change|replace)\s*(o\s*)?(fundo|cen[aá]rio|background|ambiente)\s*(pel[oa]|por|com|for|with)/i,
+    /(coloque|botar?)\s*n[oa]\s*(outro|outra|cen[aá]rio|fundo)/i,
+    /(mudar|trocar)\s*o\s*fundo/i
+  ];
+  if (changeEnvironmentPatterns.some(p => p.test(combined))) {
+    return {
+      taskType: 'CHANGE_ENVIRONMENT',
+      confidence: 0.88,
+      reasoning: 'O usuário deseja substituir o fundo/cenário preservando o sujeito e a composição principal.'
+    };
+  }
+
+  // 4. CHANGE APPEARANCE: Altering clothing, hair, colors on an existing subject
+  const changeAppearancePatterns = [
+    /(mude|troque|altere|pinte|change)\s*(a\s*roupa|o\s*cabelo|a\s*barba|a\s*cor|o\s*visual)/i
+  ];
+  if (hasTargetRef && changeAppearancePatterns.some(p => p.test(combined))) {
+    return {
+      taskType: 'CHANGE_APPEARANCE',
+      confidence: 0.85,
+      reasoning: 'O usuário deseja alterar aspectos estéticos específicos (roupa/cabelo) preservando a pessoa e enquadramento.'
+    };
+  }
+
+  // 5. STYLE TRANSFER: Applying visual language / grading / textures only
+  if (hasStyleRef && !hasTargetRef && /(estilo|visual\s*de|aesthetic|style)/i.test(combined) && !hasPersonRef && !hasProductRef) {
+    return {
+      taskType: 'STYLE_TRANSFER',
+      confidence: 0.82,
+      reasoning: 'O usuário deseja transferir apenas a linguagem visual e tratamento de cor/textura da referência.'
+    };
+  }
+
+  // 6. COMPOSITION TRANSFER: Emulating camera / framing only
+  if (hasCompRef && !hasTargetRef && /(enquadramento|composi[çc][ãa]o|posi[çc][ãa]o)/i.test(combined)) {
+    return {
+      taskType: 'COMPOSITION_TRANSFER',
+      confidence: 0.8,
+      reasoning: 'O usuário deseja reproduzir a proporção espacial e enquadramento da referência.'
+    };
+  }
+
+  // 7. EDIT EXISTING IMAGE: General target modification
+  if (hasTargetRef && /(edite|altere|corrija|inpaint|modifique)/i.test(combined)) {
+    return {
+      taskType: 'EDIT_EXISTING_IMAGE',
+      confidence: 0.8,
+      reasoning: 'O usuário forneceu uma imagem-alvo para edição cirúrgica preservando a estrutura mestre.'
+    };
+  }
+
+  // 8. CREATE NEW SCENE: Default generative visual storytelling
+  return {
+    taskType: 'CREATE_NEW_SCENE',
+    confidence: 0.9,
+    reasoning: 'Criação de nova composição fotográfica a partir da descrição e referências conceituais.'
+  };
+}
+
+export interface ResolvedTargetSources {
+  targetImage?: SimpleReference;
+  identitySource?: SimpleReference;
+  productSource?: SimpleReference;
+  environmentSource?: SimpleReference;
+  styleSource?: SimpleReference;
+  compositionSource?: SimpleReference;
+}
+
+/**
+ * 2. TARGET & SOURCE RESOLVER: Distinguishes Target master from Source references.
+ */
+export function resolveTargetAndSources(
+  taskType: TaskType,
+  userIdea: string,
+  references: SimpleReference[] = []
+): ResolvedTargetSources {
+  const result: ResolvedTargetSources = {};
+
+  // 1. Explicit target by role or flag
+  const explicitTarget = references.find(r => r.role === 'IMAGEM_ALVO' || r.isTarget);
+  if (explicitTarget) {
+    result.targetImage = explicitTarget;
+  }
+
+  // 2. Identity source (PESSOA)
+  result.identitySource = references.find(r => r.role === 'PESSOA' && r !== result.targetImage);
+
+  // 3. Environment source (CENÁRIO)
+  result.environmentSource = references.find(r => r.role === 'CENÁRIO' && r !== result.targetImage);
+
+  // 4. Product source (PRODUTO)
+  result.productSource = references.find(r => r.role === 'PRODUTO' && r !== result.targetImage);
+
+  // 5. Style source (ESTILO)
+  result.styleSource = references.find(r => r.role === 'ESTILO' && r !== result.targetImage);
+
+  // 6. Composition source (COMPOSIÇÃO)
+  result.compositionSource = references.find(r => r.role === 'COMPOSIÇÃO' && r !== result.targetImage);
+
+  // If target not explicitly set, infer based on taskType
+  if (!result.targetImage) {
+    if (taskType === 'IDENTITY_TRANSFER') {
+      const characterNamedRef = references.find(
+        r => r !== result.identitySource &&
+             r !== result.environmentSource &&
+             /(personagem|character|alvo|target|crimson|jogo|protagonista|modelo|foto\s*original)/i.test(r.name)
+      );
+      if (characterNamedRef) {
+        result.targetImage = characterNamedRef;
+      } else {
+        const otherRef = references.find(r => r !== result.identitySource && r !== result.environmentSource);
+        if (otherRef) {
+          result.targetImage = otherRef;
+        }
+      }
+    } else if (taskType === 'REPLACE_OBJECT') {
+      if (references.length >= 2) {
+        result.targetImage = references[0];
+        result.productSource = references.find(r => r !== result.targetImage && (r.role === 'PRODUTO' || /console|produto|objeto/i.test(r.name))) || references[1];
+      }
+    } else if (taskType === 'CHANGE_ENVIRONMENT') {
+      if (references.length >= 2) {
+        result.targetImage = references[0];
+        result.environmentSource = references.find(r => r !== result.targetImage && (r.role === 'CENÁRIO' || /cen[aá]rio|fundo|background/i.test(r.name))) || references[1];
+      }
+    }
+  }
+
+  return result;
+}
+
+export interface AttributeOwnershipMap {
+  faceOwner: AttributeOwner;
+  hairOwner: AttributeOwner;
+  beardOwner: AttributeOwner;
+  bodyOwner: AttributeOwner;
+  poseOwner: AttributeOwner;
+  headAngleOwner: AttributeOwner;
+  clothingOwner: AttributeOwner;
+  armorOwner?: AttributeOwner;
+  propsOwner?: AttributeOwner;
+  handsOwner: AttributeOwner;
+  productOwner: AttributeOwner;
+  environmentOwner: AttributeOwner;
+  lightingOwner: AttributeOwner;
+  compositionOwner: AttributeOwner;
+  styleOwner: AttributeOwner;
+}
+
+/**
+ * 3. ATTRIBUTE OWNERSHIP: Resolves attribute ownership before prompt building.
+ */
+export function resolveAttributeOwnership(
+  taskType: TaskType,
+  userIdea: string,
+  resolved: ResolvedTargetSources
+): AttributeOwnershipMap {
+  const lower = userIdea.toLowerCase();
+
+  let faceOwner: AttributeOwner = 'NONE';
+  let hairOwner: AttributeOwner = 'NONE';
+  let beardOwner: AttributeOwner = 'NONE';
+  let bodyOwner: AttributeOwner = 'NONE';
+  let poseOwner: AttributeOwner = 'NONE';
+  let headAngleOwner: AttributeOwner = 'NONE';
+  let clothingOwner: AttributeOwner = 'NONE';
+  let armorOwner: AttributeOwner = 'NONE';
+  let propsOwner: AttributeOwner = 'NONE';
+  let handsOwner: AttributeOwner = 'NONE';
+  let productOwner: AttributeOwner = 'NONE';
+  let environmentOwner: AttributeOwner = 'NONE';
+  let lightingOwner: AttributeOwner = 'INFERRED';
+  let compositionOwner: AttributeOwner = 'INFERRED';
+  let styleOwner: AttributeOwner = resolved.styleSource ? 'STYLE_REF' : 'NONE';
+
+  if (taskType === 'IDENTITY_TRANSFER') {
+    faceOwner = resolved.identitySource ? 'PERSON_REF' : 'USER';
+
+    // Hair Ownership (Section 10)
+    const keepsMyHair = /(meu\s*cabelo|minha\s*cabe[çc]a|my\s*hair)/i.test(lower);
+    const keepsTargetHair = /(cabelo\s*do\s*personagem|target\s*hair|character\s*hair|mantenha.*cabelo|keep.*hair|visual\s*do\s*personagem)/i.test(lower);
+
+    if (keepsMyHair && !keepsTargetHair) {
+      hairOwner = 'PERSON_REF';
+    } else {
+      hairOwner = resolved.targetImage ? 'TARGET' : 'INFERRED';
+    }
+
+    // Beard Ownership (Section 10)
+    const keepsMyBeard = /(minha\s*barba|my\s*beard|use\s*minha\s*barba|com\s*minha\s*barba)/i.test(lower);
+    const keepsTargetBeard = /(barba\s*do\s*personagem|target\s*beard|character\s*beard|visual\s*do\s*personagem)/i.test(lower);
+
+    if (keepsMyBeard && !keepsTargetBeard) {
+      beardOwner = 'PERSON_REF';
+    } else {
+      beardOwner = resolved.targetImage ? 'TARGET' : 'INFERRED';
+    }
+
+    bodyOwner = resolved.targetImage ? 'TARGET' : 'INFERRED';
+    poseOwner = resolved.targetImage ? 'TARGET' : 'INFERRED';
+    headAngleOwner = resolved.targetImage ? 'TARGET' : 'INFERRED';
+    clothingOwner = resolved.targetImage ? 'TARGET' : 'INFERRED';
+    armorOwner = resolved.targetImage ? 'TARGET' : 'INFERRED';
+    propsOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    handsOwner = 'ADAPTED';
+    compositionOwner = resolved.targetImage ? 'TARGET' : 'INFERRED';
+    productOwner = 'NONE';
+
+    if (resolved.environmentSource) {
+      environmentOwner = 'SCENARIO_REF';
+      lightingOwner = 'SCENARIO_REF';
+    } else if (resolved.targetImage) {
+      environmentOwner = 'TARGET';
+      lightingOwner = 'TARGET';
+    } else {
+      environmentOwner = 'NONE';
+      lightingOwner = 'INFERRED';
+    }
+  } else if (taskType === 'REPLACE_OBJECT') {
+    faceOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    hairOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    beardOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    bodyOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    poseOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    headAngleOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    clothingOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    productOwner = resolved.productSource ? 'PRODUCT_REF' : 'USER';
+    handsOwner = 'ADAPTED';
+    environmentOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    lightingOwner = resolved.targetImage ? 'TARGET' : 'INFERRED';
+    compositionOwner = resolved.targetImage ? 'TARGET' : 'INFERRED';
+  } else if (taskType === 'CHANGE_ENVIRONMENT') {
+    faceOwner = resolved.targetImage ? 'TARGET' : (resolved.identitySource ? 'PERSON_REF' : 'NONE');
+    hairOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    beardOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    bodyOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    poseOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    headAngleOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    clothingOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    productOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    handsOwner = resolved.targetImage ? 'TARGET' : 'NONE';
+    environmentOwner = resolved.environmentSource ? 'SCENARIO_REF' : 'USER';
+    lightingOwner = resolved.environmentSource ? 'SCENARIO_REF' : 'INFERRED';
+    compositionOwner = resolved.targetImage ? 'TARGET' : 'INFERRED';
+  } else {
+    faceOwner = resolved.identitySource ? 'PERSON_REF' : 'USER';
+    hairOwner = resolved.identitySource ? 'PERSON_REF' : 'USER';
+    beardOwner = resolved.identitySource ? 'PERSON_REF' : 'USER';
+    bodyOwner = 'USER';
+    poseOwner = 'INFERRED';
+    headAngleOwner = 'INFERRED';
+    const isTech = detectTechHardware(userIdea);
+    productOwner = resolved.productSource ? 'PRODUCT_REF' : (isTech || /produto|console|hardware|device|notebook/i.test(userIdea) ? 'USER' : 'NONE');
+    handsOwner = productOwner !== 'NONE' ? 'ADAPTED' : 'INFERRED';
+    const explicitEnv = detectExplicitEnvironment(userIdea);
+    environmentOwner = resolved.environmentSource ? 'SCENARIO_REF' : (explicitEnv.hasExplicitEnv ? 'USER' : 'NONE');
+    lightingOwner = explicitEnv.hasExplicitEnv ? 'USER' : 'INFERRED';
+    compositionOwner = resolved.compositionSource ? 'COMPOSITION_REF' : 'INFERRED';
+  }
+
+  return {
+    faceOwner,
+    hairOwner,
+    beardOwner,
+    bodyOwner,
+    poseOwner,
+    headAngleOwner,
+    clothingOwner,
+    armorOwner,
+    propsOwner,
+    handsOwner,
+    productOwner,
+    environmentOwner,
+    lightingOwner,
+    compositionOwner,
+    styleOwner
+  };
+}
+
+/**
+ * 4. PROVENANCE GUARD: Audits visual statements and purges unsupported defaults or reference leakages.
+ */
+export function auditPromptProvenance(
+  promptText: string,
+  scenePlan: ScenePlan,
+  references: SimpleReference[] = []
+): { cleanedPrompt: string; purged: string[]; warnings: string[] } {
+  let cleaned = promptText;
+  const purged: string[] = [];
+  const warnings: string[] = [];
+
+  // 1. UNSUPPORTED DOMESTIC ENVIRONMENT PURGE
+  const hasExplicitEnv = scenePlan.environmentOwner === 'USER' ||
+    scenePlan.environmentOwner === 'SCENARIO_REF' ||
+    scenePlan.environmentOwner === 'TARGET';
+
+  if (!hasExplicitEnv) {
+    const domesticTokens = [
+      /(a\s+)?(cozy\s+)?(real\s+)?apartment\s+living\s+room/gi,
+      /(a\s+)?(domestic\s+)?(bedroom|living\s+room|home\s+office|gaming\s+room|streamer\s+setup)/gi,
+      /(authentic\s+)?sofa(\s+cushions)?/gi,
+      /(a\s+)?(wooden\s+)?(work\s+)?desk(\s+lamp)?/gi,
+      /floor\s+lamp/gi,
+      /abajur(\s+de\s+sala)?/gi,
+      /window\s+light(\s+bounce)?/gi
+    ];
+
+    for (const pattern of domesticTokens) {
+      if (pattern.test(cleaned)) {
+        purged.push(`Removed unsupported domestic environment fallback matching ${pattern}`);
+        cleaned = cleaned.replace(pattern, 'clean neutral background with generous negative space');
+      }
+    }
+  }
+
+  // 2. UNSUPPORTED PRODUCT / DEVICE HERO PURGE
+  if (scenePlan.productOwner === 'NONE') {
+    const productHeroTokens = [
+      /HARDWARE\s*&\s*PRODUCT\s*FIDELITY[^\n]*\n?/gi,
+      /holding\s+the\s+(handheld\s+)?(gaming\s+)?console[^\n,.]*/gi,
+      /holding\s+the\s+device[^\n,.]*/gi,
+      /opened\s+laptop\s+chassis[^\n,.]*/gi,
+      /physical\s+product\s+hero[^\n,.]*/gi,
+      /creator\s+standing\s+behind\s+(a\s+)?(glowing\s+)?product/gi
+    ];
+
+    for (const pattern of productHeroTokens) {
+      if (pattern.test(cleaned)) {
+        purged.push(`Removed unsupported product hero framing matching ${pattern}`);
+        cleaned = cleaned.replace(pattern, '');
+      }
+    }
+  }
+
+  // 3. REFERENCE LEAKAGE GUARDS (Section 17)
+  const personRefs = references.filter(r => r.role === 'PESSOA');
+  if (personRefs.length > 0 && scenePlan.environmentOwner !== 'SCENARIO_REF') {
+    const personLeakTokens = [
+      /selfie\s+background/gi,
+      /bed\s+in\s+the\s+background/gi,
+      /bedroom\s+wall/gi
+    ];
+    for (const pattern of personLeakTokens) {
+      if (pattern.test(cleaned)) {
+        purged.push(`Prevented person reference environment leakage matching ${pattern}`);
+        cleaned = cleaned.replace(pattern, '');
+      }
+    }
+  }
+
+  const productRefs = references.filter(r => r.role === 'PRODUTO');
+  if (productRefs.length > 0) {
+    const productLeakTokens = [
+      /product\s+photo\s+studio\s+cyclorama/gi,
+      /studio\s+lightbox/gi
+    ];
+    for (const pattern of productLeakTokens) {
+      if (pattern.test(cleaned)) {
+        purged.push(`Prevented product reference studio leakage matching ${pattern}`);
+        cleaned = cleaned.replace(pattern, '');
+      }
+    }
+  }
+
+  const styleRefs = references.filter(r => r.role === 'ESTILO');
+  if (styleRefs.length > 0) {
+    const styleLeakTokens = [
+      /woman\s+in\s+red\s+jacket/gi,
+      /specific\s+person\s+from\s+style\s+reference/gi
+    ];
+    for (const pattern of styleLeakTokens) {
+      if (pattern.test(cleaned)) {
+        purged.push(`Prevented style reference subject leakage matching ${pattern}`);
+        cleaned = cleaned.replace(pattern, '');
+      }
+    }
+  }
+
+  const compRefs = references.filter(r => r.role === 'COMPOSIÇÃO');
+  if (compRefs.length > 0) {
+    const compLeakTokens = [
+      /motorcycle/gi,
+      /vehicle\s+from\s+composition\s+reference/gi
+    ];
+    for (const pattern of compLeakTokens) {
+      if (pattern.test(cleaned)) {
+        purged.push(`Prevented composition reference object leakage matching ${pattern}`);
+        cleaned = cleaned.replace(pattern, '');
+      }
+    }
+  }
+
+  // 4. FACE PASTE SANITIZER (Section 8 & 9)
+  // Only sanitize positive instruction blocks (before NEGATIVE / STRICTLY AVOID)
+  const [positivePart, ...negParts] = cleaned.split('NEGATIVE / STRICTLY AVOID:');
+  let cleanPos = positivePart;
+  const facePasteTokens = [
+    /paste\s+(the\s+)?(user'?s?\s+)?face/gi,
+    /overlay\s+(the\s+)?(user'?s?\s+)?face/gi,
+    /cut\s+and\s+paste\s+face/gi,
+    /swap\s+face\s+texture/gi,
+    /frontal\s+face\s+onto\s+target/gi
+  ];
+  for (const pattern of facePasteTokens) {
+    if (pattern.test(cleanPos)) {
+      purged.push(`Sanitized face-paste phrasing matching ${pattern}`);
+      cleanPos = cleanPos.replace(pattern, 'reconstruct the target character facial anatomy to authentically match the identity');
+    }
+  }
+
+  cleaned = negParts.length > 0
+    ? `${cleanPos.trim()}\n\nNEGATIVE / STRICTLY AVOID:\n${negParts.join('NEGATIVE / STRICTLY AVOID:').trim()}`
+    : cleanPos.trim();
+
+  cleaned = cleaned.replace(/,\s*(?=,)/g, '').replace(/,\s*\./g, '.');
+
+  return {
+    cleanedPrompt: cleaned,
+    purged,
+    warnings
+  };
+}
+
+/**
+ * 5. SCENE PLAN BUILDER: Assembles the ScenePlan data structure.
+ */
+export function buildScenePlan(
+  input: CreateThumbnailInput,
+  approachIndex = 0
+): ScenePlan {
+  const { videoTitle, ideaDescription, references = [] } = input;
+  const userText = `${videoTitle} ${ideaDescription}`.trim();
+
+  const { taskType } = classifyTask(videoTitle, userText, references);
+  const resolved = resolveTargetAndSources(taskType, userText, references);
+  const ownership = resolveAttributeOwnership(taskType, userText, resolved);
+
+  const change: string[] = [];
+  const preserve: string[] = [];
+  const provenanceMap: Record<string, ProvenanceOrigin> = {};
+
+  if (taskType === 'IDENTITY_TRANSFER') {
+    const targetName = resolved.targetImage?.name || 'personagem-alvo';
+    const idName = resolved.identitySource?.name || 'sua foto';
+
+    change.push(
+      `Reconstruct facial anatomy to embody the authentic identity from reference (${idName}): facial proportions, eye shape, nose structure, mouth, bone structure, and true age.`
+    );
+    provenanceMap['face'] = 'PERSON_REFERENCE';
+
+    preserve.push(`Target character head pose, 3D skull orientation, perspective, tilt, and gaze direction from master (${targetName}).`);
+    provenanceMap['head_pose'] = 'TARGET_IMAGE';
+
+    if (ownership.hairOwner === 'TARGET') {
+      preserve.push(`Exact target character hairstyle, hair color, and hair volume from master (${targetName}).`);
+      provenanceMap['hair'] = 'TARGET_IMAGE';
+    } else {
+      change.push(`User personal hairstyle from identity reference (${idName}).`);
+      provenanceMap['hair'] = 'PERSON_REFERENCE';
+    }
+
+    if (ownership.beardOwner === 'TARGET') {
+      preserve.push(`Exact target character facial hair / beard styling and texture from master (${targetName}).`);
+      provenanceMap['beard'] = 'TARGET_IMAGE';
+    } else if (ownership.beardOwner === 'PERSON_REF') {
+      change.push(`User personal beard style from identity reference (${idName}).`);
+      provenanceMap['beard'] = 'PERSON_REFERENCE';
+    }
+
+    preserve.push(`Exact target character armor, costume, clothing, materials, and physical textures.`);
+    provenanceMap['costume'] = 'TARGET_IMAGE';
+
+    preserve.push(`Target body pose, physical build, and held props (including holding the map / equipment) with anatomically plausible hands.`);
+    provenanceMap['body_and_props'] = 'TARGET_IMAGE';
+
+    preserve.push(`Camera angle, framing distance, and optical perspective from target master.`);
+    provenanceMap['camera'] = 'TARGET_IMAGE';
+
+    if (resolved.environmentSource) {
+      change.push(`Background and setting seamlessly replaced with supplied environment reference (${resolved.environmentSource.name}).`);
+      preserve.push(`Motivated physical illumination harmonized with the supplied environment.`);
+      provenanceMap['environment'] = 'SCENARIO_REFERENCE';
+      provenanceMap['lighting'] = 'SCENARIO_REFERENCE';
+    } else if (resolved.targetImage) {
+      preserve.push(`Target environment and background setting exactly as in master image (${targetName}).`);
+      provenanceMap['environment'] = 'TARGET_IMAGE';
+      provenanceMap['lighting'] = 'TARGET_IMAGE';
+    } else {
+      provenanceMap['environment'] = 'UNSUPPORTED_DEFAULT';
+    }
+  } else if (taskType === 'REPLACE_OBJECT') {
+    const targetName = resolved.targetImage?.name || 'foto base';
+    const prodName = resolved.productSource?.name || 'novo produto';
+
+    change.push(`Replace target object/device with exact hardware geometry, buttons, ports, and silhouette of (${prodName}).`);
+    provenanceMap['product'] = 'PRODUCT_REFERENCE';
+
+    change.push(`Adapt hand grip naturally around the new hardware with anatomically plausible fingers and natural occlusion.`);
+    provenanceMap['hands'] = 'NECESSARY_ADAPTATION';
+
+    preserve.push(`Preserve person facial identity, expression, gaze, body pose, and clothing from (${targetName}).`);
+    provenanceMap['person'] = 'TARGET_IMAGE';
+
+    preserve.push(`Preserve background setting, camera angle, framing, and scene lighting from (${targetName}).`);
+    provenanceMap['environment'] = 'TARGET_IMAGE';
+    provenanceMap['lighting'] = 'TARGET_IMAGE';
+  } else if (taskType === 'CHANGE_ENVIRONMENT') {
+    const targetName = resolved.targetImage?.name || 'sujeito base';
+    const envName = resolved.environmentSource?.name || 'novo cenário';
+
+    change.push(`Replace background with authentic location/atmosphere from (${envName}).`);
+    provenanceMap['environment'] = 'SCENARIO_REFERENCE';
+
+    preserve.push(`Preserve primary subject, face, body pose, clothing, and any held objects exactly from (${targetName}).`);
+    provenanceMap['subject'] = 'TARGET_IMAGE';
+
+    preserve.push(`Camera angle and subject scale hierarchy from master (${targetName}).`);
+    provenanceMap['camera'] = 'TARGET_IMAGE';
+  } else {
+    provenanceMap['concept'] = 'USER_EXPLICIT';
+    if (resolved.environmentSource) {
+      provenanceMap['environment'] = 'SCENARIO_REFERENCE';
+    } else if (/sof[aá]|quarto|sala|rua|praia|est[uú]dio|mesa|bancada/i.test(userText)) {
+      provenanceMap['environment'] = 'USER_EXPLICIT';
+    } else {
+      provenanceMap['environment'] = 'JUSTIFIED_INFERENCE';
+    }
+  }
+
+  const avoid = buildAntiSlopAvoid(userText);
+  if (taskType === 'IDENTITY_TRANSFER') {
+    avoid.push('paste face', 'overlay face', 'flat frontal face on rotated head', 'plastic waxy skin', 'beauty filter jaw slimming');
+    avoid.push('domestic room', 'sofa', 'desk lamp', 'floor lamp', 'living room furniture', 'physical product hero', 'device teardown');
+  }
+
+  return {
+    taskType,
+    primarySubject: resolved.targetImage?.name || ideaDescription || videoTitle,
+    secondarySubject: resolved.productSource?.name,
+    targetImage: resolved.targetImage,
+    identitySource: resolved.identitySource,
+    productSource: resolved.productSource,
+    environmentSource: resolved.environmentSource,
+    styleSource: resolved.styleSource,
+    compositionSource: resolved.compositionSource,
+    ...ownership,
+    change,
+    preserve,
+    avoid,
+    provenanceMap
+  };
+}
+
+export interface PromptBuilderResult {
+  finalPrompt: string;
+  directionPt: VisualDirectionOutput;
+  approachTitle: string;
+  typographyPlan?: string;
+  cleanedPlan: ScenePlan;
+}
+
+/**
+ * 6. PROMPT BUILDER: Builds the generation prompt based on the ScenePlan.
+ */
+export function buildPromptFromScenePlan(
+  plan: ScenePlan,
+  input: CreateThumbnailInput,
+  approachIndex = 0
+): PromptBuilderResult {
+  const { videoTitle, ideaDescription, aspectRatio = '16:9', thumbnailText, fontName, reservedSpacePosition, stylePreset = 'Natural', textTreatment, reserveSpaceForText } = input;
+  const cleanIdea = ideaDescription.trim() || videoTitle.trim();
+  const arParam = aspectRatio === '9:16' ? '9:16 vertical format' : '16:9 widescreen format';
+  const targetName = plan.targetImage?.name || 'personagem/imagem mestre';
+  const idName = plan.identitySource?.name || 'foto de identidade';
+
+  let finalPrompt = '';
+  let directionPt: VisualDirectionOutput;
+  let approachTitle = 'Direção Fotográfica';
+
+  let typographyDirective = 'Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.';
+  if (textTreatment === 'SEM_TEXTO') {
+    typographyDirective = 'Do not render any text, characters, letters, subtitles or watermark.';
+  } else if (thumbnailText?.trim()) {
+    const posStr = reservedSpacePosition === 'ESQUERDA' ? 'left side' :
+      reservedSpacePosition === 'DIREITA' ? 'right side' :
+      reservedSpacePosition === 'SUPERIOR' ? 'upper top area' : 'lower bottom area';
+    typographyDirective = `Reserve clean, uncluttered negative space on the ${posStr} of the composition specifically for post-production typography ("${thumbnailText.trim()}"). Do not bake distorted AI typography directly into the pixels.`;
+  }
+
+  if (plan.taskType === 'IDENTITY_TRANSFER') {
+    approachTitle = 'Reconstrução de Identidade / Adaptação Anatômica';
+
+    directionPt = {
+      ideia: 'Adaptação de identidade no personagem: reconstrução anatômica facial preservando o visual, cabelo, armadura e mapa do personagem.',
+      foco: 'O personagem com a identidade facial integrada e o mapa em mãos como ponto focal narrativo.',
+      composicao: 'Enquadramento, pose e ângulo fiéis à imagem-alvo mestre, com integração harmoniosa do cenário ao fundo.',
+      expressao: 'Expressão focada e compenetrada do personagem com lábios fechados, sem caretas artificiais.',
+      visual: 'Iluminação motivada do cenário refletindo naturalmente na armadura e na pele, sem néon e sem brilhos plásticos.'
+    };
+
+    const hairDesc = plan.hairOwner === 'TARGET'
+      ? `Exact hairstyle, hair color, texture, and hair volume preserved from the target character master (${targetName}).`
+      : `Personal hairstyle from the identity reference (${idName}).`;
+
+    const beardDesc = plan.beardOwner === 'TARGET'
+      ? `Exact facial hair / beard styling and texture preserved from the target character master (${targetName}).`
+      : plan.beardOwner === 'PERSON_REF'
+      ? `Personal beard from identity reference (${idName}).`
+      : 'Natural clean facial finish consistent with the target character.';
+
+    let envSection = 'Clean neutral background with soft natural optical falloff.';
+    if (plan.environmentSource) {
+      envSection = `Environment and background setting seamlessly integrated from the supplied scenario reference (${plan.environmentSource.name}), matching authentic real-world perspective and depth.`;
+    } else if (plan.targetImage) {
+      envSection = `Exact environmental setting and background preserved from the target master image (${targetName}).`;
+    }
+
+    finalPrompt = `Photographic YouTube thumbnail, ${arParam}. Directed visual storytelling, authentic and grounded.
+SCENE: ${cleanIdea}.
+TASK: IDENTITY_TRANSFER (ANATOMICAL RECONSTRUCTION — NOT A FACE PASTE).
+
+TARGET MASTER STRUCTURE (${targetName}):
+- Subject: Target character from (${targetName}).
+- Composition & Camera: Exact camera angle, 16:9 framing distance, body posture, head tilt, and 3D skull orientation from master image.
+- Armor & Clothing: Exact target character armor, physical fabrics, metal finishes, and weathered textures.
+- Props & Hands: Holding the map and physical equipment naturally with anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers.
+- Hair & Facial Hair: ${hairDesc} ${beardDesc}
+
+IDENTITY RECONSTRUCTION DIRECTIVE (MANDATORY):
+Reconstruct the target character's facial anatomy so that the character naturally and authentically embodies the facial identity of the individual in the reference (${idName}): recognizable facial bone structure, eye shape, nose structure, mouth proportions, natural facial asymmetry, and true age.
+CRITICAL ANATOMICAL RULES:
+1. Strictly adapt the facial features to the target character's 3D skull geometry, head angle, head tilt, gaze perspective, and scene lighting.
+2. Do NOT paste a flat or frontal face onto the target head.
+3. Do NOT alter the target character's body pose, armor, hair, costume, or held props.
+4. Zero beauty filters, zero plastic skin smoothing, zero jaw slimming. The result must appear as the same real person organically inhabiting the target character's body, world, and physical reality.
+
+ENVIRONMENT & LIGHTING:
+${envSection} Physically motivated scene lighting harmonized between character and environment, with natural directional shadow falloff and realistic specular highlights on armor and skin.
+
+TYPOGRAPHY:
+${typographyDirective}
+
+NEGATIVE / STRICTLY AVOID:
+paste face, overlay face, flat frontal face on rotated head, plastic waxy skin, beauty filter jaw slimming, cartoon saturation, generic shocked expression, changing target armor, changing target pose, changing target props, domestic room, sofa, desk lamp, floor lamp, living room furniture, physical product hero, handheld gaming console, device teardown, creator standing behind product, ${CORE_ANTI_SLOP_AVOID.slice(0, 22).join(', ')}.`;
+  } else if (plan.taskType === 'REPLACE_OBJECT') {
+    const prodName = plan.productSource?.name || 'novo produto';
+    approachTitle = 'Substituição Cirúrgica de Objeto / Hardware';
+
+    directionPt = {
+      ideia: 'Substituição cirúrgica do dispositivo preservando 100% da pose, pessoa, iluminação e cenário mestre.',
+      foco: 'O novo dispositivo integrado com precisão física milimétrica.',
+      composicao: 'Enquadramento idêntico à imagem-alvo, adaptando apenas o contato das mãos.',
+      expressao: 'Expressão natural preservada da imagem-alvo.',
+      visual: 'Materiais foscos fiéis e iluminação consistente com o ambiente original.'
+    };
+
+    finalPrompt = `Photographic YouTube thumbnail, ${arParam}. Directed visual storytelling, authentic and grounded.
+SCENE: ${cleanIdea}.
+TASK: REPLACE_OBJECT (SURGICAL OBJECT REPLACEMENT).
+
+MASTER STRUCTURE TO PRESERVE (${targetName}):
+1. Person facial identity, true age, expression, gaze direction, and body posture from master photo.
+2. Camera framing, 16:9 composition, depth of field, and original background setting.
+3. Scene lighting direction and ambient shadow falloff.
+
+CHANGE:
+Replace original held object with exact physical hardware geometry, chassis proportions, ports, buttons, screen ratio, and tactile materials from the product reference (${prodName}).
+
+ADAPT:
+Hand grip and fingers around the new hardware: anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact.
+
+TYPOGRAPHY:
+${typographyDirective}
+
+NEGATIVE / STRICTLY AVOID:
+regenerating the entire scene, changing person facial identity, changing clothing, deformed hardware geometry, fictional buttons, rubbery chassis, unmotivated rim light, ${CORE_ANTI_SLOP_AVOID.slice(0, 20).join(', ')}.`;
+  } else if (plan.taskType === 'CHANGE_ENVIRONMENT') {
+    const envName = plan.environmentSource?.name || 'novo cenário';
+    approachTitle = 'Substituição de Cenário / Fundo';
+
+    directionPt = {
+      ideia: 'Substituição de cenário: o sujeito e objetos são preservados enquanto o fundo é transportado para o novo local.',
+      foco: 'O sujeito principal mantendo destaque com integração luminosa crível no novo espaço.',
+      composicao: 'Composição e enquadramento do sujeito preservados da imagem original.',
+      expressao: 'Expressão natural preservada do criador.',
+      visual: 'Iluminação rebalanceada suavemente para refletir as fontes reais do novo ambiente.'
+    };
+
+    finalPrompt = `Photographic YouTube thumbnail, ${arParam}. Directed visual storytelling, authentic and grounded.
+SCENE: ${cleanIdea}.
+TASK: CHANGE_ENVIRONMENT (BACKGROUND REPLACEMENT).
+
+PRESERVE FROM MASTER (${targetName}):
+1. Exact subject identity, facial features, body posture, clothing, and any held objects.
+2. Subject framing scale and camera distance.
+
+CHANGE:
+Replace the background setting entirely with the authentic environment, architecture, and spatial atmosphere from the scenario reference (${envName}).
+
+ADAPT:
+Subtle environmental light bounce on shoulders and edges to physically ground the subject in the new setting without artificial rim light or glowing outlines.
+
+TYPOGRAPHY:
+${typographyDirective}
+
+NEGATIVE / STRICTLY AVOID:
+redesigning the subject, changing facial identity, changing clothing, artificial cut-and-paste halo, green screen edge glow, ${CORE_ANTI_SLOP_AVOID.slice(0, 20).join(', ')}.`;
+  } else {
+    approachTitle = approachIndex === 1
+      ? 'Foco no Objeto / Hardware'
+      : approachIndex === 2
+      ? 'Tensão Documental'
+      : 'Equilíbrio Narrativo';
+
+    directionPt = {
+      ideia: 'Equilíbrio e autenticidade visual sem clichês sintéticos.',
+      foco: 'Sujeito principal claro com separação figura-fundo para leitura rápida no mobile.',
+      composicao: 'Enquadramento balanceado em 16:9 com espaço negativo para tipografia.',
+      expressao: 'Fisionomia humana natural e compenetrada com lábios fechados.',
+      visual: 'Iluminação direcional motivada com sombras suaves e texturas reais.'
+    };
+
+    let envText = 'Clean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on the primary subject without domestic clutter';
+    if (plan.environmentSource) {
+      envText = `Authentic environment integrated from reference (${plan.environmentSource.name}), preserving spatial character and atmosphere`;
+    } else if (plan.environmentOwner === 'USER') {
+      envText = `Grounded physical setting as explicitly described by the user (${cleanIdea})`;
+    }
+
+    finalPrompt = `Photographic YouTube thumbnail, ${arParam}. Directed visual storytelling, authentic and grounded.
+SCENE: ${cleanIdea}.
+SUBJECT & FRAMING: Compelling hero presentation with clean silhouette and immediate readability at 120px mobile thumbnail scale. Anatomically plausible hands with natural grip, correct visible finger count according to pose and natural occlusion.
+HUMAN EXPRESSION: Natural composed curiosity with closed mouth and expressive eyes, authentic facial asymmetry, natural skin texture avoiding plastic waxy smoothing.
+LIGHTING: Motivated physical illumination with clean directional key light and soft natural shadow falloff.
+ENVIRONMENT & OPTICS: ${envText}. Balanced photographic perspective with 35mm lens, preserving authentic spatial depth and subject clarity without forced blur.
+TYPOGRAPHY:
+${typographyDirective}
+NEGATIVE / STRICTLY AVOID:
+${CORE_ANTI_SLOP_AVOID.slice(0, 25).join(', ')}.`;
+  }
+
+  const audit = auditPromptProvenance(finalPrompt, plan, input.references);
+  finalPrompt = audit.cleanedPrompt;
+
+  if (input.targetModel === 'MIDJOURNEY') {
+    const arFlag = input.aspectRatio === '9:16' ? '--ar 9:16' : '--ar 16:9';
+    const wantsRaw = (input.stylePreset === 'Natural' || input.stylePreset === 'Fotojornalismo') && input.realismLevel === 'Alto' && !/(cinemat|styliz|fantasy|cartoon|3d)/i.test(cleanIdea);
+    finalPrompt = wantsRaw ? `${finalPrompt}\n\n${arFlag} --style raw` : `${finalPrompt}\n\n${arFlag}`;
+  } else if (input.targetModel === 'FLUX') {
+    finalPrompt = `[Authentic photography] ${finalPrompt} shot on professional digital camera with 35mm focal length, clean optical perspective, tactile real-world materials.`;
+  } else if (input.targetModel === 'GEMINI') {
+    finalPrompt = `Google Gemini Imagen Prompt:\n${finalPrompt}\nDirective: Emphasize physical realism, grounded optical perspective, natural skin textures, and zero synthetic AI gloss.`;
+  } else if (input.targetModel === 'OPENAI') {
+    finalPrompt = `DALL-E 3 / GPT-4o Prompt:\n${finalPrompt}\nRule: Photo style, realistic camera shutter capture, natural skin texture, authentic human facial asymmetry, and accurate hardware geometry.`;
+  }
+
+  const typographyPlan = buildTypographyPlan(
+    thumbnailText,
+    plan.productOwner !== 'NONE',
+    fontName,
+    reservedSpacePosition,
+    stylePreset,
+    textTreatment
+  );
+
+  return {
+    finalPrompt,
+    directionPt,
+    approachTitle,
+    typographyPlan,
+    cleanedPlan: {
+      ...plan,
+      unsupportedDetailsRemoved: audit.purged
+    }
+  };
+}
+
 // Interprets user intent with fidelity to the idea and genuine diversity across approaches
 export function interpretUserIntent(
   title: string,
@@ -306,7 +1149,7 @@ export function interpretUserIntent(
     ? `Atmospheric background inspired by the environment mood reference (${refEnvRef.name}), adopting general density, materials, and tonal character without copying geometry`
     : explicitEnv.hasExplicitEnv
     ? explicitEnv.descriptionEn!
-    : 'Clean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on the primary subject without domestic room clutter';
+    : 'Clean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on the primary subject without domestic clutter';
 
   const resolvedLightingEn = myEnvRef
     ? 'Physically motivated illumination matching the authentic sources of the referenced location, with natural shadow falloff'
@@ -416,7 +1259,7 @@ export function interpretUserIntent(
       subjectEn: 'The creator holding the handheld device naturally toward the camera with anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact',
       contextEn: hasExplicitEnv
         ? resolvedContextEn
-        : 'Minimal neutral background with soft optical falloff, keeping undivided focus on the device and creator without domestic room clutter',
+        : 'Minimal neutral background with soft optical falloff, keeping undivided focus on the device and creator without domestic clutter',
       lightingEn: hasExplicitEnv
         ? resolvedLightingEn
         : 'Clean motivated directional key lighting with soft natural shadow falloff, emphasizing true matte chassis textures and screen content without artificial glare or unmotivated RGB neon',
@@ -517,7 +1360,7 @@ export function interpretUserIntent(
         : 'Foreground hero focus on the primary physical object with authentic real-world texture and material finish',
       contextEn: hasExplicitEnv
         ? resolvedContextEn
-        : 'Clean neutral background with soft optical falloff, keeping the foreground subject as the commanding centerpiece without domestic room clutter',
+        : 'Clean neutral background with soft optical falloff, keeping the foreground subject as the commanding centerpiece without domestic clutter',
       lightingEn: hasExplicitEnv
         ? resolvedLightingEn
         : 'Motivated directional key light with gentle wrap-around illumination and soft natural shadow falloff across the surface',
@@ -541,7 +1384,7 @@ export function interpretUserIntent(
       : 'A person presenting the primary subject with genuine ease and natural composed posture',
     contextEn: hasExplicitEnv
       ? resolvedContextEn
-      : 'Clean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on the primary subject without domestic room clutter',
+      : 'Clean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on the primary subject without domestic clutter',
     lightingEn: hasExplicitEnv
       ? resolvedLightingEn
       : 'Clean motivated key illumination with soft natural shadow falloff, emphasizing genuine physical textures and form without artificial glare',
@@ -577,6 +1420,26 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
     extraInstructions,
     approachIndex = 0
   } = input;
+
+  // 0. Hidden Pipeline: Intent Router, Target/Source Resolution & ScenePlan
+  const scenePlan = buildScenePlan(input, approachIndex);
+
+  // If this is an edit / reconstruction task (IDENTITY_TRANSFER, REPLACE_OBJECT, CHANGE_ENVIRONMENT)
+  if (
+    scenePlan.taskType === 'IDENTITY_TRANSFER' ||
+    scenePlan.taskType === 'REPLACE_OBJECT' ||
+    scenePlan.taskType === 'CHANGE_ENVIRONMENT'
+  ) {
+    const builderResult = buildPromptFromScenePlan(scenePlan, input, approachIndex);
+    return {
+      direction: builderResult.directionPt,
+      finalPrompt: builderResult.finalPrompt,
+      approachTitle: builderResult.approachTitle,
+      approachIndex,
+      typographyPlan: builderResult.typographyPlan,
+      scenePlan: builderResult.cleanedPlan
+    };
+  }
 
   const isTech = detectTechHardware(`${videoTitle} ${ideaDescription}`);
   const hasPersonRef = preserveFace || (references || []).some(r => r.role === 'PESSOA');
@@ -763,6 +1626,10 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
     finalPrompt = `DALL-E 3 / GPT-4o Prompt:\n${promptBody}\nRule: Photo style, realistic camera shutter capture, natural skin texture, authentic human facial asymmetry, and accurate hardware geometry.`;
   }
 
+  // Audit prompt through Provenance Guard to strip any unsupported defaults or leakage
+  const audit = auditPromptProvenance(finalPrompt, scenePlan, references);
+  finalPrompt = audit.cleanedPrompt;
+
   const typographyPlan = buildTypographyPlan(
     thumbnailText,
     isTech,
@@ -777,7 +1644,11 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
     finalPrompt,
     approachTitle,
     approachIndex,
-    typographyPlan
+    typographyPlan,
+    scenePlan: {
+      ...scenePlan,
+      unsupportedDetailsRemoved: audit.purged
+    }
   };
 }
 
