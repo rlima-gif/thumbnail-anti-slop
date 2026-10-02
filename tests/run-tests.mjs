@@ -385,7 +385,7 @@ console.log('\n14. Testando Ausência de Viés Cinematográfico, Abertura Força
   assert.ok(!/pores|poros/i.test(promptLower), 'Prompt padrão NÃO deve usar "pores" como muleta de realismo');
   console.log('  ✓ Ausência de viés "cinematic", f/2.0 e "pores" validada no preset padrão Natural.');
 
-  // Test Midjourney target model flags: Natural + Alto realism -> applies --style raw
+  // Test Midjourney target model flags: Padrão NÃO deve forçar --style raw automaticamente
   const resMJ = generateSimpleThumbnail({
     videoTitle: 'Setup de Gravação',
     ideaDescription: 'Mesa de trabalho com notebook e luz natural da janela',
@@ -399,8 +399,25 @@ console.log('\n14. Testando Ausência de Viés Cinematográfico, Abertura Força
   });
 
   assert.ok(!resMJ.finalPrompt.includes('--v 6'), 'Prompt Midjourney NÃO deve fixar versão volátil como --v 6.1');
-  assert.ok(resMJ.finalPrompt.includes('--style raw'), 'Prompt Midjourney realista DEVE incluir --style raw');
+  assert.ok(!resMJ.finalPrompt.includes('--style raw'), 'Prompt Midjourney padrão NÃO deve forçar --style raw');
+  assert.ok(resMJ.finalPrompt.includes('--v 8.2'), 'Prompt Midjourney DEVE incluir versão atual --v 8.2');
   assert.ok(resMJ.finalPrompt.includes('--ar 16:9'), 'Prompt Midjourney DEVE incluir proporção --ar 16:9');
+
+  // Test Midjourney target model flags: Pedido explícito via extraInstructions deve permitir --style raw
+  const resMJExplicitRaw = generateSimpleThumbnail({
+    videoTitle: 'Setup de Gravação',
+    ideaDescription: 'Mesa de trabalho com notebook e luz natural da janela',
+    references: [],
+    targetModel: 'MIDJOURNEY',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto',
+    preserveFace: false,
+    preserveProduct: false,
+    extraInstructions: 'usar --style raw'
+  });
+  assert.ok(resMJExplicitRaw.finalPrompt.includes('--style raw'), 'Prompt Midjourney com pedido explícito em extraInstructions deve conter --style raw');
+  assert.ok(resMJExplicitRaw.finalPrompt.includes('--v 8.2'), 'Prompt Midjourney com pedido explícito deve manter --v 8.2');
 
   // Test Midjourney target model flags: Cinematográfico / Estilizado -> NÃO deve forçar --style raw (Regra 2)
   const resMJStylized = generateSimpleThumbnail({
@@ -416,7 +433,7 @@ console.log('\n14. Testando Ausência de Viés Cinematográfico, Abertura Força
   });
   assert.ok(!resMJStylized.finalPrompt.includes('--style raw'), 'Prompt Midjourney cinematográfico/estilizado NÃO deve forçar --style raw');
   assert.ok(resMJStylized.finalPrompt.includes('--ar 16:9'), 'Prompt Midjourney estilizado DEVE manter proporção --ar 16:9');
-  console.log('  ✓ Parâmetros Midjourney validados (--style raw aplicado por intenção visual, não fixo universalmente).');
+  console.log('  ✓ Parâmetros Midjourney validados (--style raw não forçado por padrão; permitido apenas sob pedido explícito).');
 
   // Test explicit Cinematic request
   const resCinematic = generateSimpleThumbnail({
@@ -1608,7 +1625,16 @@ console.log('\n24. Testando Modernização de Modelos Alvo 2026: Google Nano Ban
   assert.ok(mjPrompt.includes('--v 8.2'), 'Midjourney V8.2 deve conter --v 8.2');
   assert.ok(!mjPrompt.includes('--v 6'), 'Midjourney V8.2 NÃO deve conter --v 6');
   assert.ok(!mjPrompt.includes('--v 7'), 'Midjourney V8.2 NÃO deve conter --v 7');
+  assert.ok(!mjPrompt.includes('--style raw'), 'Midjourney V8.2 padrão NÃO deve conter --style raw');
   assert.equal(mjV8Result.outputMetadata?.modelId, 'v8.2');
+
+  const mjV8WithRaw = generateSimpleThumbnail({
+    ...crimsonInput,
+    targetModel: 'MIDJOURNEY_V8_2',
+    extraInstructions: 'usar --style raw'
+  });
+  assert.ok(mjV8WithRaw.finalPrompt.includes('--style raw'), 'Midjourney V8.2 com pedido explícito em extraInstructions deve conter --style raw');
+  assert.ok(mjV8WithRaw.finalPrompt.includes('--v 8.2'), 'Midjourney V8.2 com pedido explícito deve conter --v 8.2');
 
   const mjNijiResult = generateSimpleThumbnail({
     videoTitle: 'Anime Fight Scene',
@@ -1622,7 +1648,7 @@ console.log('\n24. Testando Modernização de Modelos Alvo 2026: Google Nano Ban
   assert.ok(mjNijiResult.finalPrompt.includes('--niji 7'), 'Midjourney Niji 7 deve conter --niji 7');
   assert.ok(!mjNijiResult.finalPrompt.includes('--style raw'), 'Midjourney Niji 7 NUNCA deve incluir --style raw');
   assert.equal(mjNijiResult.outputMetadata?.modelId, 'niji-7');
-  console.log('  ✓ TEST 24.4: Midjourney V8.2 (--v 8.2) e Niji 7 (--niji 7) validados com prompt visual conciso e sem sintaxe interna.');
+  console.log('  ✓ TEST 24.4: Midjourney V8.2 (--v 8.2) e Niji 7 (--niji 7) validados com prompt visual conciso, sem versões obsoletas e sem --style raw por padrão.');
 
   // TEST 24.5: FLUX.2 Max — Instrução Natural Direta com Sourcing de Referências e Conversão Positiva
   const fluxResult = generateSimpleThumbnail({
@@ -1809,8 +1835,9 @@ console.log('\n25. Testando Consolidação da Arquitetura de Modelos Alvo, Catá
   assert.ok(resultMidjourney.improvedPrompt.includes('--v 8.2'), 'Midjourney improve usa versão atual --v 8.2');
   assert.ok(!resultMidjourney.improvedPrompt.includes('--v 6'), 'Midjourney NÃO usa versão obsoleta --v 6');
   assert.ok(!resultMidjourney.improvedPrompt.includes('--v 7'), 'Midjourney NÃO usa versão obsoleta --v 7');
+  assert.ok(!resultMidjourney.improvedPrompt.includes('--style raw'), 'Midjourney improve padrão NÃO deve conter --style raw');
   assert.equal(resultMidjourney.outputMetadata?.modelId, 'v8.2');
-  console.log('  ✓ TEST 26.4: improvePrompt com Midjourney produz prompt conciso com flags modernas sem versões obsoletas.');
+  console.log('  ✓ TEST 26.4: improvePrompt com Midjourney produz prompt conciso com flags modernas sem versões obsoletas e sem --style raw padrão.');
 
   // 26.5: FLUX (Direct Natural Positive - Sem Negative Dump)
   const resultFlux = improvePrompt({ rawPrompt: samplePrompt, targetModel: 'FLUX_2_MAX' });

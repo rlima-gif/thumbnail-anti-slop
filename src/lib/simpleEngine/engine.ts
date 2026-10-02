@@ -1313,7 +1313,7 @@ export interface MidjourneyPromptOptions {
  * Strips verbose internal engine syntax (HAIR OWNER, TASK, contract labels).
  * Emits --ar 16:9 or --ar 9:16.
  * Emits --v 8.2 or --niji 7.
- * Applies --style raw only when justified on V8.2 (never on Niji 7).
+ * Applies --style raw only when explicitly requested by user (never as automatic default).
  */
 export function buildMidjourneyPrompt({
   plan,
@@ -1350,12 +1350,13 @@ export function buildMidjourneyPrompt({
     return `${visualText}\n\n${arFlag} --niji 7`;
   }
 
-  // Midjourney V8.2
-  const wantsRaw = (input.stylePreset === 'Natural' || input.stylePreset === 'Fotojornalismo') &&
-    input.realismLevel === 'Alto' &&
-    !/(cinemat|styliz|fantasy|cartoon|3d|anime|manga)/i.test(cleanIdea);
+  // Midjourney V8.2: Only emit --style raw when explicitly requested by user (never as hidden default)
+  const explicitRawRequested = Boolean(
+    input.extraInstructions &&
+    /(--style\s*raw|\bstyle\s*raw\b)/i.test(input.extraInstructions)
+  );
 
-  return wantsRaw
+  return explicitRawRequested
     ? `${visualText}\n\n${arFlag} --style raw --v 8.2`
     : `${visualText}\n\n${arFlag} --v 8.2`;
 }
