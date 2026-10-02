@@ -561,6 +561,12 @@ export type ProductSourceState =
   | 'PRODUCT_RESEARCH_GROUNDED'
   | 'PRODUCT_INFERRED';
 
+export type AllowedResearchEntityType =
+  | 'PRODUCT'
+  | 'GAME_OR_FICTIONAL_WORLD'
+  | 'PUBLIC_PLACE_OR_LANDMARK'
+  | 'VEHICLE_MODEL';
+
 export type AllowedResearchCategory =
   | 'PRODUCT_GEOMETRY'
   | 'CONTROL_LAYOUT'
@@ -587,12 +593,15 @@ export interface ResearchFact {
 export interface ResearchResult {
   entity: string;
   category: AllowedResearchCategory;
+  entityType?: AllowedResearchEntityType;
   facts: ResearchFact[];
   provider: string;
   cached?: boolean;
   latencyMs?: number;
   success: boolean;
   failureReason?: string;
+  attempted?: boolean;
+  timedOut?: boolean;
 }
 
 export interface ThemeContext {
@@ -632,6 +641,10 @@ export interface ComplementaryDebugInfo {
   themeResolverUsed: boolean;
   researchEligible: boolean;
   researchEnabled: boolean;
+  researchAttempted?: boolean;
+  researchSucceeded?: boolean;
+  researchTimedOut?: boolean;
+  researchDurationMs?: number;
   researchProvider?: string;
   researchFacts?: ResearchFact[];
   environmentDecision?: string;

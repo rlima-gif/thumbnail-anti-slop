@@ -4,6 +4,7 @@ import {
   buildScenePlan,
   buildPromptFromScenePlan,
   auditPromptProvenance,
+  isComplementaryEnginesEnabled,
   resolveThemeContext,
   ResearchBroker,
   planPhysicalInteraction,
@@ -65,22 +66,25 @@ export async function POST(req: NextRequest) {
     const reconciledPlan = reconcileDirectorWithLocalRules(directorResult, localScenePlan, body);
 
     // 3.5 COMPLEMENTARY ENGINES (Theme Context, Optional Grounded Research, Physical Interaction)
-    const themeCtx = resolveThemeContext(body, reconciledPlan);
-    const researchResults: ResearchResult[] = [];
-    if (ResearchBroker.isResearchEnabled() && themeCtx.researchCandidate) {
-      for (const entity of themeCtx.namedEntities) {
-        if (ResearchBroker.isEligible(entity, 'PRODUCT_GEOMETRY', reconciledPlan)) {
-          const res = await ResearchBroker.resolve({ entity, category: 'PRODUCT_GEOMETRY' });
-          if (res.success) researchResults.push(res);
-        }
-        if (themeCtx.environmentNeed && ResearchBroker.isEligible(entity, 'ENVIRONMENT_TYPE', reconciledPlan)) {
-          const res = await ResearchBroker.resolve({ entity, category: 'ENVIRONMENT_TYPE' });
-          if (res.success) researchResults.push(res);
+    let fullyEnrichedPlan = reconciledPlan;
+    if (isComplementaryEnginesEnabled()) {
+      const themeCtx = resolveThemeContext(body, reconciledPlan);
+      const researchResults: ResearchResult[] = [];
+      if (ResearchBroker.isResearchEnabled() && themeCtx.researchCandidate) {
+        for (const entity of themeCtx.namedEntities) {
+          if (ResearchBroker.isEligible(entity, 'PRODUCT_GEOMETRY', reconciledPlan, undefined, body.references)) {
+            const res = await ResearchBroker.resolve({ entity, category: 'PRODUCT_GEOMETRY' }, undefined, reconciledPlan, body.references);
+            if (res.success) researchResults.push(res);
+          }
+          if (themeCtx.environmentNeed && ResearchBroker.isEligible(entity, 'ENVIRONMENT_TYPE', reconciledPlan, undefined, body.references)) {
+            const res = await ResearchBroker.resolve({ entity, category: 'ENVIRONMENT_TYPE' }, undefined, reconciledPlan, body.references);
+            if (res.success) researchResults.push(res);
+          }
         }
       }
+      const interactionPlan = planPhysicalInteraction(body, reconciledPlan, themeCtx, researchResults.flatMap(r => r.facts));
+      fullyEnrichedPlan = mergeComplementaryPlan(reconciledPlan, body, themeCtx, researchResults, interactionPlan);
     }
-    const interactionPlan = planPhysicalInteraction(body, reconciledPlan, themeCtx, researchResults.flatMap(r => r.facts));
-    const fullyEnrichedPlan = mergeComplementaryPlan(reconciledPlan, body, themeCtx, researchResults, interactionPlan);
 
     // 4. PROMPT BUILDER
     const builderResult = buildPromptFromScenePlan(fullyEnrichedPlan, body, body.approachIndex || 0);
@@ -174,6 +178,10 @@ export async function POST(req: NextRequest) {
               themeResolverUsed: fullyEnrichedPlan.complementaryDebug?.themeResolverUsed,
               researchEligible: fullyEnrichedPlan.complementaryDebug?.researchEligible,
               researchEnabled: fullyEnrichedPlan.complementaryDebug?.researchEnabled,
+              researchAttempted: fullyEnrichedPlan.complementaryDebug?.researchAttempted,
+              researchSucceeded: fullyEnrichedPlan.complementaryDebug?.researchSucceeded,
+              researchTimedOut: fullyEnrichedPlan.complementaryDebug?.researchTimedOut,
+              researchDurationMs: fullyEnrichedPlan.complementaryDebug?.researchDurationMs,
               researchProvider: fullyEnrichedPlan.complementaryDebug?.researchProvider,
               researchFacts: fullyEnrichedPlan.complementaryDebug?.researchFacts,
               environmentDecision: fullyEnrichedPlan.complementaryDebug?.environmentDecision,

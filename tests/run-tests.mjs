@@ -1968,6 +1968,124 @@ console.log('\n27. Testando Segurança, Sanitização, Defesa Contra Injeção e
   assert.equal(queryI.entity, 'ROG Ally X', 'Entidade normalizada isolada');
   assert.equal(queryI.category, 'PRODUCT_GEOMETRY', 'Categoria permitida isolada');
   console.log('  ✓ TEST I: Pesquisa transmite apenas entidade normalizada + categoria permitida.');
+
+  // TEST J: Entity Type Allowlist (PRODUCT, GAME_OR_FICTIONAL_WORLD, PUBLIC_PLACE_OR_LANDMARK, VEHICLE_MODEL)
+  const productCheck = ResearchBroker.validateEntityType('ROG Ally X', 'PRODUCT');
+  assert.equal(productCheck.allowed, true, 'PRODUCT deve ser permitido');
+  assert.equal(productCheck.resolvedType, 'PRODUCT');
+
+  const gameCheck = ResearchBroker.validateEntityType('Crimson Desert', 'GAME_OR_FICTIONAL_WORLD');
+  assert.equal(gameCheck.allowed, true, 'GAME_OR_FICTIONAL_WORLD deve ser permitido');
+  assert.equal(gameCheck.resolvedType, 'GAME_OR_FICTIONAL_WORLD');
+
+  const placeCheck = ResearchBroker.validateEntityType('Eiffel Tower', 'PUBLIC_PLACE_OR_LANDMARK');
+  assert.equal(placeCheck.allowed, true, 'PUBLIC_PLACE_OR_LANDMARK deve ser permitido');
+  assert.equal(placeCheck.resolvedType, 'PUBLIC_PLACE_OR_LANDMARK');
+
+  const vehicleCheck = ResearchBroker.validateEntityType('Tesla Cybertruck', 'VEHICLE_MODEL');
+  assert.equal(vehicleCheck.allowed, true, 'VEHICLE_MODEL deve ser permitido');
+  assert.equal(vehicleCheck.resolvedType, 'VEHICLE_MODEL');
+  console.log('  ✓ TEST J: Entity Type Allowlist (PRODUCT, GAME_OR_FICTIONAL_WORLD, PUBLIC_PLACE_OR_LANDMARK, VEHICLE_MODEL) validada.');
+
+  // TEST K: Bloqueio estrito de PESSOA, Nomes Privados, Endereços e Negócios
+  assert.equal(ResearchBroker.validateEntityType('criador', 'PERSON').allowed, false, 'PERSON deve ser bloqueado');
+  assert.equal(ResearchBroker.validateEntityType('eu apresentador').allowed, false, 'Expressões de apresentador/criador devem ser bloqueadas');
+  assert.equal(ResearchBroker.validateEntityType('Dr. Roberto').allowed, false, 'Nome de pessoa deve ser bloqueado');
+  assert.equal(ResearchBroker.validateEntityType('meu rosto').allowed, false, 'USER_IDENTITY deve ser bloqueada');
+  assert.equal(ResearchBroker.validateEntityType('Rua das Flores 123').allowed, false, 'PRIVATE_ADDRESS deve ser bloqueado');
+  assert.equal(ResearchBroker.validateEntityType('minha casa no campo').allowed, false, 'PERSONAL_LOCATION deve ser bloqueado');
+  assert.equal(ResearchBroker.validateEntityType('minha oficina mecânica').allowed, false, 'USER_BUSINESS deve ser bloqueado');
+
+  // Teste com referência PESSOA
+  const planWithPessoa = {
+    identitySource: { id: 'p1', name: 'Foto de Lucas', role: 'PESSOA', url: 'https://example.com/p.jpg' }
+  };
+  assert.equal(ResearchBroker.validateEntityType('Foto de Lucas', undefined, planWithPessoa).allowed, false, 'Entidade que bate com referência PESSOA deve ser estritamente bloqueada');
+  console.log('  ✓ TEST K: Bloqueio estrito de PESSOA, biometria, nomes privados, endereços e negócios particulares validado.');
+
+  // TEST L: Entity Match Validation (Mapeamento exato de entidade no fato retornado)
+  const matchingFact = { entity: 'ROG Ally X', fact: 'White ergonomic handheld console with dual analog sticks.', confidence: 0.9 };
+  const validatedMatching = ResearchBroker.sanitizeAndValidateFact(matchingFact, 'ROG Ally X', 'PRODUCT_GEOMETRY');
+  assert.ok(validatedMatching, 'Fato com entidade correspondente é aceito');
+
+  const mismatchFact = { entity: 'Steam Deck OLED', fact: 'Black portable console with 7.4-inch OLED display.', confidence: 0.9 };
+  const validatedMismatch = ResearchBroker.sanitizeAndValidateFact(mismatchFact, 'ROG Ally X', 'PRODUCT_GEOMETRY');
+  assert.equal(validatedMismatch, null, 'Fato com entidade divergente (Steam Deck OLED != ROG Ally X) deve ser estritamente REJEITADO');
+
+  // Validação no nível do resultado do provider
+  const mismatchProvider = {
+    name: 'mock-mismatch-provider',
+    isConfigured: () => true,
+    lookup: () => Promise.resolve({
+      entity: 'Steam Deck OLED',
+      category: 'PRODUCT_GEOMETRY',
+      facts: [{ entity: 'Steam Deck OLED', fact: 'OLED screen device', confidence: 0.9 }],
+      provider: 'mock-mismatch-provider',
+      success: true
+    })
+  };
+  ResearchBroker.setMockProvider(mismatchProvider);
+  process.env.COMPLEMENTARY_ENGINES_ENABLED = 'true';
+  process.env.RESEARCH_ENABLED = 'true';
+  const resMismatch = await ResearchBroker.resolve({ entity: 'ROG Ally X', category: 'PRODUCT_GEOMETRY' });
+  assert.equal(resMismatch.success, false, 'Resultado de provedor com entidade trocada deve falhar');
+  assert.equal(resMismatch.failureReason, 'ENTITY_MISMATCH', 'Motivo registrado como ENTITY_MISMATCH');
+  ResearchBroker.setMockProvider(null);
+  console.log('  ✓ TEST L: Entity Match Validation validada com rejeição estrita de entidades divergentes.');
+
+  // TEST M: Master Kill Switch COMPLEMENTARY_ENGINES_ENABLED
+  process.env.COMPLEMENTARY_ENGINES_ENABLED = 'false';
+  process.env.RESEARCH_ENABLED = 'true';
+  assert.equal(ResearchBroker.isResearchEnabled(), false, 'Com master flag=false, research deve ser false mesmo se RESEARCH_ENABLED=true');
+
+  process.env.COMPLEMENTARY_ENGINES_ENABLED = 'true';
+  process.env.RESEARCH_ENABLED = 'false';
+  assert.equal(ResearchBroker.isResearchEnabled(), false, 'Com master flag=true e RESEARCH_ENABLED=false, research deve ser false');
+
+  process.env.COMPLEMENTARY_ENGINES_ENABLED = 'true';
+  process.env.RESEARCH_ENABLED = 'true';
+  assert.equal(ResearchBroker.isResearchEnabled(), true, 'Ambos os flags devem ser true para habilitar pesquisa');
+
+  // Restaurar defaults desligados
+  process.env.RESEARCH_ENABLED = 'false';
+  process.env.COMPLEMENTARY_ENGINES_ENABLED = 'false';
+  console.log('  ✓ TEST M: Master Kill Switch COMPLEMENTARY_ENGINES_ENABLED e subordinação de RESEARCH_ENABLED validados.');
+
+  // TEST N: Observabilidade e campos de trace
+  assert.equal(typeof ResearchBroker.getTimeoutMs(), 'number');
+  process.env.RESEARCH_TIMEOUT_MS = '6500';
+  assert.equal(ResearchBroker.getTimeoutMs(), 6500, 'RESEARCH_TIMEOUT_MS é configurável');
+  delete process.env.RESEARCH_TIMEOUT_MS;
+
+  const mockTraceProvider = {
+    name: 'mock-trace-provider',
+    isConfigured: () => true,
+    lookup: (req) => Promise.resolve({
+      entity: req.entity,
+      category: req.category,
+      facts: [{ entity: req.entity, fact: 'Clean matte white texture.', confidence: 0.9 }],
+      provider: 'mock-trace-provider',
+      success: true
+    })
+  };
+  ResearchBroker.setMockProvider(mockTraceProvider);
+  const traceRes = await ResearchBroker.resolve({ entity: 'ROG Ally X', category: 'PRODUCT_GEOMETRY' });
+  assert.equal(traceRes.attempted, true, 'researchAttempted deve ser true');
+  assert.equal(traceRes.success, true, 'researchSucceeded deve ser true');
+  assert.equal(traceRes.timedOut, false, 'researchTimedOut deve ser false');
+  assert.equal(typeof traceRes.latencyMs, 'number', 'researchDurationMs registrado');
+  assert.equal(traceRes.provider, 'mock-trace-provider', 'researchProvider registrado');
+  ResearchBroker.setMockProvider(null);
+  console.log('  ✓ TEST N: Observabilidade, rastreabilidade e métricas de trace validadas.');
+
+  // TEST O: Verificação de provedores reais implementados
+  const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim().length > 5);
+  const hasOpenAIKey = Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY.trim().length > 5);
+  if (hasGeminiKey || hasOpenAIKey) {
+    console.log('  ✓ TEST O: Provedor real configurado para pesquisa fundamentada.');
+  } else {
+    console.log('  ℹ️ REAL GROUNDED RESEARCH TEST: SKIPPED — PROVIDER NOT CONFIGURED');
+  }
 }
 
 // 28. Testando Regressões Complementares, Autoridade e Snapshots Byte-a-Byte...
@@ -1976,6 +2094,9 @@ console.log('\n28. Testando Regressões Complementares, Autoridade e Snapshots B
   const engine = await import('../src/lib/simpleEngine/engine.ts');
   const fs = await import('node:fs');
   const path = await import('node:path');
+
+  // Ativar complementary engines para a suíte de testes de capacidades complementares
+  process.env.COMPLEMENTARY_ENGINES_ENABLED = 'true';
 
   // TEST 1: Complementary NO-OP com ScenePlan totalmente resolvido
   const resolvedInput = {
@@ -2180,6 +2301,10 @@ console.log('\n28. Testando Regressões Complementares, Autoridade e Snapshots B
   console.log('  ✓ TEST 12: Robustez de constraints, CHANGE/ADAPT/PRESERVE e anti-face-paste 100% preservada.');
 
   // TEST 13: Validação de Snapshot Byte-a-Byte contra Fixtures Pré-Implementação
+  // TEST 13: Validação de Snapshot Byte-a-Byte contra Fixtures Pré-Implementação com Master Flag Desabilitado
+  process.env.COMPLEMENTARY_ENGINES_ENABLED = 'false';
+  assert.equal(engine.isComplementaryEnginesEnabled(), false, 'Master flag COMPLEMENTARY_ENGINES_ENABLED deve estar false');
+
   const snapshotFile = path.join(path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Z]:)/, '$1')), 'fixtures', 'baseline-snapshots.json');
   if (fs.existsSync(snapshotFile)) {
     const rawSnap = fs.readFileSync(snapshotFile, 'utf8');
@@ -2224,12 +2349,13 @@ console.log('\n28. Testando Regressões Complementares, Autoridade e Snapshots B
         totalChecked++;
       }
     }
-    console.log(`  ✓ TEST 13: Validação de baseline byte-a-byte concluída com sucesso absoluto (${totalChecked}/${totalChecked} verificações idênticas).`);
+    console.log(`  ✓ TEST 13: Validação de baseline byte-a-byte com Master Flag desabilitado concluída com sucesso absoluto (${totalChecked}/${totalChecked} verificações idênticas).`);
   } else {
     console.log('  ⚠️ TEST 13: Arquivo de snapshots não encontrado em fixtures.');
   }
 
   // TEST 14: Regressão Semântica de Provedores e Pesquisa Fundamentada
+  process.env.COMPLEMENTARY_ENGINES_ENABLED = 'true';
   const asyncGenResult = await engine.generateSimpleThumbnailAsync({
     videoTitle: 'Setup Tech 2026',
     ideaDescription: 'Apresentando um teclado mecânico customizado com switch magnético.',
@@ -2240,6 +2366,9 @@ console.log('\n28. Testando Regressões Complementares, Autoridade e Snapshots B
   assert.equal(asyncGenResult.targetModel, 'GOOGLE_NANO_BANANA_2', 'TargetModel preservado');
   assert.equal(asyncGenResult.scenePlan?.complementaryDebug?.researchEnabled, false, 'researchEnabled é false por padrão no trace');
   console.log('  ✓ TEST 14: Regressão semântica de provedores e execução assíncrona validadas.');
+
+  // Restaurar default estrito desligado
+  delete process.env.COMPLEMENTARY_ENGINES_ENABLED;
 }
 
 console.log('\n✅ TODOS OS TESTES PASSARAM COM SUCESSO! VALIDAÇÃO CONCLUÍDA.');

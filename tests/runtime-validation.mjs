@@ -135,7 +135,10 @@ async function runRuntimeValidation() {
     targetModel: 'GERAL'
   });
   assert.equal(res8.debugInfo?.researchEnabled, false);
-  console.log('   ✓ Caso 8 validado: researchEnabled é false no trace de desenvolvimento.');
+  assert.equal(res8.debugInfo?.researchAttempted, false);
+  assert.equal(res8.debugInfo?.researchSucceeded, false);
+  assert.equal(res8.debugInfo?.researchTimedOut, false);
+  console.log('   ✓ Caso 8 validado: researchEnabled é false e campos de observabilidade validados no trace.');
 
   // Case 9: simulated research failure / fallback
   console.log('\n9. Validando Caso 9: Fallback robusto e integridade do resultado...');

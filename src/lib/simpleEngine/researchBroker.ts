@@ -1,10 +1,20 @@
 import type {
+  AllowedResearchEntityType,
   AllowedResearchCategory,
   ResearchFact,
   ResearchResult,
-  ScenePlan
+  ScenePlan,
+  SimpleReference
 } from '../../types/simple.ts';
 import { isEligibleNamedEntity } from './themeResolver.ts';
+import { detectTechHardware } from './engine.ts';
+
+export const ALLOWED_RESEARCH_ENTITY_TYPES: ReadonlySet<AllowedResearchEntityType> = new Set<AllowedResearchEntityType>([
+  'PRODUCT',
+  'GAME_OR_FICTIONAL_WORLD',
+  'PUBLIC_PLACE_OR_LANDMARK',
+  'VEHICLE_MODEL'
+]);
 
 export const ALLOWED_RESEARCH_CATEGORIES: ReadonlySet<AllowedResearchCategory> = new Set<AllowedResearchCategory>([
   'PRODUCT_GEOMETRY',
@@ -24,6 +34,7 @@ export const ALLOWED_RESEARCH_CATEGORIES: ReadonlySet<AllowedResearchCategory> =
 export interface ResearchRequest {
   entity: string;
   category: AllowedResearchCategory;
+  entityType?: AllowedResearchEntityType;
 }
 
 export interface ResearchProvider {
@@ -31,6 +42,26 @@ export interface ResearchProvider {
   isConfigured(): boolean;
   lookup(req: ResearchRequest, timeoutMs: number): Promise<ResearchResult>;
 }
+
+// Blocked entity type designations
+const BLOCKED_ENTITY_TYPES = new Set([
+  'PERSON',
+  'PRIVATE_NAME',
+  'USER_IDENTITY',
+  'PESSOA',
+  'PRIVATE_ADDRESS',
+  'PERSONAL_LOCATION',
+  'USER_BUSINESS'
+]);
+
+// Personal / private / user identity patterns
+const PERSON_IDENTITY_PATTERNS = [
+  /\b(?:eu|meu\s*rosto|minha\s*foto|criador|apresentador|pessoa|creator|host|user|human|avatar|self|myself|rosto|face)\b/i,
+  /\b(?:dr\.|mr\.|mrs\.|ms\.|prof\.)\s+[A-Z]/i,
+  /\b(?:minha\s*casa|meu\s*quarto|meu\s*est[úu]dio|minha\s*sala|minha\s*rua|meu\s*apartamento|my\s*room|my\s*house|my\s*studio|my\s*office|my\s*desk)\b/i,
+  /\b(?:rua|avenida|travessa|alameda|estrada|street|avenue|blvd|road|apt|apartamento|n[ºo]\s*\d+)\b/i,
+  /\b(?:minha\s*loja|minha\s*empresa|minha\s*ag[êe]ncia|minha\s*oficina|minha\s*cl[íi]nica|meu\s*restaurante|my\s*store|my\s*business|my\s*shop|my\s*company)\b/i
+];
 
 // Prompt Injection and Malicious Text Patterns
 const INJECTION_PATTERNS = [
@@ -83,13 +114,136 @@ export class ResearchBroker {
     RESEARCH_CACHE.clear();
   }
 
+  /**
+   * Research requires BOTH:
+   * COMPLEMENTARY_ENGINES_ENABLED=true
+   * AND
+   * RESEARCH_ENABLED=true
+   */
   public static isResearchEnabled(): boolean {
-    return process.env.RESEARCH_ENABLED === 'true';
+    return process.env.COMPLEMENTARY_ENGINES_ENABLED === 'true' && process.env.RESEARCH_ENABLED === 'true';
   }
 
   public static getTimeoutMs(): number {
     const val = Number(process.env.RESEARCH_TIMEOUT_MS);
     return Number.isFinite(val) && val > 0 ? val : 4000;
+  }
+
+  /**
+   * Validates whether an entity is allowed for grounded research.
+   * Research is permitted ONLY for:
+   * - PRODUCT
+   * - GAME_OR_FICTIONAL_WORLD
+   * - PUBLIC_PLACE_OR_LANDMARK
+   * - VEHICLE_MODEL
+   *
+   * NEVER permitted for:
+   * - PERSON, PRIVATE_NAME, USER_IDENTITY, PESSOA reference identity,
+   *   PRIVATE_ADDRESS, PERSONAL_LOCATION, USER-RELATED PRIVATE BUSINESS.
+   */
+  public static validateEntityType(
+    entity: string,
+    explicitType?: string,
+    plan?: ScenePlan,
+    references?: SimpleReference[]
+  ): { allowed: boolean; resolvedType?: AllowedResearchEntityType; reason?: string } {
+    if (!entity || typeof entity !== 'string' || entity.trim().length === 0) {
+      return { allowed: false, reason: 'EMPTY_ENTITY' };
+    }
+
+    const clean = entity.trim();
+
+    // 1. If explicit type is supplied, check against blocked and allowed lists
+    if (explicitType) {
+      const upperType = explicitType.toUpperCase();
+      if (BLOCKED_ENTITY_TYPES.has(upperType)) {
+        return { allowed: false, reason: 'BLOCKED_ENTITY_TYPE_PERSON_OR_PRIVATE' };
+      }
+      if (!ALLOWED_RESEARCH_ENTITY_TYPES.has(upperType as AllowedResearchEntityType)) {
+        return { allowed: false, reason: 'ENTITY_TYPE_NOT_ALLOWED' };
+      }
+    }
+
+    // 2. Reject if entity matches any person, personal address, or private business patterns
+    for (const pat of PERSON_IDENTITY_PATTERNS) {
+      if (pat.test(clean)) {
+        return { allowed: false, reason: 'BLOCKED_PERSON_OR_PRIVATE_PATTERN' };
+      }
+    }
+
+    // 3. Reject if entity matches any reference designated as PESSOA
+    const refsToCheck: SimpleReference[] = [
+      ...(references || []),
+      ...(plan?.identitySource ? [plan.identitySource] : []),
+      ...(plan?.targetImage ? [plan.targetImage] : [])
+    ];
+
+    for (const ref of refsToCheck) {
+      if (ref.role === 'PESSOA' && ref.name) {
+        const refNameNorm = ref.name.trim().toLowerCase();
+        const entityNorm = clean.toLowerCase();
+        if (entityNorm === refNameNorm || entityNorm.includes(refNameNorm) || refNameNorm.includes(entityNorm)) {
+          return { allowed: false, reason: 'PESSOA_REFERENCE_IDENTITY' };
+        }
+      }
+    }
+
+    // 4. Determine or verify allowed category
+    const resolved = ResearchBroker.inferAllowedEntityType(clean, explicitType as AllowedResearchEntityType);
+    if (!resolved) {
+      return { allowed: false, reason: 'UNRECOGNIZED_OR_DISALLOWED_ENTITY_TYPE' };
+    }
+
+    return { allowed: true, resolvedType: resolved };
+  }
+
+  private static inferAllowedEntityType(
+    entity: string,
+    explicitType?: AllowedResearchEntityType
+  ): AllowedResearchEntityType | null {
+    if (explicitType && ALLOWED_RESEARCH_ENTITY_TYPES.has(explicitType)) {
+      return explicitType;
+    }
+
+    const lower = entity.toLowerCase();
+
+    // GAME_OR_FICTIONAL_WORLD
+    if (
+      /\b(?:crimson\s*desert|elden\s*ring|cyberpunk(?:\s*2077)?|gta\s*(?:6|vi|v)|black\s*myth(?:\s*wukong)?|zelda|starfield|skyrim|fallout|dark\s*souls|witcher|world\s*of\s*warcraft)\b/i.test(lower)
+    ) {
+      return 'GAME_OR_FICTIONAL_WORLD';
+    }
+
+    // PRODUCT
+    if (
+      /\b(?:rog\s*ally(?:\s*x)?|steam\s*deck(?:\s*oled)?|nintendo\s*switch(?:\s*2|\s*oled)?|legion\s*go|playstation\s*5|ps5|xbox\s*series\s*[sx]|rtx\s*50\d0|rtx\s*40\d0|iphone\s*\d+|galaxy\s*s\d+|quest\s*3|vision\s*pro|pixel\s*\d+|macbook(?:\s*pro)?|ipad(?:\s*pro)?)\b/i.test(lower)
+    ) {
+      return 'PRODUCT';
+    }
+
+    // VEHICLE_MODEL
+    if (
+      /\b(?:cybertruck|tesla\s*model\s*[3sxy]|porsche\s*911|ferrari\s*(?:f40|roma)|boeing\s*7\d\d|airbus\s*a3\d\d|mustang|corvette|bmw\s*m\d|audi\s*rs\d)\b/i.test(lower)
+    ) {
+      return 'VEHICLE_MODEL';
+    }
+
+    // PUBLIC_PLACE_OR_LANDMARK
+    if (
+      /\b(?:eiffel\s*tower|torre\s*eiffel|tokyo\s*tower|grand\s*canyon|colosseum|coliseu|est[áa]tua\s*da\s*liberdade|statue\s*of\s*liberty|mount\s*everest|times\s*square|stonehenge|louvre|cristo\s*redentor)\b/i.test(lower)
+    ) {
+      return 'PUBLIC_PLACE_OR_LANDMARK';
+    }
+
+    // Fallback heuristic: If it matches KNOWN_NAMED_ENTITIES from themeResolver or has specific hardware/world pattern
+    if (isEligibleNamedEntity(entity)) {
+      if (detectTechHardware(lower) || /\b(?:console|handheld|headset|hardware|gpu|phone|teclado|mouse)\b/i.test(lower)) {
+        return 'PRODUCT';
+      }
+      return 'GAME_OR_FICTIONAL_WORLD';
+    }
+
+    return null;
   }
 
   /**
@@ -99,7 +253,9 @@ export class ResearchBroker {
   public static isEligible(
     entity: string,
     category: AllowedResearchCategory,
-    plan?: ScenePlan
+    plan?: ScenePlan,
+    explicitType?: string,
+    references?: SimpleReference[]
   ): boolean {
     if (!entity || typeof entity !== 'string' || entity.trim().length === 0) {
       return false;
@@ -117,7 +273,15 @@ export class ResearchBroker {
       return false;
     }
 
-    // 3. If plan provided, check if information is already locked by higher authority
+    // 3. Entity-Type Allowlist Validation:
+    // Must be PRODUCT, GAME_OR_FICTIONAL_WORLD, PUBLIC_PLACE_OR_LANDMARK, VEHICLE_MODEL
+    // Must NEVER be PERSON, PRIVATE_NAME, USER_IDENTITY, etc.
+    const typeValidation = ResearchBroker.validateEntityType(normEntity, explicitType, plan, references);
+    if (!typeValidation.allowed) {
+      return false;
+    }
+
+    // 4. If plan provided, check if information is already locked by higher authority
     if (plan) {
       // Product reference locks geometry: research is ineligible
       if (
@@ -145,7 +309,8 @@ export class ResearchBroker {
    */
   public static sanitizeQuery(
     entity: string,
-    category: AllowedResearchCategory
+    category: AllowedResearchCategory,
+    entityType?: AllowedResearchEntityType
   ): ResearchRequest | null {
     if (!ALLOWED_RESEARCH_CATEGORIES.has(category)) {
       return null;
@@ -161,19 +326,28 @@ export class ResearchBroker {
       return null;
     }
 
-    return {
+    const req: ResearchRequest = {
       entity: cleanEntity,
       category
     };
+    if (entityType) {
+      req.entityType = entityType;
+    }
+    return req;
   }
 
   /**
    * Security & sanitization filter: validates a single research fact.
-   * Returns sanitized ResearchFact or null if rejected.
+   * Enforces:
+   * - Fact character length limits (5-240)
+   * - Allowed categories
+   * - Injection patterns
+   * - Non-visual specs
+   * - ENTITY MATCH VALIDATION: Returned fact entity must match requested normalized entity!
    */
   public static sanitizeAndValidateFact(
     raw: unknown,
-    entity: string,
+    requestedEntity: string,
     category: AllowedResearchCategory
   ): ResearchFact | null {
     if (!raw || typeof raw !== 'object') return null;
@@ -187,6 +361,19 @@ export class ResearchBroker {
 
     if (!ALLOWED_RESEARCH_CATEGORIES.has(category)) {
       return null;
+    }
+
+    // ENTITY MATCH VALIDATION:
+    // If the fact object specifies an entity, it MUST match the requested normalized entity!
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const normRequested = normalize(requestedEntity);
+
+    if (typeof obj.entity === 'string' && obj.entity.trim().length > 0) {
+      const normFactEntity = normalize(obj.entity.trim());
+      if (normFactEntity !== normRequested) {
+        // Mismatched entity (e.g. requested 'ROG Ally X', returned 'Steam Deck OLED') -> REJECT
+        return null;
+      }
     }
 
     // Check for injection patterns
@@ -212,7 +399,7 @@ export class ResearchBroker {
       : 0.9;
 
     return {
-      entity,
+      entity: requestedEntity,
       category,
       fact: factText,
       confidence,
@@ -226,61 +413,96 @@ export class ResearchBroker {
    */
   public static async resolve(
     req: ResearchRequest,
-    customTimeoutMs?: number
+    customTimeoutMs?: number,
+    plan?: ScenePlan,
+    references?: SimpleReference[]
   ): Promise<ResearchResult> {
     const startTime = Date.now();
     const timeoutMs = customTimeoutMs || ResearchBroker.getTimeoutMs();
 
-    // 1. Check Kill Switch
+    // 1. Check Kill Switch (Requires both COMPLEMENTARY_ENGINES_ENABLED and RESEARCH_ENABLED)
     if (!ResearchBroker.isResearchEnabled() && !ResearchBroker.mockProvider) {
       return {
         entity: req.entity,
         category: req.category,
+        entityType: req.entityType,
         facts: [],
         provider: 'none',
         success: false,
-        failureReason: 'RESEARCH_DISABLED'
+        failureReason: 'RESEARCH_DISABLED',
+        attempted: false,
+        timedOut: false,
+        latencyMs: 0
       };
     }
 
-    // 2. Sanitize query to ensure strict privacy
-    const sanitizedReq = ResearchBroker.sanitizeQuery(req.entity, req.category);
+    // 2. Validate Entity Type Allowlist
+    const typeValidation = ResearchBroker.validateEntityType(req.entity, req.entityType, plan, references);
+    if (!typeValidation.allowed) {
+      return {
+        entity: req.entity,
+        category: req.category,
+        entityType: req.entityType,
+        facts: [],
+        provider: 'none',
+        success: false,
+        failureReason: 'ENTITY_TYPE_NOT_ALLOWED',
+        attempted: false,
+        timedOut: false,
+        latencyMs: 0
+      };
+    }
+
+    const resolvedEntityType = typeValidation.resolvedType || req.entityType;
+
+    // 3. Sanitize query to ensure strict privacy
+    const sanitizedReq = ResearchBroker.sanitizeQuery(req.entity, req.category, resolvedEntityType);
     if (!sanitizedReq) {
       return {
         entity: req.entity,
         category: req.category,
+        entityType: resolvedEntityType,
         facts: [],
         provider: 'none',
         success: false,
-        failureReason: 'INVALID_QUERY_OR_CATEGORY'
+        failureReason: 'INVALID_QUERY_OR_CATEGORY',
+        attempted: false,
+        timedOut: false,
+        latencyMs: 0
       };
     }
 
-    // 3. Cache lookup
+    // 4. Cache lookup
     const cacheKey = `${sanitizedReq.entity.toLowerCase()}::${sanitizedReq.category}`;
     const cached = RESEARCH_CACHE.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
       return {
         ...cached.result,
         cached: true,
+        attempted: true,
+        timedOut: false,
         latencyMs: Date.now() - startTime
       };
     }
 
-    // 4. Determine provider
+    // 5. Determine provider
     const provider = ResearchBroker.mockProvider || ResearchBroker.getDefaultProvider();
     if (!provider || !provider.isConfigured()) {
       return {
         entity: sanitizedReq.entity,
         category: sanitizedReq.category,
+        entityType: sanitizedReq.entityType,
         facts: [],
         provider: provider?.name || 'none',
         success: false,
-        failureReason: 'PROVIDER_NOT_CONFIGURED'
+        failureReason: 'PROVIDER_NOT_CONFIGURED',
+        attempted: false,
+        timedOut: false,
+        latencyMs: 0
       };
     }
 
-    // 5. Execute with hard timeout
+    // 6. Execute with hard timeout
     try {
       const resultPromise = provider.lookup(sanitizedReq, timeoutMs);
       const timeoutPromise = new Promise<ResearchResult>((_, reject) =>
@@ -289,7 +511,24 @@ export class ResearchBroker {
 
       const rawResult = await Promise.race([resultPromise, timeoutPromise]);
 
-      // 6. Security filter and schema validation
+      // ENTITY MATCH VALIDATION on top-level result
+      const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (rawResult.entity && normalize(rawResult.entity) !== normalize(sanitizedReq.entity)) {
+        return {
+          entity: sanitizedReq.entity,
+          category: sanitizedReq.category,
+          entityType: sanitizedReq.entityType,
+          facts: [],
+          provider: provider.name,
+          latencyMs: Date.now() - startTime,
+          success: false,
+          failureReason: 'ENTITY_MISMATCH',
+          attempted: true,
+          timedOut: false
+        };
+      }
+
+      // 7. Security filter and schema validation
       const validatedFacts: ResearchFact[] = [];
       for (const fact of rawResult.facts || []) {
         const validated = ResearchBroker.sanitizeAndValidateFact(
@@ -306,11 +545,14 @@ export class ResearchBroker {
       const finalResult: ResearchResult = {
         entity: sanitizedReq.entity,
         category: sanitizedReq.category,
+        entityType: sanitizedReq.entityType,
         facts: validatedFacts,
         provider: provider.name,
         latencyMs: Date.now() - startTime,
         success: validatedFacts.length > 0,
-        failureReason: validatedFacts.length === 0 ? 'NO_FACTS_ACCEPTED' : undefined
+        failureReason: validatedFacts.length === 0 ? 'NO_FACTS_ACCEPTED' : undefined,
+        attempted: true,
+        timedOut: false
       };
 
       if (finalResult.success) {
@@ -323,14 +565,18 @@ export class ResearchBroker {
       return finalResult;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
+      const isTimeout = msg === 'RESEARCH_TIMEOUT' || (err instanceof Error && err.name === 'AbortError');
       return {
         entity: sanitizedReq.entity,
         category: sanitizedReq.category,
+        entityType: sanitizedReq.entityType,
         facts: [],
         provider: provider.name,
         latencyMs: Date.now() - startTime,
         success: false,
-        failureReason: msg === 'RESEARCH_TIMEOUT' ? 'TIMEOUT' : 'PROVIDER_ERROR'
+        failureReason: isTimeout ? 'TIMEOUT' : 'PROVIDER_ERROR',
+        attempted: true,
+        timedOut: isTimeout
       };
     }
   }
@@ -353,6 +599,8 @@ export class ResearchBroker {
 
 /**
  * Gemini Grounded Search Provider implementation
+ * Uses Google Search Grounding tool in Gemini API.
+ * Receives STRICTLY: { entity, category }.
  */
 class GeminiGroundedSearchProvider implements ResearchProvider {
   public name = 'gemini-grounded-search';
@@ -369,8 +617,9 @@ class GeminiGroundedSearchProvider implements ResearchProvider {
     const promptText = `Provide 2 to 4 concise visual physical facts about the entity "${req.entity}" for category "${req.category}".
 Return ONLY a valid JSON object matching:
 {
+  "entity": "${req.entity}",
   "facts": [
-    { "fact": "short visual fact under 200 chars", "confidence": 0.9, "visualRelevance": 0.9 }
+    { "entity": "${req.entity}", "fact": "short visual fact under 200 chars", "confidence": 0.9, "visualRelevance": 0.9 }
   ]
 }
 Rules:
@@ -410,10 +659,13 @@ Rules:
         return {
           entity: req.entity,
           category: req.category,
+          entityType: req.entityType,
           facts: [],
           provider: this.name,
           success: false,
-          failureReason: 'INVALID_JSON_RESPONSE'
+          failureReason: 'INVALID_JSON_RESPONSE',
+          attempted: true,
+          timedOut: false
         };
       }
 
@@ -423,9 +675,12 @@ Rules:
       return {
         entity: req.entity,
         category: req.category,
+        entityType: req.entityType,
         facts: rawFacts,
         provider: this.name,
-        success: rawFacts.length > 0
+        success: rawFacts.length > 0,
+        attempted: true,
+        timedOut: false
       };
     } catch (err: unknown) {
       clearTimeout(timeoutId);
@@ -436,6 +691,7 @@ Rules:
 
 /**
  * OpenAI Web Search Provider implementation
+ * Receives STRICTLY: { entity, category }.
  */
 class OpenAIWebSearchProvider implements ResearchProvider {
   public name = 'openai-web-search';
@@ -451,8 +707,9 @@ class OpenAIWebSearchProvider implements ResearchProvider {
     const promptText = `Provide 2 to 4 concise visual physical facts about the entity "${req.entity}" for category "${req.category}".
 Return ONLY a valid JSON object matching:
 {
+  "entity": "${req.entity}",
   "facts": [
-    { "fact": "short visual fact under 200 chars", "confidence": 0.9, "visualRelevance": 0.9 }
+    { "entity": "${req.entity}", "fact": "short visual fact under 200 chars", "confidence": 0.9, "visualRelevance": 0.9 }
   ]
 }
 Rules:
@@ -493,9 +750,12 @@ Rules:
       return {
         entity: req.entity,
         category: req.category,
+        entityType: req.entityType,
         facts: rawFacts,
         provider: this.name,
-        success: rawFacts.length > 0
+        success: rawFacts.length > 0,
+        attempted: true,
+        timedOut: false
       };
     } catch (err: unknown) {
       clearTimeout(timeoutId);

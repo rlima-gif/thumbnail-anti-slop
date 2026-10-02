@@ -143,12 +143,22 @@ export function mergeComplementaryPlan(
   }
 
   // 5. ASSEMBLE COMPLEMENTARY DEBUG INFO
+  const firstRes = Array.isArray(researchResults) ? researchResults[0] : researchResults;
+  const researchAttempted = firstRes?.attempted ?? Boolean(firstRes && firstRes.provider !== 'none');
+  const researchSucceeded = firstRes?.success ?? (allResearchFacts.length > 0);
+  const researchTimedOut = firstRes?.timedOut ?? (firstRes?.failureReason === 'TIMEOUT');
+  const researchDurationMs = firstRes?.latencyMs;
+
   const complementaryDebug: ComplementaryDebugInfo = {
     theme: themeCtx?.theme,
     primaryVisualStory: themeCtx?.primaryVisualStory,
     themeResolverUsed: Boolean(themeCtx),
     researchEligible: Boolean(themeCtx?.researchCandidate),
-    researchEnabled: process.env.RESEARCH_ENABLED === 'true',
+    researchEnabled: process.env.COMPLEMENTARY_ENGINES_ENABLED === 'true' && process.env.RESEARCH_ENABLED === 'true',
+    researchAttempted,
+    researchSucceeded,
+    researchTimedOut,
+    researchDurationMs,
     researchProvider: primaryResearchProvider || 'none',
     researchFacts: allResearchFacts.length > 0 ? allResearchFacts : undefined,
     environmentDecision: mergedPlan.environment,

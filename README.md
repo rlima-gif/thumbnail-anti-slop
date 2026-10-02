@@ -78,15 +78,20 @@ O motor proíbe automaticamente em todos os prompts gerados:
 
 O sistema conta com três motores complementares que atuam **apenas sobre campos não-resolvidos ou vazios**, respeitando estritamente a hierarquia de autoridade pré-existente:
 
+- **Master Kill Switch (`COMPLEMENTARY_ENGINES_ENABLED=false`)**: Por padrão, toda a camada complementar fica desligada, preservando byte a byte o comportamento original do motor.
+- **Subordinação de Pesquisa (`RESEARCH_ENABLED=false`)**: A pesquisa fundamentada requer obrigatoriamente que ambos os switches estejam ativos (`COMPLEMENTARY_ENGINES_ENABLED=true` E `RESEARCH_ENABLED=true`).
+
 1. **Theme Context Resolver (`themeResolver.ts`)**:
    - Identifica universo temático, domínio narrativo e necessidades visuais autênticas (ex: *Crimson Desert* direciona para cenários medievais e ermos, evitando a substituição por salas domésticas genéricas).
    - Filtra clichês espúrios sem sobrepor preferências explícitas do criador.
 
 2. **Grounded Research Broker (`researchBroker.ts`)**:
-   - **Garantia de Privacidade**: Desabilitado por padrão (`RESEARCH_ENABLED=false`).
-   - Recebe **estritamente** payloads mínimos e anonimizados: `{ entity, category }`.
-   - **Jamais** transmite fotos, características biométricas, rostos ou prompts livres de usuários.
-   - Aplica sanitização rigorosa contra injeção de prompt, limite de 240 caracteres por fato e fallback automático em 4 segundos.
+   - **Garantia de Privacidade**: Desabilitado por padrão.
+   - **Allowlist Estrita de Tipos de Entidade**: Permitido apenas para `PRODUCT`, `GAME_OR_FICTIONAL_WORLD`, `PUBLIC_PLACE_OR_LANDMARK`, `VEHICLE_MODEL`.
+   - **Bloqueio Incondicional**: Jamais pesquisa `PERSON`, `PRIVATE_NAME`, `USER_IDENTITY`, referências `PESSOA`, endereços privados ou negócios particulares.
+   - **Validação de Correspondência de Entidade**: Rejeita qualquer fato cuja entidade normalizada divirja da solicitada (ex.: pedido `ROG Ally X`, retorno `Steam Deck OLED` $\rightarrow$ rejeitado).
+   - Recebe **estritamente** payloads mínimos e anonimizados: `{ entity, category }`. Jamais transmite fotos, características biométricas, rostos ou prompts livres de usuários.
+   - Aplica sanitização rigorosa contra injeção de prompt, limite de 240 caracteres por fato e fallback automático em 4 segundos (configurável via `RESEARCH_TIMEOUT_MS`).
    - Atribui proveniência única `WEB_RESEARCH`.
 
 3. **Physical Interaction Planner (`interactionPlanner.ts`)**:

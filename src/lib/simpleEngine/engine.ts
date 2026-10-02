@@ -50,6 +50,14 @@ export {
 };
 export type { ResearchResult, ResearchFact, AllowedResearchCategory };
 
+/**
+ * Master kill switch for complementary engines pass.
+ * Default: false
+ */
+export function isComplementaryEnginesEnabled(): boolean {
+  return process.env.COMPLEMENTARY_ENGINES_ENABLED === 'true';
+}
+
 // Internal Anti-Slop Safeguards grouped strictly by Section 8 requirements
 export const CORE_ANTI_SLOP_AVOID = [
   // ROSTO
@@ -2096,12 +2104,16 @@ export function generateSimpleThumbnail(
   const scenePlan = buildScenePlan(input, approachIndex);
 
   // 0.5 Complementary Pass (Theme Context, Research Facts, Physical Interaction)
-  const themeCtx = resolveThemeContext(input, scenePlan);
-  const rawFacts = options?.researchResults
+  // Strictly conditional on master kill switch COMPLEMENTARY_ENGINES_ENABLED=true
+  const complementaryEnabled = isComplementaryEnginesEnabled();
+  const themeCtx = complementaryEnabled ? resolveThemeContext(input, scenePlan) : undefined;
+  const rawFacts = (complementaryEnabled && options?.researchResults)
     ? (Array.isArray(options.researchResults) ? options.researchResults.flatMap(r => r.facts) : options.researchResults.facts)
     : undefined;
-  const interactionPlan = planPhysicalInteraction(input, scenePlan, themeCtx, rawFacts);
-  const enrichedPlan = mergeComplementaryPlan(scenePlan, input, themeCtx, options?.researchResults, interactionPlan);
+  const interactionPlan = complementaryEnabled ? planPhysicalInteraction(input, scenePlan, themeCtx, rawFacts) : undefined;
+  const enrichedPlan = complementaryEnabled
+    ? mergeComplementaryPlan(scenePlan, input, themeCtx, options?.researchResults, interactionPlan)
+    : scenePlan;
 
   // If this is an edit / reconstruction task (IDENTITY_TRANSFER, REPLACE_OBJECT, CHANGE_ENVIRONMENT)
   if (
@@ -2138,7 +2150,7 @@ export function generateSimpleThumbnail(
   } = interpretUserIntent(videoTitle, ideaDescription, approachIndex, hasPersonRef ? true : undefined, references);
 
   // If environment was enriched by theme or research, use enriched environment; otherwise keep defaultContextEn
-  const contextEn = (enrichedPlan.environment && (enrichedPlan.provenanceMap.environment === 'WEB_RESEARCH' || (themeCtx.environmentNeed && enrichedPlan.provenanceMap.environment === 'JUSTIFIED_INFERENCE')))
+  const contextEn = (complementaryEnabled && enrichedPlan.environment && (enrichedPlan.provenanceMap.environment === 'WEB_RESEARCH' || (themeCtx?.environmentNeed && enrichedPlan.provenanceMap.environment === 'JUSTIFIED_INFERENCE')))
     ? enrichedPlan.environment
     : defaultContextEn;
 
@@ -2358,18 +2370,22 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
 export async function generateSimpleThumbnailAsync(
   input: CreateThumbnailInput
 ): Promise<CreateThumbnailResult> {
+  if (!isComplementaryEnginesEnabled()) {
+    return generateSimpleThumbnail(input);
+  }
+
   const basePlan = buildScenePlan(input, input.approachIndex || 0);
   const themeCtx = resolveThemeContext(input, basePlan);
 
   const researchResults: ResearchResult[] = [];
   if (ResearchBroker.isResearchEnabled() && themeCtx.researchCandidate) {
     for (const entity of themeCtx.namedEntities) {
-      if (ResearchBroker.isEligible(entity, 'PRODUCT_GEOMETRY', basePlan)) {
-        const res = await ResearchBroker.resolve({ entity, category: 'PRODUCT_GEOMETRY' });
+      if (ResearchBroker.isEligible(entity, 'PRODUCT_GEOMETRY', basePlan, undefined, input.references)) {
+        const res = await ResearchBroker.resolve({ entity, category: 'PRODUCT_GEOMETRY' }, undefined, basePlan, input.references);
         if (res.success) researchResults.push(res);
       }
-      if (themeCtx.environmentNeed && ResearchBroker.isEligible(entity, 'ENVIRONMENT_TYPE', basePlan)) {
-        const res = await ResearchBroker.resolve({ entity, category: 'ENVIRONMENT_TYPE' });
+      if (themeCtx.environmentNeed && ResearchBroker.isEligible(entity, 'ENVIRONMENT_TYPE', basePlan, undefined, input.references)) {
+        const res = await ResearchBroker.resolve({ entity, category: 'ENVIRONMENT_TYPE' }, undefined, basePlan, input.references);
         if (res.success) researchResults.push(res);
       }
     }
