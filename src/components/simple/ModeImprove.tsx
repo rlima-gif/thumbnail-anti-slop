@@ -1,8 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Wand2, Copy, Check, Sparkles, CheckCircle2 } from 'lucide-react';
-import { ImprovePromptResult } from '@/types/simple';
+import {
+  ImprovePromptResult,
+  TargetModel,
+  normalizeTargetModel,
+  TARGET_MODEL_CONFIGS,
+  getSelectableTargetModels
+} from '@/types/simple';
 import { improvePrompt } from '@/lib/simpleEngine/engine';
 import { saveSimpleHistoryItem } from '@/lib/simpleEngine/history';
 
@@ -13,9 +19,12 @@ interface ModeImproveProps {
 
 export function ModeImprove({ onNotify, onRefreshHistoryCount }: ModeImproveProps) {
   const [rawPrompt, setRawPrompt] = useState('');
+  const [targetModel, setTargetModel] = useState<TargetModel>('GERAL');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<ImprovePromptResult | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const selectableTargetModels = useMemo(() => getSelectableTargetModels(), []);
 
   const handleImprove = async () => {
     if (!rawPrompt.trim()) {
@@ -29,7 +38,7 @@ export function ModeImprove({ onNotify, onRefreshHistoryCount }: ModeImproveProp
       const res = await fetch('/api/ai/simple-improve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rawPrompt })
+        body: JSON.stringify({ rawPrompt, targetModel })
       });
 
       let data: ImprovePromptResult;
@@ -37,7 +46,7 @@ export function ModeImprove({ onNotify, onRefreshHistoryCount }: ModeImproveProp
       if (res.ok) {
         data = await res.json();
       } else {
-        data = improvePrompt({ rawPrompt });
+        data = improvePrompt({ rawPrompt, targetModel });
       }
 
       setResult(data);
@@ -52,7 +61,7 @@ export function ModeImprove({ onNotify, onRefreshHistoryCount }: ModeImproveProp
 
       onNotify('Slop removido com sucesso!');
     } catch {
-      const fallback = improvePrompt({ rawPrompt });
+      const fallback = improvePrompt({ rawPrompt, targetModel });
       setResult(fallback);
       onNotify('Prompt purificado pelo motor local.');
     } finally {
@@ -99,7 +108,28 @@ export function ModeImprove({ onNotify, onRefreshHistoryCount }: ModeImproveProp
           className="w-full bg-zinc-950/60 border border-zinc-800/80 rounded-xl p-3.5 text-xs font-mono text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-amber-500/80 transition resize-y leading-relaxed"
         />
 
-        <div className="flex justify-end pt-1">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+          <div className="flex items-center gap-2">
+            <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400 shrink-0">
+              Modelo Alvo:
+            </label>
+            <select
+              value={normalizeTargetModel(targetModel)}
+              onChange={e => setTargetModel(normalizeTargetModel(e.target.value as TargetModel))}
+              className="bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-amber-500 font-mono w-full sm:w-auto"
+            >
+              {selectableTargetModels.map(group => (
+                <optgroup key={group.groupLabel} label={group.groupLabel}>
+                  {group.models.map(m => (
+                    <option key={m.id} value={m.id}>
+                      {m.displayName}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
           <button
             type="button"
             onClick={handleImprove}
@@ -169,12 +199,23 @@ export function ModeImprove({ onNotify, onRefreshHistoryCount }: ModeImproveProp
             <div className="space-y-4">
               <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-5 sm:p-6 space-y-4">
                 <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <span className="text-xs font-mono uppercase tracking-wider text-amber-500 font-bold block">
-                      PROMPT MELHORADO
-                    </span>
-                    <p className="text-xs text-zinc-400 mt-0.5 font-sans">
-                      Livre de artificialidade, com iluminação motivada e planos críveis
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono uppercase tracking-wider text-amber-500 font-bold block">
+                        PROMPT MELHORADO
+                      </span>
+                      {result?.outputMetadata && (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-zinc-950 border border-zinc-800 text-[10px] font-mono text-zinc-400">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          {result.outputMetadata.modelId} • {result.outputMetadata.aspectRatioHint}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-zinc-400 font-sans">
+                      Pronto para colar no{' '}
+                      {normalizeTargetModel(result.targetModel || targetModel) === 'GERAL'
+                        ? 'Midjourney, FLUX ou seu gerador preferido'
+                        : TARGET_MODEL_CONFIGS[normalizeTargetModel(result.targetModel || targetModel)]?.displayName || targetModel}
                     </p>
                   </div>
 

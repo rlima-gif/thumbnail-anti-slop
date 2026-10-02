@@ -2273,7 +2273,8 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
       ...scenePlan,
       unsupportedDetailsRemoved: audit.purged
     },
-    outputMetadata: resolveOutputMetadata(targetModel, aspectRatio)
+    outputMetadata: resolveOutputMetadata(targetModel, aspectRatio),
+    targetModel: normalizeTargetModel(targetModel)
   };
 }
 
@@ -2335,6 +2336,8 @@ export function buildTypographyPlan(
 export function improvePrompt(input: ImprovePromptInput): ImprovePromptResult {
   const raw = input.rawPrompt.trim();
   const changes: string[] = [];
+  const normModel = normalizeTargetModel(input.targetModel);
+  const cfg = TARGET_MODEL_CONFIGS[normModel];
 
   const isGaming = /(game|gaming|console|playstation|xbox|nintendo|steam\s*deck|legion|controller|joystick)/i.test(raw);
   const isTech = detectTechHardware(raw);
@@ -2407,16 +2410,59 @@ export function improvePrompt(input: ImprovePromptInput): ImprovePromptResult {
     ? '\nHUMAN EXPRESSION: Natural composed curiosity with closed mouth and expressive eyes, authentic facial asymmetry, natural skin texture avoiding plastic waxy smoothing.'
     : '';
 
-  const improvedPrompt = `High-impact photographic YouTube thumbnail, 16:9 widescreen format.
+  const baseNeutralPrompt = `High-impact photographic YouTube thumbnail, 16:9 widescreen format.
 SUBJECT & FRAMING: ${subjectDescription}. Clean figure-ground separation with bold silhouette for instant readability at 120px mobile size.${handsHardwareDirective}${expressionDirective}
 LIGHTING: Motivated physical illumination with clean directional key light and soft natural shadow falloff.
 OPTICAL DEPTH: Balanced photographic perspective with 35mm lens, preserving authentic spatial depth and subject clarity without forced blur.
 TEXTURES: Authentic tactile materials, true matte finishes, natural skin texture, physical fabric and surfaces.
 STRICTLY AVOID: ${CORE_ANTI_SLOP_AVOID.slice(0, 18).join(', ')}.`;
 
+  let finalPrompt = baseNeutralPrompt;
+
+  if (normModel !== 'GERAL' && cfg && cfg.promptStyle !== 'neutral') {
+    const createInput: CreateThumbnailInput = {
+      videoTitle: cleanSubject || subjectDescription,
+      ideaDescription: subjectDescription,
+      references: [],
+      targetModel: normModel,
+      aspectRatio: '16:9',
+      stylePreset: 'Natural',
+      realismLevel: 'Alto',
+      preserveFace: hasFace,
+      preserveProduct: isGaming || isTech,
+      extraInstructions: isGaming || isTech ? 'Focus on authentic hardware geometry and natural hand grip.' : undefined
+    };
+    const scenePlan = buildScenePlan(createInput);
+    const typographyDirective = 'Reserve clean, uncluttered negative space for post-production typography. Do not bake distorted AI typography directly into the pixels.';
+    const arParam = '16:9 widescreen format';
+
+    finalPrompt = renderPromptForTargetModel({
+      plan: scenePlan,
+      input: createInput,
+      basePrompt: baseNeutralPrompt,
+      typographyDirective,
+      arParam
+    });
+
+    const audit = auditPromptProvenance(finalPrompt, scenePlan, []);
+    finalPrompt = audit.cleanedPrompt;
+
+    if (cfg.promptStyle === 'structured_contract') {
+      changes.push(`Prompt estruturado em seções de contrato para ${cfg.displayName}.`);
+    } else if (cfg.promptStyle === 'natural_multireference') {
+      changes.push(`Prompt formatado em blocos descritivos naturais para ${cfg.displayName}.`);
+    } else if (cfg.promptStyle === 'concise_visual') {
+      changes.push(`Prompt sintetizado de forma concisa e com parâmetros para ${cfg.displayName}.`);
+    } else if (cfg.promptStyle === 'direct_natural_positive') {
+      changes.push(`Restrições negativas convertidas em atributos visuais positivos para ${cfg.displayName}.`);
+    }
+  }
+
   return {
     changes,
-    improvedPrompt
+    improvedPrompt: finalPrompt,
+    targetModel: normModel,
+    outputMetadata: resolveOutputMetadata(normModel, '16:9')
   };
 }
 

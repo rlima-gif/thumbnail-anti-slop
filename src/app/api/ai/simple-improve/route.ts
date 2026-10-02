@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { improvePrompt } from '@/lib/simpleEngine/engine';
+import { improvePrompt, resolveOutputMetadata } from '@/lib/simpleEngine/engine';
 import { getVisualDirector } from '@/lib/ai/orchestrator';
-import type { ImprovePromptInput } from '@/types/simple';
+import { type ImprovePromptInput, normalizeTargetModel } from '@/types/simple';
 
 export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.json();
     const body: ImprovePromptInput = {
       ...rawBody,
-      rawPrompt: rawBody.rawPrompt || rawBody.prompt || ''
+      rawPrompt: rawBody.rawPrompt || rawBody.prompt || '',
+      targetModel: rawBody.targetModel
     };
 
     const { director, providerName: dirProvider } = getVisualDirector();
@@ -91,10 +92,13 @@ Output strictly JSON with:
         }
 
         if (parsed) {
+          const normModel = normalizeTargetModel(body.targetModel);
           return NextResponse.json({
             isLocal: false,
             changes: parsed.changes || [],
-            improvedPrompt: parsed.improvedPrompt || body.rawPrompt
+            improvedPrompt: parsed.improvedPrompt || body.rawPrompt,
+            targetModel: normModel,
+            outputMetadata: resolveOutputMetadata(normModel, '16:9')
           });
         }
       } catch (err) {

@@ -59,6 +59,7 @@ export interface TargetModelConfig {
   apiModelId?: string;
   modelId?: string;
   description: string;
+  selectable: boolean;
   promptStyle: 'neutral' | 'structured_contract' | 'natural_multireference' | 'concise_visual' | 'direct_natural_positive';
   supportsEditing: boolean;
   supportsReferences: boolean;
@@ -80,6 +81,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     displayName: 'Geral — Compatível com todos',
     family: 'General',
     description: 'Prompt limpo e agnóstico de provedor para qualquer gerador moderno.',
+    selectable: true,
     promptStyle: 'neutral',
     supportsEditing: true,
     supportsReferences: true,
@@ -98,6 +100,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'gpt-image-2.5-sunburst',
     modelId: 'gpt-image-2.5-sunburst',
     description: 'Máxima fidelidade para thumbnails exigentes, preservação estrita de identidade, produtos e edições precisas.',
+    selectable: true,
     promptStyle: 'structured_contract',
     supportsEditing: true,
     supportsReferences: true,
@@ -119,6 +122,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'gpt-image-2.5-flare',
     modelId: 'gpt-image-2.5-flare',
     description: 'Geração rápida e eficiente para thumbnails diárias e experimentação iterativa.',
+    selectable: true,
     promptStyle: 'structured_contract',
     supportsEditing: true,
     supportsReferences: true,
@@ -139,6 +143,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'gemini-3.1-flash-image',
     modelId: 'gemini-3.1-flash-image',
     description: 'Geração e edição ágil com múltiplas referências, consistência de personagem e tipografia nítida.',
+    selectable: true,
     promptStyle: 'natural_multireference',
     supportsEditing: true,
     supportsReferences: true,
@@ -160,6 +165,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'gemini-3-pro-image',
     modelId: 'gemini-3-pro-image',
     description: 'Composições profissionais difíceis, alta fidelidade de detalhes e cenas carregadas de referências.',
+    selectable: true,
     promptStyle: 'natural_multireference',
     supportsEditing: true,
     supportsReferences: true,
@@ -180,6 +186,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'v8.2',
     modelId: 'v8.2',
     description: 'Prompt visual conciso com proporção (--ar) e parâmetros atuais da versão 8.2.',
+    selectable: true,
     promptStyle: 'concise_visual',
     supportsEditing: true,
     supportsReferences: true,
@@ -199,6 +206,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'niji-7',
     modelId: 'niji-7',
     description: 'Tratamentos ilustrados, anime, mangá e composição visual com estética oriental refinada.',
+    selectable: true,
     promptStyle: 'concise_visual',
     supportsEditing: true,
     supportsReferences: true,
@@ -217,6 +225,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'flux-2-max',
     modelId: 'flux-2-max',
     description: 'Saída fotográfica de máxima qualidade, seguimento estrito de instruções e texturas realistas.',
+    selectable: true,
     promptStyle: 'direct_natural_positive',
     supportsEditing: true,
     supportsReferences: true,
@@ -238,6 +247,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'flux-2-pro',
     modelId: 'flux-2-pro',
     description: 'Equilíbrio ideal entre velocidade e qualidade para fluxos profissionais do dia a dia.',
+    selectable: true,
     promptStyle: 'direct_natural_positive',
     supportsEditing: true,
     supportsReferences: true,
@@ -258,6 +268,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'flux-2-flex',
     modelId: 'flux-2-flex',
     description: 'Controle refinado e renderização tipográfica precisa diretamente na composição da imagem.',
+    selectable: true,
     promptStyle: 'direct_natural_positive',
     supportsEditing: true,
     supportsReferences: true,
@@ -278,6 +289,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'flux-2-klein',
     modelId: 'flux-2-klein',
     description: 'Iteração rápida, prévias imediatas e menor latência de geração.',
+    selectable: true,
     promptStyle: 'direct_natural_positive',
     supportsEditing: true,
     supportsReferences: true,
@@ -298,6 +310,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'test-model',
     modelId: 'test-model',
     description: 'Modelo temporário para validação de ponta a ponta da arquitetura.',
+    selectable: false,
     promptStyle: 'neutral',
     supportsEditing: true,
     supportsReferences: true,
@@ -316,6 +329,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'gpt-image-2.5-sunburst',
     modelId: 'gpt-image-2.5-sunburst',
     description: 'Redirecionado automaticamente para GPT Image 2.5 Sunburst.',
+    selectable: false,
     promptStyle: 'structured_contract',
     supportsEditing: true,
     supportsReferences: true,
@@ -336,6 +350,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'gemini-3.1-flash-image',
     modelId: 'gemini-3.1-flash-image',
     description: 'Redirecionado automaticamente para Google Nano Banana 2.',
+    selectable: false,
     promptStyle: 'natural_multireference',
     supportsEditing: true,
     supportsReferences: true,
@@ -354,6 +369,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'gemini-3.1-flash-image',
     modelId: 'gemini-3.1-flash-image',
     description: 'Redirecionado automaticamente para Google Nano Banana 2.',
+    selectable: false,
     promptStyle: 'natural_multireference',
     supportsEditing: true,
     supportsReferences: true,
@@ -372,6 +388,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'v8.2',
     modelId: 'v8.2',
     description: 'Redirecionado automaticamente para Midjourney V8.2.',
+    selectable: false,
     promptStyle: 'concise_visual',
     supportsEditing: true,
     supportsReferences: true,
@@ -390,6 +407,7 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     apiModelId: 'flux-2-max',
     modelId: 'flux-2-max',
     description: 'Redirecionado automaticamente para FLUX.2 Max.',
+    selectable: false,
     promptStyle: 'direct_natural_positive',
     supportsEditing: true,
     supportsReferences: true,
@@ -476,20 +494,11 @@ export interface TargetModelGroup {
   models: TargetModelOption[];
 }
 
-const LEGACY_MODEL_IDS = new Set<TargetModel>([
-  'OPENAI',
-  'GEMINI',
-  'GOOGLE_IMAGEN',
-  'MIDJOURNEY',
-  'FLUX'
-]);
-
 export function getSelectableTargetModels(): TargetModelGroup[] {
   const groupsMap = new Map<string, TargetModelOption[]>();
 
-  for (const [key, cfg] of Object.entries(TARGET_MODEL_CONFIGS)) {
-    const modelId = key as TargetModel;
-    if (LEGACY_MODEL_IDS.has(modelId)) continue;
+  for (const [, cfg] of Object.entries(TARGET_MODEL_CONFIGS)) {
+    if (cfg.selectable !== true) continue;
 
     const group = cfg.providerGroup || 'GERAL';
     if (!groupsMap.has(group)) {
@@ -622,6 +631,7 @@ export interface CreateThumbnailResult {
   typographyPlan?: string;
   scenePlan?: ScenePlan;
   outputMetadata?: ImageOutputMetadata;
+  targetModel?: TargetModel;
 }
 
 export interface ImprovePromptInput {
@@ -632,6 +642,8 @@ export interface ImprovePromptInput {
 export interface ImprovePromptResult {
   changes: string[];
   improvedPrompt: string;
+  targetModel?: TargetModel;
+  outputMetadata?: ImageOutputMetadata;
 }
 
 export interface AnalyzeThumbnailSimpleResult {

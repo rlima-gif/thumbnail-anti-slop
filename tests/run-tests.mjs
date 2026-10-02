@@ -1702,17 +1702,19 @@ console.log('\n25. Testando Consolidação da Arquitetura de Modelos Alvo, Catá
   assert.ok(groupLabels.includes('GOOGLE'), 'Contém grupo GOOGLE');
   assert.ok(groupLabels.includes('MIDJOURNEY'), 'Contém grupo MIDJOURNEY');
   assert.ok(groupLabels.includes('BLACK FOREST LABS'), 'Contém grupo BLACK FOREST LABS');
-  assert.ok(groupLabels.includes('TEST'), 'Contém grupo TEST');
+  assert.ok(!groupLabels.includes('TEST'), 'Catálogo selecionável NÃO deve conter grupo TEST');
 
   const allSelectableIds = groups.flatMap(g => g.models.map(m => m.id));
   const legacyIds = ['OPENAI', 'GEMINI', 'GOOGLE_IMAGEN', 'MIDJOURNEY', 'FLUX'];
   for (const leg of legacyIds) {
     assert.ok(!allSelectableIds.includes(leg), `Catálogo selecionável NÃO deve conter ID legado "${leg}"`);
   }
-  assert.ok(allSelectableIds.includes('TEST_MODEL'), 'Catálogo selecionável deve conter TEST_MODEL');
+  assert.ok(!allSelectableIds.includes('TEST_MODEL'), 'Catálogo selecionável NÃO deve conter TEST_MODEL');
+  assert.equal(engine.TARGET_MODEL_CONFIGS.TEST_MODEL.selectable, false, 'TEST_MODEL tem selectable: false no catálogo');
+  assert.equal(engine.TARGET_MODEL_CONFIGS.OPENAI_GPT_IMAGE_2_5_SUNBURST.selectable, true, 'Modelos de produção têm selectable: true');
   assert.ok(allSelectableIds.includes('OPENAI_GPT_IMAGE_2_5_SUNBURST'), 'Catálogo deve conter SUNBURST');
   assert.ok(allSelectableIds.includes('GOOGLE_NANO_BANANA_2'), 'Catálogo deve conter NANO_BANANA_2');
-  console.log('  ✓ TEST 25.2: getSelectableTargetModels() agrupa modelos dinamicamente e exclui apelidos legados.');
+  console.log('  ✓ TEST 25.2: getSelectableTargetModels() filtra estritamente por selectable: true e esconde TEST_MODEL e apelidos legados.');
 
   // TEST 25.3: Modelo Temporário TEST_MODEL de Ponta a Ponta
   assert.equal(engine.normalizeTargetModel('TEST_MODEL'), 'TEST_MODEL', 'Normaliza TEST_MODEL exato');
@@ -1757,6 +1759,108 @@ console.log('\n25. Testando Consolidação da Arquitetura de Modelos Alvo, Catá
     assert.equal(meta.targetModel, model, `TargetModel correto para ${model}`);
   }
   console.log('  ✓ TEST 25.4: Preservação de outputMetadata consistente em todos os 11 modelos modernos.');
+}
+
+// 26. Validação Completa do Fluxo MELHORAR com Despacho por Modelo Alvo e Persistência no Histórico
+{
+  console.log('\n26. Testando Fluxo MELHORAR com Despacho de Modelo Alvo e Persistência de Metadados...');
+  const { improvePrompt } = await import('../src/lib/simpleEngine/engine.ts');
+  const {
+    getSimpleHistory,
+    saveSimpleHistoryItem,
+    clearSimpleHistory
+  } = await import('../src/lib/simpleEngine/history.ts');
+
+  const samplePrompt = 'Epic gaming thumbnail with neon purple lights, dramatic glowing console, floating particles and excited screaming YouTuber face.';
+
+  // 26.1: GERAL (Neutral)
+  const resultGeral = improvePrompt({ rawPrompt: samplePrompt, targetModel: 'GERAL' });
+  assert.equal(resultGeral.targetModel, 'GERAL', 'targetModel normalizado para GERAL');
+  assert.ok(resultGeral.improvedPrompt.includes('High-impact photographic YouTube thumbnail'), 'Prompt neutro para GERAL');
+  assert.ok(resultGeral.improvedPrompt.includes('STRICTLY AVOID:'), 'GERAL mantém seção de avoid neutro');
+  assert.equal(resultGeral.outputMetadata, undefined, 'GERAL não possui outputMetadata');
+  console.log('  ✓ TEST 26.1: improvePrompt com GERAL produz prompt neutro compatível.');
+
+  // 26.2: OPENAI (Structured Contract)
+  const resultOpenAI = improvePrompt({ rawPrompt: samplePrompt, targetModel: 'OPENAI_GPT_IMAGE_2_5_SUNBURST' });
+  assert.equal(resultOpenAI.targetModel, 'OPENAI_GPT_IMAGE_2_5_SUNBURST');
+  assert.ok(resultOpenAI.improvedPrompt.includes('GOAL:'), 'OpenAI improve contém GOAL:');
+  assert.ok(resultOpenAI.improvedPrompt.includes('CHANGE:'), 'OpenAI improve contém CHANGE:');
+  assert.ok(resultOpenAI.improvedPrompt.includes('ADAPT:'), 'OpenAI improve contém ADAPT:');
+  assert.ok(resultOpenAI.improvedPrompt.includes('PRESERVE:'), 'OpenAI improve contém PRESERVE:');
+  assert.ok(resultOpenAI.improvedPrompt.includes('AVOID:'), 'OpenAI improve contém AVOID:');
+  assert.equal(resultOpenAI.outputMetadata?.modelId, 'gpt-image-2.5-sunburst');
+  console.log('  ✓ TEST 26.2: improvePrompt com OpenAI produz formato de contrato estruturado.');
+
+  // 26.3: GOOGLE (Natural Multireference)
+  const resultGoogle = improvePrompt({ rawPrompt: samplePrompt, targetModel: 'GOOGLE_NANO_BANANA_2' });
+  assert.equal(resultGoogle.targetModel, 'GOOGLE_NANO_BANANA_2');
+  assert.ok(resultGoogle.improvedPrompt.includes('SCENE:'), 'Google improve contém SCENE:');
+  assert.ok(resultGoogle.improvedPrompt.includes('WHAT CHANGES:'), 'Google improve contém WHAT CHANGES:');
+  assert.ok(resultGoogle.improvedPrompt.includes('WHAT REMAINS:'), 'Google improve contém WHAT REMAINS:');
+  assert.ok(resultGoogle.improvedPrompt.includes('PHOTOGRAPHIC DIRECTIVES:'), 'Google improve contém PHOTOGRAPHIC DIRECTIVES:');
+  assert.equal(resultGoogle.outputMetadata?.modelId, 'gemini-3.1-flash-image');
+  console.log('  ✓ TEST 26.3: improvePrompt com Google produz blocos descritivos naturais.');
+
+  // 26.4: MIDJOURNEY (Concise Visual)
+  const resultMidjourney = improvePrompt({ rawPrompt: samplePrompt, targetModel: 'MIDJOURNEY_V8_2' });
+  assert.equal(resultMidjourney.targetModel, 'MIDJOURNEY_V8_2');
+  assert.ok(resultMidjourney.improvedPrompt.includes('--ar 16:9'), 'Midjourney improve contém proporção --ar 16:9');
+  assert.ok(resultMidjourney.improvedPrompt.includes('--v 8.2'), 'Midjourney improve usa versão atual --v 8.2');
+  assert.ok(!resultMidjourney.improvedPrompt.includes('--v 6'), 'Midjourney NÃO usa versão obsoleta --v 6');
+  assert.ok(!resultMidjourney.improvedPrompt.includes('--v 7'), 'Midjourney NÃO usa versão obsoleta --v 7');
+  assert.equal(resultMidjourney.outputMetadata?.modelId, 'v8.2');
+  console.log('  ✓ TEST 26.4: improvePrompt com Midjourney produz prompt conciso com flags modernas sem versões obsoletas.');
+
+  // 26.5: FLUX (Direct Natural Positive - Sem Negative Dump)
+  const resultFlux = improvePrompt({ rawPrompt: samplePrompt, targetModel: 'FLUX_2_MAX' });
+  assert.equal(resultFlux.targetModel, 'FLUX_2_MAX');
+  assert.ok(resultFlux.improvedPrompt.includes('POSITIVE VISUAL ATTRIBUTES:'), 'FLUX improve contém POSITIVE VISUAL ATTRIBUTES:');
+  assert.ok(resultFlux.improvedPrompt.includes('PRESERVATION CONSTRAINTS:'), 'FLUX improve contém PRESERVATION CONSTRAINTS:');
+  assert.ok(!resultFlux.improvedPrompt.includes('STRICTLY AVOID: generic AI beauty face'), 'FLUX NÃO despeja lista negativa genérica de slop');
+  assert.equal(resultFlux.outputMetadata?.modelId, 'flux-2-max');
+  console.log('  ✓ TEST 26.5: improvePrompt com FLUX converte restrições em atributos visuais positivos sem negative dump.');
+
+  // 26.6: Persistência e Roundtrip no Histórico
+  clearSimpleHistory();
+  assert.equal(getSimpleHistory().length, 0, 'Histórico inicial limpo');
+
+  // Salvar item moderno gerado no modo MELHORAR
+  saveSimpleHistoryItem({
+    mode: 'MELHORAR',
+    title: 'Prompt Gamer Otimizado',
+    previewSummary: resultFlux.changes[0] || 'Ajustes',
+    data: resultFlux
+  });
+
+  // Salvar item legado sem outputMetadata
+  saveSimpleHistoryItem({
+    mode: 'MELHORAR',
+    title: 'Prompt Legado Antigo',
+    previewSummary: 'Purificado',
+    data: {
+      changes: ['Removido neon'],
+      improvedPrompt: 'Prompt legado simples sem metadados',
+      targetModel: 'FLUX'
+    }
+  });
+
+  const loadedHistory = getSimpleHistory();
+  assert.equal(loadedHistory.length, 2, 'Histórico deve conter exatamente 2 itens recuperados');
+
+  const modernItem = loadedHistory.find(i => i.title === 'Prompt Gamer Otimizado');
+  assert.ok(modernItem, 'Item moderno recuperado com sucesso');
+  const modernData = modernItem.data;
+  assert.equal(modernData.targetModel, 'FLUX_2_MAX', 'targetModel persistido no item moderno');
+  assert.ok(modernData.outputMetadata, 'outputMetadata preservado no roundtrip');
+  assert.equal(modernData.outputMetadata.modelId, 'flux-2-max', 'modelId do outputMetadata preservado');
+
+  const legacyItem = loadedHistory.find(i => i.title === 'Prompt Legado Antigo');
+  assert.ok(legacyItem, 'Item legado recuperado sem erro');
+  const legacyData = legacyItem.data;
+  assert.equal(legacyData.targetModel, 'FLUX_2_MAX', 'Apelido legado FLUX normalizado para FLUX_2_MAX');
+  assert.equal(legacyData.outputMetadata, undefined, 'Item legado sem outputMetadata preservado como undefined sem erro');
+  console.log('  ✓ TEST 26.6: Roundtrip de histórico validado — outputMetadata preservado e itens legados suportados sem quebras.');
 }
 
 console.log('\n✅ TODOS OS TESTES PASSARAM COM SUCESSO! VALIDAÇÃO CONCLUÍDA.');

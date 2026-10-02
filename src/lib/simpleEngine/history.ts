@@ -1,11 +1,29 @@
-import { SimpleHistoryItem, normalizeTargetModel } from '@/types/simple';
+import type { SimpleHistoryItem } from '../../types/simple.ts';
+import { normalizeTargetModel } from '../../types/simple.ts';
 
 const HISTORY_KEY = 'tas_simple_history_v1';
 
+const memoryStorage: Record<string, string> = {};
+
+function getStorage() {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return window.localStorage;
+  }
+  if (typeof globalThis !== 'undefined' && (globalThis as unknown as { localStorage?: Storage }).localStorage) {
+    return (globalThis as unknown as { localStorage: Storage }).localStorage;
+  }
+  return {
+    getItem: (key: string) => memoryStorage[key] ?? null,
+    setItem: (key: string, value: string) => { memoryStorage[key] = value; },
+    removeItem: (key: string) => { delete memoryStorage[key]; }
+  };
+}
+
 export function getSimpleHistory(): SimpleHistoryItem[] {
-  if (typeof window === 'undefined') return [];
+  const storage = getStorage();
+  if (!storage) return [];
   try {
-    const raw = localStorage.getItem(HISTORY_KEY);
+    const raw = storage.getItem(HISTORY_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -36,13 +54,14 @@ export function saveSimpleHistoryItem(item: Omit<SimpleHistoryItem, 'id' | 'time
     timestamp: new Date().toISOString()
   };
 
-  if (typeof window === 'undefined') return newItem;
+  const storage = getStorage();
+  if (!storage) return newItem;
 
   try {
     const current = getSimpleHistory();
     // Keep maximum 30 items
     const updated = [newItem, ...current.filter(i => i.id !== newItem.id)].slice(0, 30);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    storage.setItem(HISTORY_KEY, JSON.stringify(updated));
   } catch {
     // Ignore quota errors
   }
@@ -51,11 +70,12 @@ export function saveSimpleHistoryItem(item: Omit<SimpleHistoryItem, 'id' | 'time
 }
 
 export function deleteSimpleHistoryItem(id: string): SimpleHistoryItem[] {
-  if (typeof window === 'undefined') return [];
+  const storage = getStorage();
+  if (!storage) return [];
   try {
     const current = getSimpleHistory();
     const updated = current.filter(i => i.id !== id);
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    storage.setItem(HISTORY_KEY, JSON.stringify(updated));
     return updated;
   } catch {
     return [];
@@ -63,9 +83,10 @@ export function deleteSimpleHistoryItem(id: string): SimpleHistoryItem[] {
 }
 
 export function clearSimpleHistory(): void {
-  if (typeof window === 'undefined') return;
+  const storage = getStorage();
+  if (!storage) return;
   try {
-    localStorage.removeItem(HISTORY_KEY);
+    storage.removeItem(HISTORY_KEY);
   } catch {
     // Ignore
   }
