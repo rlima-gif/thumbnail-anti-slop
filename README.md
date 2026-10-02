@@ -74,6 +74,33 @@ O motor proíbe automaticamente em todos os prompts gerados:
 
 ---
 
+## 🧩 Motores Complementares Seguros (Passo Não-Destrutivo)
+
+O sistema conta com três motores complementares que atuam **apenas sobre campos não-resolvidos ou vazios**, respeitando estritamente a hierarquia de autoridade pré-existente:
+
+1. **Theme Context Resolver (`themeResolver.ts`)**:
+   - Identifica universo temático, domínio narrativo e necessidades visuais autênticas (ex: *Crimson Desert* direciona para cenários medievais e ermos, evitando a substituição por salas domésticas genéricas).
+   - Filtra clichês espúrios sem sobrepor preferências explícitas do criador.
+
+2. **Grounded Research Broker (`researchBroker.ts`)**:
+   - **Garantia de Privacidade**: Desabilitado por padrão (`RESEARCH_ENABLED=false`).
+   - Recebe **estritamente** payloads mínimos e anonimizados: `{ entity, category }`.
+   - **Jamais** transmite fotos, características biométricas, rostos ou prompts livres de usuários.
+   - Aplica sanitização rigorosa contra injeção de prompt, limite de 240 caracteres por fato e fallback automático em 4 segundos.
+   - Atribui proveniência única `WEB_RESEARCH`.
+
+3. **Physical Interaction Planner (`interactionPlanner.ts`)**:
+   - Planeja empunhadura física ergonômica e plausibilidade anatômica para objetos e consoles (evita "segurar com pinça" ou dedos fundidos).
+   - Respeita integralmente poses manuais explícitas do usuário ou a pose travada na Imagem-Alvo (`TARGET_IMAGE`).
+
+### Hierarquia Estrita de Autoridade
+A camada complementar segue sem exceção a seguinte ordem de precedência:
+`USER_EXPLICIT` > `TARGET_IMAGE` > `ASSIGNED_REFERENCE` > `WEB_RESEARCH` > `NECESSARY_ADAPTATION` > `JUSTIFIED_INFERENCE`
+
+Se qualquer campo já tiver sido resolvido com autoridade superior, a camada complementar atua como estrito **NO-OP**.
+
+---
+
 ## 🚀 Instalação e Execução
 
 ### Pré-requisitos
@@ -86,13 +113,14 @@ npm install
 ```
 
 ### Variáveis de Ambiente (Opcional)
-Se desejar habilitar a visão multimodal do OpenAI GPT-4o no servidor, configure em `.env.local`:
+Configure em `.env.local`:
 ```env
 OPENAI_API_KEY=sua_chave_aqui
-OPENAI_VISION_MODEL=gpt-4o
-OPENAI_TEXT_MODEL=gpt-4o-mini
+AI_DIRECTOR_PROVIDER=auto
+RESEARCH_ENABLED=false
+RESEARCH_TIMEOUT_MS=4000
 ```
-> **Nota**: Se `OPENAI_API_KEY` não for configurada, o motor local determinístico assume 100% da operação silenciosamente, sem falhas nem erros na interface.
+> **Nota**: Se as chaves externas não forem configuradas, o motor local determinístico assume 100% da operação silenciosamente, sem falhas nem erros na interface.
 
 ### Execução Local
 ```bash
@@ -107,9 +135,10 @@ Acesse [http://localhost:3000](http://localhost:3000).
 
 ### Testes e Verificação
 ```bash
-npm test            # 13 suítes de teste unitários e heurísticos
+npm test            # 28 suítes de teste (incluindo segurança, proveniência e 45 snapshots byte-a-byte)
 npx tsc --noEmit    # Verificação estática TypeScript (Zero erros)
 npm run lint        # Verificação ESLint 9 (Zero avisos)
+git diff --check    # Verificação de integridade git
 ```
 
 ---
@@ -117,6 +146,7 @@ npm run lint        # Verificação ESLint 9 (Zero avisos)
 ## 🔒 Armazenamento e Privacidade
 
 - **100% Privado**: Imagens e ideias residem no navegador do usuário (`localStorage`).
+- **Anonimização Externa**: A pesquisa fundamentada opera unicamente com o nome da entidade normalizada e sua categoria de hardware/cenário. Nenhuma imagem ou biometria sai do navegador.
 - **Histórico Rápido**: O botão **Histórico** permite resgatar e copiar prompts recentes em 1 clique.
 - **Zero Rastreamento**: Nenhuma telemetria ou envio de dados sem ação explícita do usuário.
 

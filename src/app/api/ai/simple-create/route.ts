@@ -3,7 +3,12 @@ import {
   generateSimpleThumbnail,
   buildScenePlan,
   buildPromptFromScenePlan,
-  auditPromptProvenance
+  auditPromptProvenance,
+  resolveThemeContext,
+  ResearchBroker,
+  planPhysicalInteraction,
+  mergeComplementaryPlan,
+  type ResearchResult
 } from '@/lib/simpleEngine/engine';
 import {
   getVisualDirector,
@@ -59,11 +64,29 @@ export async function POST(req: NextRequest) {
     // Deterministic reconciliation: User intent > Reference roles > Target master > Local rules > AI facts
     const reconciledPlan = reconcileDirectorWithLocalRules(directorResult, localScenePlan, body);
 
+    // 3.5 COMPLEMENTARY ENGINES (Theme Context, Optional Grounded Research, Physical Interaction)
+    const themeCtx = resolveThemeContext(body, reconciledPlan);
+    const researchResults: ResearchResult[] = [];
+    if (ResearchBroker.isResearchEnabled() && themeCtx.researchCandidate) {
+      for (const entity of themeCtx.namedEntities) {
+        if (ResearchBroker.isEligible(entity, 'PRODUCT_GEOMETRY', reconciledPlan)) {
+          const res = await ResearchBroker.resolve({ entity, category: 'PRODUCT_GEOMETRY' });
+          if (res.success) researchResults.push(res);
+        }
+        if (themeCtx.environmentNeed && ResearchBroker.isEligible(entity, 'ENVIRONMENT_TYPE', reconciledPlan)) {
+          const res = await ResearchBroker.resolve({ entity, category: 'ENVIRONMENT_TYPE' });
+          if (res.success) researchResults.push(res);
+        }
+      }
+    }
+    const interactionPlan = planPhysicalInteraction(body, reconciledPlan, themeCtx, researchResults.flatMap(r => r.facts));
+    const fullyEnrichedPlan = mergeComplementaryPlan(reconciledPlan, body, themeCtx, researchResults, interactionPlan);
+
     // 4. PROMPT BUILDER
-    const builderResult = buildPromptFromScenePlan(reconciledPlan, body, body.approachIndex || 0);
+    const builderResult = buildPromptFromScenePlan(fullyEnrichedPlan, body, body.approachIndex || 0);
 
     // 5. LOCAL FINAL VALIDATOR & PROVENANCE AUDIT
-    const audit = auditPromptProvenance(builderResult.finalPrompt, reconciledPlan, body.references);
+    const audit = auditPromptProvenance(builderResult.finalPrompt, fullyEnrichedPlan, body.references);
     let finalCleanedPrompt = audit.cleanedPrompt;
 
     // 6. OPTIONAL SECOND VISUAL AUDITOR (Gemini) — Section 19-25
@@ -125,12 +148,12 @@ export async function POST(req: NextRequest) {
       approachIndex: body.approachIndex || 0,
       typographyPlan: builderResult.typographyPlan,
       scenePlan: {
-        ...reconciledPlan,
+        ...fullyEnrichedPlan,
         unsupportedDetailsRemoved: allPurged
       },
       outputMetadata: builderResult.outputMetadata,
-      // Development debug data (Section 31)
-      ...(process.env.NODE_ENV !== 'production'
+      // Development debug data (Section 31 & Complementary Trace)
+      ...(process.env.NODE_ENV !== 'production' || req.headers.get('x-debug-trace') === 'true'
         ? {
             debugInfo: {
               directorUsed: Boolean(directorResult),
@@ -140,11 +163,27 @@ export async function POST(req: NextRequest) {
               auditorUsed: Boolean(auditorResult),
               auditorProvider: auditorResult ? audProvider : 'none',
               auditorLatencyMs,
-              taskType: reconciledPlan.taskType,
-              targetImageId: reconciledPlan.targetImage?.id,
-              identitySourceId: reconciledPlan.identitySource?.id,
+              taskType: fullyEnrichedPlan.taskType,
+              targetImageId: fullyEnrichedPlan.targetImage?.id,
+              identitySourceId: fullyEnrichedPlan.identitySource?.id,
               removedUnsupportedDetails: allPurged,
-              totalTimeMs: Date.now() - startTime
+              totalTimeMs: Date.now() - startTime,
+              // Complementary Engine Fields
+              theme: fullyEnrichedPlan.complementaryDebug?.theme,
+              primaryVisualStory: fullyEnrichedPlan.complementaryDebug?.primaryVisualStory,
+              themeResolverUsed: fullyEnrichedPlan.complementaryDebug?.themeResolverUsed,
+              researchEligible: fullyEnrichedPlan.complementaryDebug?.researchEligible,
+              researchEnabled: fullyEnrichedPlan.complementaryDebug?.researchEnabled,
+              researchProvider: fullyEnrichedPlan.complementaryDebug?.researchProvider,
+              researchFacts: fullyEnrichedPlan.complementaryDebug?.researchFacts,
+              environmentDecision: fullyEnrichedPlan.complementaryDebug?.environmentDecision,
+              environmentSource: fullyEnrichedPlan.complementaryDebug?.environmentSource,
+              productSource: fullyEnrichedPlan.complementaryDebug?.productSource,
+              interactionPlannerUsed: fullyEnrichedPlan.complementaryDebug?.interactionPlannerUsed,
+              interactionPlan: fullyEnrichedPlan.complementaryDebug?.interactionPlan,
+              complementaryFieldsFilled: fullyEnrichedPlan.complementaryDebug?.complementaryFieldsFilled,
+              complementaryFieldsRejectedDueToHigherAuthority: fullyEnrichedPlan.complementaryDebug?.complementaryFieldsRejectedDueToHigherAuthority,
+              researchFailureReason: fullyEnrichedPlan.complementaryDebug?.researchFailureReason
             }
           }
         : {})

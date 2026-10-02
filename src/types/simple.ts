@@ -551,9 +551,98 @@ export type ProvenanceOrigin =
   | 'SCENARIO_REFERENCE'
   | 'STYLE_REFERENCE'
   | 'COMPOSITION_REFERENCE'
+  | 'WEB_RESEARCH'
   | 'NECESSARY_ADAPTATION'
   | 'JUSTIFIED_INFERENCE'
   | 'UNSUPPORTED_DEFAULT';
+
+export type ProductSourceState =
+  | 'PRODUCT_REFERENCE_LOCKED'
+  | 'PRODUCT_RESEARCH_GROUNDED'
+  | 'PRODUCT_INFERRED';
+
+export type AllowedResearchCategory =
+  | 'PRODUCT_GEOMETRY'
+  | 'CONTROL_LAYOUT'
+  | 'SILHOUETTE'
+  | 'MATERIAL'
+  | 'COLOR'
+  | 'ENVIRONMENT_TYPE'
+  | 'TERRAIN'
+  | 'ARCHITECTURE'
+  | 'CLOTHING'
+  | 'PROP'
+  | 'SPATIAL_FEATURE'
+  | 'VISUAL_MOTIF';
+
+export interface ResearchFact {
+  entity: string;
+  category: AllowedResearchCategory;
+  fact: string;
+  confidence: number;
+  visualRelevance: number;
+  provenance: 'WEB_RESEARCH';
+}
+
+export interface ResearchResult {
+  entity: string;
+  category: AllowedResearchCategory;
+  facts: ResearchFact[];
+  provider: string;
+  cached?: boolean;
+  latencyMs?: number;
+  success: boolean;
+  failureReason?: string;
+}
+
+export interface ThemeContext {
+  theme?: string;
+  subjectDomain?: string;
+  namedEntities: string[];
+  narrativeGoal?: string;
+  userEmotion?: string;
+  importantSubjects: string[];
+  importantObjects: string[];
+  visualWorld?: string;
+  environmentNeed: boolean;
+  contextConfidence: number;
+  researchCandidate: boolean;
+  primaryVisualStory?: string;
+}
+
+export interface PhysicalInteractionPlan {
+  numberOfHands?: number;
+  gripType?: string;
+  handPlacement?: string;
+  objectOrientation?: string;
+  distanceFromBody?: string;
+  wristRelationship?: string;
+  elbowRelationship?: string;
+  faceVisibility?: string;
+  objectVisibility?: string;
+  cameraRelationship?: string;
+  minimalAnatomicalAdaptation?: string;
+  interactionConfidence: number;
+  applied: boolean;
+}
+
+export interface ComplementaryDebugInfo {
+  theme?: string;
+  primaryVisualStory?: string;
+  themeResolverUsed: boolean;
+  researchEligible: boolean;
+  researchEnabled: boolean;
+  researchProvider?: string;
+  researchFacts?: ResearchFact[];
+  environmentDecision?: string;
+  environmentSource?: string;
+  productSource?: ProductSourceState;
+  interactionPlannerUsed: boolean;
+  interactionPlan?: PhysicalInteractionPlan;
+  complementaryFieldsFilled: string[];
+  complementaryFieldsRejectedDueToHigherAuthority: string[];
+  researchFailureReason?: string;
+}
 
 export interface ScenePlan {
   taskType: TaskType;
@@ -594,6 +683,13 @@ export interface ScenePlan {
   avoid: string[];
   provenanceMap: Record<string, ProvenanceOrigin>;
   unsupportedDetailsRemoved?: string[];
+  // Complementary Engine Fields
+  primaryVisualStory?: string;
+  productSourceState?: ProductSourceState;
+  themeContext?: ThemeContext;
+  physicalInteractionPlan?: PhysicalInteractionPlan;
+  researchFacts?: ResearchFact[];
+  complementaryDebug?: ComplementaryDebugInfo;
 }
 
 export interface CreateThumbnailInput {

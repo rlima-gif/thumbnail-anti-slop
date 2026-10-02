@@ -16,7 +16,10 @@ import type {
   TargetModelConfig,
   ImageOutputMetadata,
   TargetModelOption,
-  TargetModelGroup
+  TargetModelGroup,
+  ResearchResult,
+  ResearchFact,
+  AllowedResearchCategory
 } from '../../types/simple.ts';
 
 import {
@@ -31,6 +34,21 @@ export {
   getSelectableTargetModels
 };
 export type { TargetModel, TargetModelConfig, TargetModelOption, TargetModelGroup };
+
+import { resolveThemeContext, filterIrrelevantVisualClutter, isEligibleNamedEntity } from './themeResolver.ts';
+import { ResearchBroker } from './researchBroker.ts';
+import { planPhysicalInteraction } from './interactionPlanner.ts';
+import { mergeComplementaryPlan } from './complementaryMerge.ts';
+
+export {
+  resolveThemeContext,
+  filterIrrelevantVisualClutter,
+  isEligibleNamedEntity,
+  ResearchBroker,
+  planPhysicalInteraction,
+  mergeComplementaryPlan
+};
+export type { ResearchResult, ResearchFact, AllowedResearchCategory };
 
 // Internal Anti-Slop Safeguards grouped strictly by Section 8 requirements
 export const CORE_ANTI_SLOP_AVOID = [
@@ -766,6 +784,31 @@ export function auditPromptProvenance(
   cleaned = negParts.length > 0
     ? `${cleanPos.trim()}\n\nNEGATIVE / STRICTLY AVOID:\n${negParts.join('NEGATIVE / STRICTLY AVOID:').trim()}`
     : cleanPos.trim();
+
+  // 5. UNTRUSTED WEB CONTENT & PROMPT-INJECTION PURGE
+  const injectionOrWebTokens = [
+    /https?:\/\/[\S]+/gi,
+    /www\.[\S]+/gi,
+    /ignore\s+previous\s+instructions/gi,
+    /system\s*prompt/gi,
+    /developer\s*message/gi,
+    /assistant\s*must/gi
+  ];
+  for (const pattern of injectionOrWebTokens) {
+    if (pattern.test(cleaned)) {
+      purged.push(`Purged untrusted web or injection token matching ${pattern}`);
+      cleaned = cleaned.replace(pattern, '');
+    }
+  }
+
+  // 6. VALIDATE WEB_RESEARCH PROVENANCE (Must have valid accepted research facts)
+  const hasValidResearchFacts = Array.isArray(scenePlan.researchFacts) && scenePlan.researchFacts.length > 0;
+  for (const [key, prov] of Object.entries(scenePlan.provenanceMap || {})) {
+    if (prov === 'WEB_RESEARCH' && !hasValidResearchFacts) {
+      scenePlan.provenanceMap[key] = 'JUSTIFIED_INFERENCE';
+      warnings.push(`Downgraded ungrounded WEB_RESEARCH provenance on "${key}" to JUSTIFIED_INFERENCE`);
+    }
+  }
 
   cleaned = cleaned.replace(/,\s*(?=,)/g, '').replace(/,\s*\./g, '.');
 
@@ -1686,6 +1729,8 @@ redesigning the subject, changing facial identity, changing clothing, artificial
       envText = `Authentic environment integrated from reference (${plan.environmentSource.name}), preserving spatial character and atmosphere`;
     } else if (plan.environmentOwner === 'USER') {
       envText = `Grounded physical setting as explicitly described by the user (${cleanIdea})`;
+    } else if (plan.environment && (plan.provenanceMap?.environment === 'WEB_RESEARCH' || (plan.themeContext?.environmentNeed && plan.provenanceMap?.environment === 'JUSTIFIED_INFERENCE'))) {
+      envText = plan.environment;
     }
 
     finalPrompt = `Photographic YouTube thumbnail, ${arParam}. Directed visual storytelling, authentic and grounded.
@@ -2022,7 +2067,12 @@ export function interpretUserIntent(
 }
 
 // Generate complete photographic prompt tailored for specific target models
-export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThumbnailResult {
+export function generateSimpleThumbnail(
+  input: CreateThumbnailInput,
+  options?: {
+    researchResults?: ResearchResult | ResearchResult[] | null;
+  }
+): CreateThumbnailResult {
   const {
     videoTitle = '',
     ideaDescription = '',
@@ -2045,13 +2095,21 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
   // 0. Hidden Pipeline: Intent Router, Target/Source Resolution & ScenePlan
   const scenePlan = buildScenePlan(input, approachIndex);
 
+  // 0.5 Complementary Pass (Theme Context, Research Facts, Physical Interaction)
+  const themeCtx = resolveThemeContext(input, scenePlan);
+  const rawFacts = options?.researchResults
+    ? (Array.isArray(options.researchResults) ? options.researchResults.flatMap(r => r.facts) : options.researchResults.facts)
+    : undefined;
+  const interactionPlan = planPhysicalInteraction(input, scenePlan, themeCtx, rawFacts);
+  const enrichedPlan = mergeComplementaryPlan(scenePlan, input, themeCtx, options?.researchResults, interactionPlan);
+
   // If this is an edit / reconstruction task (IDENTITY_TRANSFER, REPLACE_OBJECT, CHANGE_ENVIRONMENT)
   if (
-    scenePlan.taskType === 'IDENTITY_TRANSFER' ||
-    scenePlan.taskType === 'REPLACE_OBJECT' ||
-    scenePlan.taskType === 'CHANGE_ENVIRONMENT'
+    enrichedPlan.taskType === 'IDENTITY_TRANSFER' ||
+    enrichedPlan.taskType === 'REPLACE_OBJECT' ||
+    enrichedPlan.taskType === 'CHANGE_ENVIRONMENT'
   ) {
-    const builderResult = buildPromptFromScenePlan(scenePlan, input, approachIndex);
+    const builderResult = buildPromptFromScenePlan(enrichedPlan, input, approachIndex);
     return {
       direction: builderResult.directionPt,
       finalPrompt: builderResult.finalPrompt,
@@ -2059,7 +2117,8 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
       approachIndex,
       typographyPlan: builderResult.typographyPlan,
       scenePlan: builderResult.cleanedPlan,
-      outputMetadata: builderResult.outputMetadata || resolveOutputMetadata(targetModel, aspectRatio)
+      outputMetadata: builderResult.outputMetadata || resolveOutputMetadata(targetModel, aspectRatio),
+      targetModel: normalizeTargetModel(targetModel)
     };
   }
 
@@ -2069,7 +2128,7 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
 
   const {
     subjectEn,
-    contextEn,
+    contextEn: defaultContextEn,
     lightingEn,
     compositionEn,
     expressionEn,
@@ -2077,6 +2136,11 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
     approachTitle,
     hasPerson
   } = interpretUserIntent(videoTitle, ideaDescription, approachIndex, hasPersonRef ? true : undefined, references);
+
+  // If environment was enriched by theme or research, use enriched environment; otherwise keep defaultContextEn
+  const contextEn = (enrichedPlan.environment && (enrichedPlan.provenanceMap.environment === 'WEB_RESEARCH' || (themeCtx.environmentNeed && enrichedPlan.provenanceMap.environment === 'JUSTIFIED_INFERENCE')))
+    ? enrichedPlan.environment
+    : defaultContextEn;
 
   // Context-aware depth of field
   const depthOfField = determineDepthOfField(ideaDescription || videoTitle, approachIndex);
@@ -2100,8 +2164,16 @@ export function generateSimpleThumbnail(input: CreateThumbnailInput): CreateThum
   const productRefs = (references || []).filter(r => r.role === 'PRODUTO');
   if (hasProductRef || isTech) {
     const refNames = productRefs.length > 0 ? ` (${productRefs.map(r => r.name).join(', ')})` : '';
+    const researchedProductFacts = (enrichedPlan.researchFacts || [])
+      .filter(f => f.category === 'PRODUCT_GEOMETRY' || f.category === 'CONTROL_LAYOUT' || f.category === 'SILHOUETTE')
+      .map(f => f.fact);
+
+    const factSuffix = researchedProductFacts.length > 0
+      ? ` Grounded physical characteristics: ${researchedProductFacts.join('. ')}.`
+      : '';
+
     locks.push(
-      `HARDWARE & PRODUCT FIDELITY (MANDATORY)${refNames}: Strictly preserve authentic industrial geometry, chassis proportions, exact physical buttons, analog sticks, ports, screen, tactile materials, and instantly recognizable silhouette. Do NOT automatically copy background setting, composition, or style from the reference photo. Zero AI melting or rubbery deformation.`
+      `HARDWARE & PRODUCT FIDELITY (MANDATORY)${refNames}: Strictly preserve authentic industrial geometry, chassis proportions, exact physical buttons, analog sticks, ports, screen, tactile materials, and instantly recognizable silhouette.${factSuffix} Do NOT automatically copy background setting, composition, or style from the reference photo. Zero AI melting or rubbery deformation.`
     );
     if (hasPerson) {
       // Regra 1: Oclusão natural sem exigir 5 dedos visíveis
@@ -2244,7 +2316,7 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
 
   // Model-specific adjustments rendered via central dispatcher
   let finalPrompt = renderPromptForTargetModel({
-    plan: scenePlan,
+    plan: enrichedPlan,
     input,
     basePrompt: promptBody,
     typographyDirective,
@@ -2252,7 +2324,7 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
   });
 
   // Audit prompt through Provenance Guard to strip any unsupported defaults or leakage
-  const audit = auditPromptProvenance(finalPrompt, scenePlan, references);
+  const audit = auditPromptProvenance(finalPrompt, enrichedPlan, references);
   finalPrompt = audit.cleanedPrompt;
 
   const typographyPlan = buildTypographyPlan(
@@ -2271,12 +2343,39 @@ ENVIRONMENT & OPTICS: ${contextEn}. ${styleTreatment}${depthOfField}, tangible m
     approachIndex,
     typographyPlan,
     scenePlan: {
-      ...scenePlan,
+      ...enrichedPlan,
       unsupportedDetailsRemoved: audit.purged
     },
     outputMetadata: resolveOutputMetadata(targetModel, aspectRatio),
     targetModel: normalizeTargetModel(targetModel)
   };
+}
+
+/**
+ * Asynchronous generation pipeline with Grounded Research Broker integration.
+ * Activates external research only when RESEARCH_ENABLED is true and entity is eligible.
+ */
+export async function generateSimpleThumbnailAsync(
+  input: CreateThumbnailInput
+): Promise<CreateThumbnailResult> {
+  const basePlan = buildScenePlan(input, input.approachIndex || 0);
+  const themeCtx = resolveThemeContext(input, basePlan);
+
+  const researchResults: ResearchResult[] = [];
+  if (ResearchBroker.isResearchEnabled() && themeCtx.researchCandidate) {
+    for (const entity of themeCtx.namedEntities) {
+      if (ResearchBroker.isEligible(entity, 'PRODUCT_GEOMETRY', basePlan)) {
+        const res = await ResearchBroker.resolve({ entity, category: 'PRODUCT_GEOMETRY' });
+        if (res.success) researchResults.push(res);
+      }
+      if (themeCtx.environmentNeed && ResearchBroker.isEligible(entity, 'ENVIRONMENT_TYPE', basePlan)) {
+        const res = await ResearchBroker.resolve({ entity, category: 'ENVIRONMENT_TYPE' });
+        if (res.success) researchResults.push(res);
+      }
+    }
+  }
+
+  return generateSimpleThumbnail(input, { researchResults });
 }
 
 // Builds structured typography recommendation for post-generation design (Section 8)

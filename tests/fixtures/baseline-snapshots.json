@@ -1,0 +1,1398 @@
+{
+  "case_1_explicit_bedroom_steamdeck": {
+    "id": "case_1_explicit_bedroom_steamdeck",
+    "name": "1. Explicit bedroom + Steam Deck",
+    "input": {
+      "videoTitle": "Jogando no meu quarto",
+      "ideaDescription": "Eu sentado no meu quarto segurando meu Steam Deck.",
+      "references": []
+    },
+    "models": {
+      "GERAL": {
+        "targetModel": "GERAL",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "USER",
+        "productOwner": "USER",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "USER_EXPLICIT"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, 16:9 widescreen format. Directed visual storytelling, authentic and grounded.\nSCENE: Eu sentado no meu quarto segurando meu Steam Deck..\nSUBJECT & FRAMING: The creator holding the handheld device naturally toward the camera with anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact. Engaging eye-level medium framing with crisp figure-ground separation and clean negative space.\nHUMAN EXPRESSION: Composed authentic engagement with calm curiosity and natural focus, closed mouth.\nLIGHTING: Soft motivated room lighting with natural directional falloff. Light sources are physically motivated and grounded in the scene.\nENVIRONMENT & OPTICS: Authentic bedroom interior with natural personal decor and grounded physical atmosphere. balanced optical depth that preserves environmental context without distracting from the subject, tangible materials with matte finishes.\nTYPOGRAPHY: Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nPRESERVATION LOCKS:\nHARDWARE & PRODUCT FIDELITY (MANDATORY): Strictly preserve authentic industrial geometry, chassis proportions, exact physical buttons, analog sticks, ports, screen, tactile materials, and instantly recognizable silhouette. Do NOT automatically copy background setting, composition, or style from the reference photo. Zero AI melting or rubbery deformation.\nHAND & OBJECT INTERACTION: Anatomically plausible hands with natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact. Thumbs positioned naturally on controls without chassis melting.\n\nNEGATIVE / STRICTLY AVOID:\ngeneric AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip, impossible arm pose, body proportion drift, wrong geometry, incorrect buttons, incorrect analog sticks, wrong ports, invented vents, wrong screen ratio, incorrect thickness, warped logo, unrecognizable silhouette, deformed hardware geometry, unmotivated rim light, orange/teal lighting by default, purple/blue gaming neon by default, glowing edges, impossible reflections, multiple incompatible light directions, volumetric light without source, too many focal points, everything equally sharp, everything equally saturated, everything equally contrasted, background competing with subject, generic centered stock-photo composition, random floating elements, too many visual metaphors, tiny important story elements, composition failing at thumbnail size, overprocessed HDR, excessive sharpening, fake bokeh, extreme color grading, excessive contrast, artificial clarity, uniform micro-detail, over-saturated skin, random red arrows, random circles, floating emojis, floating logos, lightning, sparks, fire, particles, giant text, generic shocked creator, fake UI, random VS, generic before/after division, no malformed typography, no pseudo-text, no random letters, no inconsistent glyphs, no melted letterforms, no distorted baseline, no incorrect spelling, no unnecessary 3D extrusion, no fake metallic type by default."
+      },
+      "OPENAI_GPT_IMAGE_2_5_SUNBURST": {
+        "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "USER",
+        "productOwner": "USER",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "USER_EXPLICIT"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "GOAL:\nGenerate an authentic, high-impact photographic YouTube thumbnail for \"Eu sentado no meu quarto segurando meu Steam Deck.\". Maximize click-through readability at small mobile feed scale (120px) through clean figure-ground separation and tactile physical realism.\n\nREFERENCE ROLES:\nNo external image references. Ground all elements from explicit concept description.\n\nTARGET IMAGE:\nNone (original photographic composition established from scratch).\n\nCHANGE:\nEstablish complete photographic composition and hero subject based on: \"Eu sentado no meu quarto segurando meu Steam Deck.\".\n\nADAPT:\nAnatomically plausible hands with natural grip, correct visible finger count according to pose and natural occlusion. Balanced optical falloff between subject and background.\n\nPRESERVE:\n1. Natural human facial asymmetry, closed-mouth composed expression, and natural skin texture without plastic smoothing.\n2. Authentic physical materials and tactile textures.\n3. Grounded real-world scale and camera perspective.\n\nENVIRONMENT:\nGrounded physical setting as explicitly requested (\"Eu sentado no meu quarto segurando meu Steam Deck.\"), avoiding generic clutter.\n\nCOMPOSITION:\n16:9 widescreen photographic framing (16:9 widescreen format). Clean figure-ground separation with bold subject silhouette optimized for instant readability at 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth. Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nLIGHTING:\nPhysically motivated illumination with clean directional key light, subtle natural fill, and soft realistic shadow falloff. Directional coherence across all elements. Zero unmotivated neon rim lights, laser glows, or synthetic halos.\n\nAVOID:\nface swap, face paste, flat frontal face pasted on angled head, distorted skull geometry, plastic waxy skin, beauty filter jaw slimming, open mouth screaming shock face, deformed hands, extra fingers, duplicated digits, intersecting hardware, floating embers, flying sparks, neon blue-purple wash, unmotivated rim light, domestic clutter (sofas, bedroom lamps, desks unless requested), generic AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip.",
+        "outputMetadata": {
+          "modelId": "gpt-image-2.5-sunburst",
+          "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      },
+      "GOOGLE_NANO_BANANA_2": {
+        "targetModel": "GOOGLE_NANO_BANANA_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "USER",
+        "productOwner": "USER",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "USER_EXPLICIT"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE:\nEu sentado no meu quarto segurando meu Steam Deck.\n\nREFERENCE ROLES:\nNone (standalone visual composition generated from scratch).\n\nWHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE:\n- Visual Elements: Harmonious natural composition generated with realistic physical fidelity.\n\nWHAT CHANGES:\nEstablish complete photographic thumbnail composition based on: \"Eu sentado no meu quarto segurando meu Steam Deck.\".\n\nWHAT REMAINS:\n1. Composed human expression with closed mouth and natural skin texture without plastic smoothing.\n2. Grounded real-world scale and authentic physical materials.\n3. Clean optical separation with generous negative space.\n\nPHOTOGRAPHIC DIRECTIVES:\n16:9 widescreen format (16:9 widescreen format). 35mm lens perspective preserving authentic spatial depth. Directed visual storytelling with bold subject silhouette optimized for 120px mobile thumbnail scale. Motivated physical lighting with natural directional key light and soft shadow falloff. Zero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic clutter (no bedrooms, sofas, desks, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "gemini-3.1-flash-image",
+          "targetModel": "GOOGLE_NANO_BANANA_2",
+          "aspectRatioHint": "2048x1152",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "MIDJOURNEY_V8_2": {
+        "targetModel": "MIDJOURNEY_V8_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "USER",
+        "productOwner": "USER",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "USER_EXPLICIT"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, Eu sentado no meu quarto segurando meu Steam Deck., compelling hero presentation with clean silhouette and immediate readability at 120px mobile thumbnail scale, natural composed human expression with closed mouth, motivated directional physical key light with soft shadow falloff, 35mm lens perspective, authentic tactile textures, generous negative space\n\n--ar 16:9 --v 8.2",
+        "outputMetadata": {
+          "modelId": "v8.2",
+          "targetModel": "MIDJOURNEY_V8_2",
+          "aspectRatioHint": "--ar 16:9",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "FLUX_2_MAX": {
+        "targetModel": "FLUX_2_MAX",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "USER",
+        "productOwner": "USER",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "USER_EXPLICIT"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE INSTRUCTION:\nPhotographic YouTube thumbnail, Eu sentado no meu quarto segurando meu Steam Deck.. Subject presented with bold silhouette and clear optical separation optimized for 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth.\n\nPOSITIVE VISUAL ATTRIBUTES:\n- Natural skin texture with realistic pores, authentic tonal variation, and zero plastic smoothing.\n- Physically motivated illumination with clean directional key light and soft natural shadow falloff.\n- Restrained believable human expression appropriate to the scene with closed mouth.\n- Controlled optical separation with a readable background and generous negative space.\n- Anatomically plausible hands with natural grip and correct visible finger count according to pose.\n- 35mm digital camera perspective (16:9 widescreen format) with tactile physical materials. Maximum photographic detail and strict instruction following.\n\nPRESERVATION CONSTRAINTS:\nZero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic room clutter (no bedrooms, living rooms, sofas, desks, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "flux-2-max",
+          "targetModel": "FLUX_2_MAX",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "high",
+            "max"
+          ]
+        }
+      }
+    }
+  },
+  "case_2_identity_transfer_crimson_desert": {
+    "id": "case_2_identity_transfer_crimson_desert",
+    "name": "2. Identity transfer with TARGET (Crimson Desert-style case)",
+    "input": {
+      "videoTitle": "A Jornada no Deserto Carmesim",
+      "ideaDescription": "Meu rosto adaptado no guerreiro segurando o mapa mágico",
+      "references": [
+        {
+          "id": "ref-face",
+          "name": "Minha Foto",
+          "role": "PESSOA",
+          "url": "https://example.com/face.jpg"
+        },
+        {
+          "id": "ref-master",
+          "name": "Guerreiro Desert",
+          "role": "IMAGEM_ALVO",
+          "url": "https://example.com/target.jpg",
+          "isTarget": true
+        }
+      ]
+    },
+    "models": {
+      "GERAL": {
+        "targetModel": "GERAL",
+        "taskType": "IDENTITY_TRANSFER",
+        "environmentOwner": "TARGET",
+        "productOwner": "NONE",
+        "poseOwner": "TARGET",
+        "hairOwner": "TARGET",
+        "beardOwner": "TARGET",
+        "provenanceMap": {
+          "face": "PERSON_REFERENCE",
+          "head_pose": "TARGET_IMAGE",
+          "hair": "TARGET_IMAGE",
+          "beard": "TARGET_IMAGE",
+          "costume": "TARGET_IMAGE",
+          "body_and_props": "TARGET_IMAGE",
+          "camera": "TARGET_IMAGE",
+          "environment": "TARGET_IMAGE",
+          "lighting": "TARGET_IMAGE"
+        },
+        "change": [
+          "Reconstruct facial anatomy to embody the authentic identity from reference (Minha Foto): facial proportions, eye shape, nose structure, mouth, bone structure, and true age."
+        ],
+        "preserve": [
+          "Target character head pose, 3D skull orientation, perspective, tilt, and gaze direction from master (Guerreiro Desert).",
+          "Exact target character hairstyle, hair color, and hair volume from master (Guerreiro Desert).",
+          "Exact target character facial hair / beard styling and texture from master (Guerreiro Desert).",
+          "Exact target character armor, costume, clothing, materials, and physical textures.",
+          "Target body pose, physical build, and held props (including holding the map / equipment) with anatomically plausible hands.",
+          "Camera angle, framing distance, and optical perspective from target master.",
+          "Target environment and background setting exactly as in master image (Guerreiro Desert)."
+        ],
+        "finalPrompt": "Photographic YouTube thumbnail, 16:9 widescreen format. Directed visual storytelling, authentic and grounded.\nSCENE: Meu rosto adaptado no guerreiro segurando o mapa mágico.\nTASK: IDENTITY_TRANSFER (ANATOMICAL RECONSTRUCTION — NOT A FACE PASTE).\n\nTARGET MASTER STRUCTURE (Guerreiro Desert):\n- Subject: Target character from (Guerreiro Desert).\n- Composition & Camera: Exact camera angle, 16:9 framing distance, body posture, head tilt, and 3D skull orientation from master image.\n- Armor & Clothing: Exact target character armor, physical fabrics, metal finishes, and weathered textures.\n- Props & Hands: Holding the map and physical equipment naturally with anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers.\n- Hair & Facial Hair: Exact hairstyle, hair color, texture, and hair volume preserved from the target character master (Guerreiro Desert). Exact facial hair / beard styling and texture preserved from the target character master (Guerreiro Desert).\n\nIDENTITY RECONSTRUCTION DIRECTIVE (MANDATORY):\nReconstruct the target character's facial anatomy so that the character naturally and authentically embodies the facial identity of the individual in the reference (Minha Foto): recognizable facial bone structure, eye shape, nose structure, mouth proportions, natural facial asymmetry, and true age.\nCRITICAL ANATOMICAL RULES:\n1. Strictly adapt the facial features to the target character's 3D skull geometry, head angle, head tilt, gaze perspective, and scene lighting.\n2. Do NOT paste a flat or frontal face onto the target head.\n3. Do NOT alter the target character's body pose, armor, hair, costume, or held props.\n4. Zero beauty filters, zero plastic skin smoothing, zero jaw slimming. The result must appear as the same real person organically inhabiting the target character's body, world, and physical reality.\n\nENVIRONMENT & LIGHTING:\nExact environmental setting and background preserved from the target master image (Guerreiro Desert). Physically motivated scene lighting harmonized between character and environment, with natural directional shadow falloff and realistic specular highlights on armor and skin.\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nNEGATIVE / STRICTLY AVOID:\npaste face, overlay face, flat frontal face on rotated head, plastic waxy skin, beauty filter jaw slimming, cartoon saturation, generic shocked expression, changing target armor, changing target pose, changing target props, domestic room, sofa, desk lamp, floor lamp, living room furniture, handheld gaming console, device teardown, generic AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip, impossible arm pose, body proportion drift, wrong geometry, incorrect buttons."
+      },
+      "OPENAI_GPT_IMAGE_2_5_SUNBURST": {
+        "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+        "taskType": "IDENTITY_TRANSFER",
+        "environmentOwner": "TARGET",
+        "productOwner": "NONE",
+        "poseOwner": "TARGET",
+        "hairOwner": "TARGET",
+        "beardOwner": "TARGET",
+        "provenanceMap": {
+          "face": "PERSON_REFERENCE",
+          "head_pose": "TARGET_IMAGE",
+          "hair": "TARGET_IMAGE",
+          "beard": "TARGET_IMAGE",
+          "costume": "TARGET_IMAGE",
+          "body_and_props": "TARGET_IMAGE",
+          "camera": "TARGET_IMAGE",
+          "environment": "TARGET_IMAGE",
+          "lighting": "TARGET_IMAGE"
+        },
+        "change": [
+          "Reconstruct facial anatomy to embody the authentic identity from reference (Minha Foto): facial proportions, eye shape, nose structure, mouth, bone structure, and true age."
+        ],
+        "preserve": [
+          "Target character head pose, 3D skull orientation, perspective, tilt, and gaze direction from master (Guerreiro Desert).",
+          "Exact target character hairstyle, hair color, and hair volume from master (Guerreiro Desert).",
+          "Exact target character facial hair / beard styling and texture from master (Guerreiro Desert).",
+          "Exact target character armor, costume, clothing, materials, and physical textures.",
+          "Target body pose, physical build, and held props (including holding the map / equipment) with anatomically plausible hands.",
+          "Camera angle, framing distance, and optical perspective from target master.",
+          "Target environment and background setting exactly as in master image (Guerreiro Desert)."
+        ],
+        "finalPrompt": "GOAL:\nExecute high-fidelity photographic YouTube thumbnail with precise anatomical identity reconstruction, organically embodying source individual facial identity into target character body and world without synthetic AI gloss or beauty filters.\n\nREFERENCE ROLES:\n- PERSON / IDENTITY SOURCE: \"Minha Foto\"\n- TARGET IMAGE / MASTER: \"Guerreiro Desert\"\n\nTARGET STRUCTURE:\nMaster character image (\"Guerreiro Desert\"): Strictly preserves master composition, camera angle, 16:9 framing distance, body posture, head tilt, and 3D skull orientation. Exact target character armor, physical fabrics, metal finishes, weathered textures, hair styling (hairstyle, hair color, and texture preserved from target master (Guerreiro Desert)), and handheld physical props.\n\nIDENTITY SOURCE:\nPerson reference (\"Minha Foto\"): Reconstruct the target subject so it naturally has the recognizable identity of the source person while preserving target geometry, perspective, pose and lighting. Incorporate recognizable bone structure, eye shape, nose structure, mouth proportions, natural facial asymmetry, and true age.\n\nCHANGE:\nReconstruct facial anatomy to embody the source individual (\"Minha Foto\"). Strictly map facial bone structure and features onto target character's 3D skull angle, head tilt, and gaze direction without altering target body posture, armor, hair styling, or physical equipment.\n\nADAPT:\nHarmonize skin tones, directional key lighting, and ambient light bounce to match target scene. Motivated specular highlights on skin pores without plastic smoothing. Seamless anatomical transition at hairline and neck. Natural hand grip around equipment with correct visible finger count according to pose and natural occlusion.\n\nPRESERVE:\n1. Master character body posture, head angle, 3D skull rotation, and eye gaze direction.\n2. Exact armor / clothing fabrics, metal finishes, weathered textures, and physical seams.\n3. Handheld props, equipment, and finger contact placement.\n4. Hair & beard styling: hairstyle, hair color, and texture preserved from target master (Guerreiro Desert), facial hair styling preserved from target master (Guerreiro Desert).\n5. Target background setting and atmospheric depth.\n\nENVIRONMENT:\nExact background environment preserved from master photo (\"Guerreiro Desert\").\n\nCOMPOSITION:\n16:9 widescreen photographic framing (16:9 widescreen format). Clean figure-ground separation with bold subject silhouette optimized for instant readability at 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth. Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nLIGHTING:\nPhysically motivated illumination with clean directional key light, subtle natural fill, and soft realistic shadow falloff. Directional coherence across all elements. Zero unmotivated neon rim lights, laser glows, or synthetic halos.\n\nAVOID:\nface swap, face paste, flat frontal face pasted on angled head, distorted skull geometry, plastic waxy skin, beauty filter jaw slimming, open mouth screaming shock face, deformed hands, extra fingers, duplicated digits, intersecting hardware, floating embers, flying sparks, neon blue-purple wash, unmotivated rim light, domestic clutter (sofas, bedroom lamps, desks unless requested), generic AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip.",
+        "outputMetadata": {
+          "modelId": "gpt-image-2.5-sunburst",
+          "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      },
+      "GOOGLE_NANO_BANANA_2": {
+        "targetModel": "GOOGLE_NANO_BANANA_2",
+        "taskType": "IDENTITY_TRANSFER",
+        "environmentOwner": "TARGET",
+        "productOwner": "NONE",
+        "poseOwner": "TARGET",
+        "hairOwner": "TARGET",
+        "beardOwner": "TARGET",
+        "provenanceMap": {
+          "face": "PERSON_REFERENCE",
+          "head_pose": "TARGET_IMAGE",
+          "hair": "TARGET_IMAGE",
+          "beard": "TARGET_IMAGE",
+          "costume": "TARGET_IMAGE",
+          "body_and_props": "TARGET_IMAGE",
+          "camera": "TARGET_IMAGE",
+          "environment": "TARGET_IMAGE",
+          "lighting": "TARGET_IMAGE"
+        },
+        "change": [
+          "Reconstruct facial anatomy to embody the authentic identity from reference (Minha Foto): facial proportions, eye shape, nose structure, mouth, bone structure, and true age."
+        ],
+        "preserve": [
+          "Target character head pose, 3D skull orientation, perspective, tilt, and gaze direction from master (Guerreiro Desert).",
+          "Exact target character hairstyle, hair color, and hair volume from master (Guerreiro Desert).",
+          "Exact target character facial hair / beard styling and texture from master (Guerreiro Desert).",
+          "Exact target character armor, costume, clothing, materials, and physical textures.",
+          "Target body pose, physical build, and held props (including holding the map / equipment) with anatomically plausible hands.",
+          "Camera angle, framing distance, and optical perspective from target master.",
+          "Target environment and background setting exactly as in master image (Guerreiro Desert)."
+        ],
+        "finalPrompt": "SCENE:\nMeu rosto adaptado no guerreiro segurando o mapa mágico\n\nREFERENCE ROLES:\nImage 1 = [Role: PESSOA] \"Minha Foto\"\nImage 2 = [Role: IMAGEM_ALVO] \"Guerreiro Desert\"\n\nWHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE:\n- Facial Identity: Image 1 (\"Minha Foto\") controls recognizable facial bone structure, true age, eye shape, and expressions.\n- Body & Master Structure: Image 2 (\"Guerreiro Desert\") controls exact body posture, 3D skull angle, head tilt, armor/clothing fabrics, and equipment.\n- Hairstyle & Hair Texture: Strictly controlled by Image 2 (\"Guerreiro Desert\").\n- Facial Hair / Beard: Strictly controlled by Image 2 (\"Guerreiro Desert\").\n- Environment & Lighting: Preserved from Image 2 (\"Guerreiro Desert\").\n\nWHAT CHANGES:\nReconstruct the target character's facial anatomy so that the character naturally embodies the recognizable identity of the individual in Image 1 (\"Minha Foto\"): authentic bone structure, eye shape, nose, mouth proportions, natural asymmetry, and true age. Reconstruct organically onto the target 3D skull angle without flat face pasting.\n\nWHAT REMAINS:\n1. Master character body posture, head rotation, eye gaze direction, and 16:9 framing.\n2. Exact armor finishes, physical fabrics, weathered textures, and physical seams from Image 2 (\"Guerreiro Desert\").\n3. Handheld props and equipment held naturally with anatomically plausible hands and correct visible finger count.\n4. Hairstyle and facial hair strictly preserved from target character master.\n5. Target background setting and directional lighting coherence.\n\nPHOTOGRAPHIC DIRECTIVES:\n16:9 widescreen format (16:9 widescreen format). 35mm lens perspective preserving authentic spatial depth. Directed visual storytelling with bold subject silhouette optimized for 120px mobile thumbnail scale. Motivated physical lighting with natural directional key light and soft shadow falloff. Zero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic clutter (no bedrooms, sofas, desks, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "gemini-3.1-flash-image",
+          "targetModel": "GOOGLE_NANO_BANANA_2",
+          "aspectRatioHint": "2048x1152",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "MIDJOURNEY_V8_2": {
+        "targetModel": "MIDJOURNEY_V8_2",
+        "taskType": "IDENTITY_TRANSFER",
+        "environmentOwner": "TARGET",
+        "productOwner": "NONE",
+        "poseOwner": "TARGET",
+        "hairOwner": "TARGET",
+        "beardOwner": "TARGET",
+        "provenanceMap": {
+          "face": "PERSON_REFERENCE",
+          "head_pose": "TARGET_IMAGE",
+          "hair": "TARGET_IMAGE",
+          "beard": "TARGET_IMAGE",
+          "costume": "TARGET_IMAGE",
+          "body_and_props": "TARGET_IMAGE",
+          "camera": "TARGET_IMAGE",
+          "environment": "TARGET_IMAGE",
+          "lighting": "TARGET_IMAGE"
+        },
+        "change": [
+          "Reconstruct facial anatomy to embody the authentic identity from reference (Minha Foto): facial proportions, eye shape, nose structure, mouth, bone structure, and true age."
+        ],
+        "preserve": [
+          "Target character head pose, 3D skull orientation, perspective, tilt, and gaze direction from master (Guerreiro Desert).",
+          "Exact target character hairstyle, hair color, and hair volume from master (Guerreiro Desert).",
+          "Exact target character facial hair / beard styling and texture from master (Guerreiro Desert).",
+          "Exact target character armor, costume, clothing, materials, and physical textures.",
+          "Target body pose, physical build, and held props (including holding the map / equipment) with anatomically plausible hands.",
+          "Camera angle, framing distance, and optical perspective from target master.",
+          "Target environment and background setting exactly as in master image (Guerreiro Desert)."
+        ],
+        "finalPrompt": "Photographic YouTube thumbnail, Meu rosto adaptado no guerreiro segurando o mapa mágico, featuring the person from \"Minha Foto\" organically embodied as the character from \"Guerreiro Desert\", preserving the target character's authentic hairstyle, hair texture, and volume from \"Guerreiro Desert\" and exact facial hair from \"Guerreiro Desert\", wearing the exact heavy worn armor and costume, holding the map naturally with anatomically plausible hands. Grounded realism, motivated directional physical lighting, 35mm lens perspective, sharp subject focus with clean separation, authentic textures without plastic smoothing\n\n--ar 16:9 --v 8.2",
+        "outputMetadata": {
+          "modelId": "v8.2",
+          "targetModel": "MIDJOURNEY_V8_2",
+          "aspectRatioHint": "--ar 16:9",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "FLUX_2_MAX": {
+        "targetModel": "FLUX_2_MAX",
+        "taskType": "IDENTITY_TRANSFER",
+        "environmentOwner": "TARGET",
+        "productOwner": "NONE",
+        "poseOwner": "TARGET",
+        "hairOwner": "TARGET",
+        "beardOwner": "TARGET",
+        "provenanceMap": {
+          "face": "PERSON_REFERENCE",
+          "head_pose": "TARGET_IMAGE",
+          "hair": "TARGET_IMAGE",
+          "beard": "TARGET_IMAGE",
+          "costume": "TARGET_IMAGE",
+          "body_and_props": "TARGET_IMAGE",
+          "camera": "TARGET_IMAGE",
+          "environment": "TARGET_IMAGE",
+          "lighting": "TARGET_IMAGE"
+        },
+        "change": [
+          "Reconstruct facial anatomy to embody the authentic identity from reference (Minha Foto): facial proportions, eye shape, nose structure, mouth, bone structure, and true age."
+        ],
+        "preserve": [
+          "Target character head pose, 3D skull orientation, perspective, tilt, and gaze direction from master (Guerreiro Desert).",
+          "Exact target character hairstyle, hair color, and hair volume from master (Guerreiro Desert).",
+          "Exact target character facial hair / beard styling and texture from master (Guerreiro Desert).",
+          "Exact target character armor, costume, clothing, materials, and physical textures.",
+          "Target body pose, physical build, and held props (including holding the map / equipment) with anatomically plausible hands.",
+          "Camera angle, framing distance, and optical perspective from target master.",
+          "Target environment and background setting exactly as in master image (Guerreiro Desert)."
+        ],
+        "finalPrompt": "SCENE INSTRUCTION:\nUse the person from Image 1 (\"Minha Foto\") for facial identity. Use Image 2 (\"Guerreiro Desert\") as the structural target for body posture, 3D skull angle, head tilt, armor fabrics, and physical equipment. Reconstruct the facial anatomy organically to match Image 1's authentic bone structure, eye shape, and true age, while strictly preserving the target character's authentic hairstyle and hair texture from Image 2 (\"Guerreiro Desert\") and exact facial hair from Image 2, and hands holding the map with natural plausible grip and correct visible finger count.\n\nPOSITIVE VISUAL ATTRIBUTES:\n- Natural skin texture with realistic pores, authentic tonal variation, and zero plastic smoothing.\n- Physically motivated illumination with clean directional key light and soft natural shadow falloff.\n- Restrained believable human expression appropriate to the scene with closed mouth.\n- Controlled optical separation with a readable background and generous negative space.\n- Anatomically plausible hands with natural grip and correct visible finger count according to pose.\n- 35mm digital camera perspective (16:9 widescreen format) with tactile physical materials. Maximum photographic detail and strict instruction following.\n\nPRESERVATION CONSTRAINTS:\nDo not alter the target character armor, physical equipment, hairstyle, facial hair, body posture, or background setting. Zero synthetic AI gloss or plastic face paste.\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "flux-2-max",
+          "targetModel": "FLUX_2_MAX",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "high",
+            "max"
+          ]
+        }
+      }
+    }
+  },
+  "case_3_produto_reference_present": {
+    "id": "case_3_produto_reference_present",
+    "name": "3. PRODUTO reference present",
+    "input": {
+      "videoTitle": "Unboxing Gamer",
+      "ideaDescription": "Mostrando o novo headset gamer na mão.",
+      "references": [
+        {
+          "id": "ref-prod",
+          "name": "Headset Pro X",
+          "role": "PRODUTO",
+          "url": "https://example.com/headset.jpg"
+        }
+      ]
+    },
+    "models": {
+      "GERAL": {
+        "targetModel": "GERAL",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "PRODUCT_REF",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, 16:9 widescreen format. Directed visual storytelling, authentic and grounded.\nSCENE: Mostrando o novo headset gamer na mão..\nSUBJECT & FRAMING: Atmospheric scene of the weathered structure with tactile cracked concrete, creeping moss, decaying foliage, and authentic environmental aging. Intentional 16:9 framing guiding the eye directly to the shadowy central opening with generous negative space.\nLIGHTING: Subdued natural daylight filtering through the trees, creating deep realistic shadows without fake digital mist. Light sources are physically motivated and grounded in the scene.\nENVIRONMENT & OPTICS: Grounded real-world outdoor location with authentic atmospheric depth, honest moss texture, and organic shadows. natural photographic depth of field with organic optical falloff, softly defocusing the background to prioritize subject readability, tangible materials with matte finishes.\nTYPOGRAPHY: Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nPRESERVATION LOCKS:\nHARDWARE & PRODUCT FIDELITY (MANDATORY) (Headset Pro X): Strictly preserve authentic industrial geometry, chassis proportions, exact physical buttons, analog sticks, ports, screen, tactile materials, and instantly recognizable silhouette. Do NOT automatically copy background setting, composition, or style from the reference photo. Zero AI melting or rubbery deformation.\n\nNEGATIVE / STRICTLY AVOID:\ngeneric AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip, impossible arm pose, body proportion drift, wrong geometry, incorrect buttons, incorrect analog sticks, wrong ports, invented vents, wrong screen ratio, incorrect thickness, warped logo, unrecognizable silhouette, deformed hardware geometry, unmotivated rim light, orange/teal lighting by default, purple/blue gaming neon by default, glowing edges, impossible reflections, multiple incompatible light directions, volumetric light without source, too many focal points, everything equally sharp, everything equally saturated, everything equally contrasted, background competing with subject, generic centered stock-photo composition, random floating elements, too many visual metaphors, tiny important story elements, composition failing at thumbnail size, overprocessed HDR, excessive sharpening, fake bokeh, extreme color grading, excessive contrast, artificial clarity, uniform micro-detail, over-saturated skin, random red arrows, random circles, floating emojis, floating logos, lightning, sparks, fire, particles, giant text, generic shocked creator, fake UI, random VS, generic before/after division, no malformed typography, no pseudo-text, no random letters, no inconsistent glyphs, no melted letterforms, no distorted baseline, no incorrect spelling, no unnecessary 3D extrusion, no fake metallic type by default."
+      },
+      "OPENAI_GPT_IMAGE_2_5_SUNBURST": {
+        "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "PRODUCT_REF",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "GOAL:\nGenerate an authentic, high-impact photographic YouTube thumbnail for \"Mostrando o novo headset gamer na mão.\". Maximize click-through readability at small mobile feed scale (120px) through clean figure-ground separation and tactile physical realism.\n\nREFERENCE ROLES:\n- PRODUCT / HARDWARE: \"Headset Pro X\"\n\nTARGET IMAGE:\nNone (original photographic composition established from scratch).\n\nCHANGE:\nEstablish complete photographic composition and hero subject based on: \"Mostrando o novo headset gamer na mão.\".\n\nADAPT:\nAnatomically plausible hands with natural grip, correct visible finger count according to pose and natural occlusion. Balanced optical falloff between subject and background.\n\nPRESERVE:\n1. Natural human facial asymmetry, closed-mouth composed expression, and natural skin texture without plastic smoothing.\n2. Authentic physical materials and tactile textures.\n3. Grounded real-world scale and camera perspective.\n\nENVIRONMENT:\nClean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on primary subject without domestic clutter (no unrequested clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces or lamps).\n\nCOMPOSITION:\n16:9 widescreen photographic framing (16:9 widescreen format). Clean figure-ground separation with bold subject silhouette optimized for instant readability at 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth. Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nLIGHTING:\nPhysically motivated illumination with clean directional key light, subtle natural fill, and soft realistic shadow falloff. Directional coherence across all elements. Zero unmotivated neon rim lights, laser glows, or synthetic halos.\n\nAVOID:\nface swap, face paste, flat frontal face pasted on angled head, distorted skull geometry, plastic waxy skin, beauty filter jaw slimming, open mouth screaming shock face, deformed hands, extra fingers, duplicated digits, intersecting hardware, floating embers, flying sparks, neon blue-purple wash, unmotivated rim light, domestic clutter (clean neutral background with generous negative spaces, clean neutral background with generous negative space lamps, clean neutral background with generous negative spaces unless requested), generic AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip.",
+        "outputMetadata": {
+          "modelId": "gpt-image-2.5-sunburst",
+          "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      },
+      "GOOGLE_NANO_BANANA_2": {
+        "targetModel": "GOOGLE_NANO_BANANA_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "PRODUCT_REF",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE:\nMostrando o novo headset gamer na mão.\n\nREFERENCE ROLES:\nImage 1 = [Role: PRODUTO] \"Headset Pro X\"\n\nWHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE:\n- Visual Elements: Controlled by provided references as primary visual anchors.\n\nWHAT CHANGES:\nEstablish complete photographic thumbnail composition based on: \"Mostrando o novo headset gamer na mão.\".\n\nWHAT REMAINS:\n1. Composed human expression with closed mouth and natural skin texture without plastic smoothing.\n2. Grounded real-world scale and authentic physical materials.\n3. Clean optical separation with generous negative space.\n\nPHOTOGRAPHIC DIRECTIVES:\n16:9 widescreen format (16:9 widescreen format). 35mm lens perspective preserving authentic spatial depth. Directed visual storytelling with bold subject silhouette optimized for 120px mobile thumbnail scale. Motivated physical lighting with natural directional key light and soft shadow falloff. Zero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic clutter (no clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "gemini-3.1-flash-image",
+          "targetModel": "GOOGLE_NANO_BANANA_2",
+          "aspectRatioHint": "2048x1152",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "MIDJOURNEY_V8_2": {
+        "targetModel": "MIDJOURNEY_V8_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "PRODUCT_REF",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, Mostrando o novo headset gamer na mão., compelling hero presentation with clean silhouette and immediate readability at 120px mobile thumbnail scale, natural composed human expression with closed mouth, motivated directional physical key light with soft shadow falloff, 35mm lens perspective, authentic tactile textures, generous negative space\n\n--ar 16:9 --v 8.2",
+        "outputMetadata": {
+          "modelId": "v8.2",
+          "targetModel": "MIDJOURNEY_V8_2",
+          "aspectRatioHint": "--ar 16:9",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "FLUX_2_MAX": {
+        "targetModel": "FLUX_2_MAX",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "PRODUCT_REF",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE INSTRUCTION:\nPhotographic YouTube thumbnail, Mostrando o novo headset gamer na mão.. Subject presented with bold silhouette and clear optical separation optimized for 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth.\n\nPOSITIVE VISUAL ATTRIBUTES:\n- Natural skin texture with realistic pores, authentic tonal variation, and zero plastic smoothing.\n- Physically motivated illumination with clean directional key light and soft natural shadow falloff.\n- Restrained believable human expression appropriate to the scene with closed mouth.\n- Controlled optical separation with a readable background and generous negative space.\n- Anatomically plausible hands with natural grip and correct visible finger count according to pose.\n- 35mm digital camera perspective (16:9 widescreen format) with tactile physical materials. Maximum photographic detail and strict instruction following.\n\nPRESERVATION CONSTRAINTS:\nZero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic room clutter (no clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "flux-2-max",
+          "targetModel": "FLUX_2_MAX",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "high",
+            "max"
+          ]
+        }
+      }
+    }
+  },
+  "case_4_explicit_unusual_hand_pose": {
+    "id": "case_4_explicit_unusual_hand_pose",
+    "name": "4. Explicit unusual hand pose",
+    "input": {
+      "videoTitle": "Pose Incomum",
+      "ideaDescription": "Eu segurando o handheld acima da cabeça com uma mão.",
+      "references": []
+    },
+    "models": {
+      "GERAL": {
+        "targetModel": "GERAL",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, 16:9 widescreen format. Directed visual storytelling, authentic and grounded.\nSCENE: Eu segurando o handheld acima da cabeça com uma mão..\nSUBJECT & FRAMING: A person presenting the primary subject with genuine ease and natural composed posture. Eye-level conversational angle, crisp separation of subject from background through natural optical perspective.\nHUMAN EXPRESSION: Direct engaging look toward the viewer with a subtle, confident smirk conveying genuine satisfaction without shouting.\nLIGHTING: Clean motivated key illumination with soft natural shadow falloff, emphasizing genuine physical textures and form without artificial glare. Light sources are physically motivated and grounded in the scene.\nENVIRONMENT & OPTICS: Clean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on the primary subject without domestic clutter. natural photographic depth of field with organic optical falloff, softly defocusing the background to prioritize subject readability, tangible materials with matte finishes.\nTYPOGRAPHY: Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nNEGATIVE / STRICTLY AVOID:\ngeneric AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip, impossible arm pose, body proportion drift, wrong geometry, incorrect buttons, incorrect analog sticks, wrong ports, invented vents, wrong screen ratio, incorrect thickness, warped logo, unrecognizable silhouette, deformed hardware geometry, unmotivated rim light, orange/teal lighting by default, purple/blue gaming neon by default, glowing edges, impossible reflections, multiple incompatible light directions, volumetric light without source, too many focal points, everything equally sharp, everything equally saturated, everything equally contrasted, background competing with subject, generic centered stock-photo composition, random floating elements, too many visual metaphors, tiny important story elements, composition failing at thumbnail size, overprocessed HDR, excessive sharpening, fake bokeh, extreme color grading, excessive contrast, artificial clarity, uniform micro-detail, over-saturated skin, random red arrows, random circles, floating emojis, floating logos, lightning, sparks, fire, particles, giant text, generic shocked creator, fake UI, random VS, generic before/after division, no malformed typography, no pseudo-text, no random letters, no inconsistent glyphs, no melted letterforms, no distorted baseline, no incorrect spelling, no unnecessary 3D extrusion, no fake metallic type by default."
+      },
+      "OPENAI_GPT_IMAGE_2_5_SUNBURST": {
+        "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "GOAL:\nGenerate an authentic, high-impact photographic YouTube thumbnail for \"Eu segurando o handheld acima da cabeça com uma mão.\". Maximize click-through readability at small mobile feed scale (120px) through clean figure-ground separation and tactile physical realism.\n\nREFERENCE ROLES:\nNo external image references. Ground all elements from explicit concept description.\n\nTARGET IMAGE:\nNone (original photographic composition established from scratch).\n\nCHANGE:\nEstablish complete photographic composition and hero subject based on: \"Eu segurando o handheld acima da cabeça com uma mão.\".\n\nADAPT:\nAnatomically plausible hands with natural grip, correct visible finger count according to pose and natural occlusion. Balanced optical falloff between subject and background.\n\nPRESERVE:\n1. Natural human facial asymmetry, closed-mouth composed expression, and natural skin texture without plastic smoothing.\n2. Authentic physical materials and tactile textures.\n3. Grounded real-world scale and camera perspective.\n\nENVIRONMENT:\nClean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on primary subject without domestic clutter (no unrequested clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces or lamps).\n\nCOMPOSITION:\n16:9 widescreen photographic framing (16:9 widescreen format). Clean figure-ground separation with bold subject silhouette optimized for instant readability at 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth. Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nLIGHTING:\nPhysically motivated illumination with clean directional key light, subtle natural fill, and soft realistic shadow falloff. Directional coherence across all elements. Zero unmotivated neon rim lights, laser glows, or synthetic halos.\n\nAVOID:\nface swap, face paste, flat frontal face pasted on angled head, distorted skull geometry, plastic waxy skin, beauty filter jaw slimming, open mouth screaming shock face, deformed hands, extra fingers, duplicated digits, intersecting hardware, floating embers, flying sparks, neon blue-purple wash, unmotivated rim light, domestic clutter (clean neutral background with generous negative spaces, clean neutral background with generous negative space lamps, clean neutral background with generous negative spaces unless requested), generic AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip.",
+        "outputMetadata": {
+          "modelId": "gpt-image-2.5-sunburst",
+          "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      },
+      "GOOGLE_NANO_BANANA_2": {
+        "targetModel": "GOOGLE_NANO_BANANA_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE:\nEu segurando o handheld acima da cabeça com uma mão.\n\nREFERENCE ROLES:\nNone (standalone visual composition generated from scratch).\n\nWHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE:\n- Visual Elements: Harmonious natural composition generated with realistic physical fidelity.\n\nWHAT CHANGES:\nEstablish complete photographic thumbnail composition based on: \"Eu segurando o handheld acima da cabeça com uma mão.\".\n\nWHAT REMAINS:\n1. Composed human expression with closed mouth and natural skin texture without plastic smoothing.\n2. Grounded real-world scale and authentic physical materials.\n3. Clean optical separation with generous negative space.\n\nPHOTOGRAPHIC DIRECTIVES:\n16:9 widescreen format (16:9 widescreen format). 35mm lens perspective preserving authentic spatial depth. Directed visual storytelling with bold subject silhouette optimized for 120px mobile thumbnail scale. Motivated physical lighting with natural directional key light and soft shadow falloff. Zero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic clutter (no clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "gemini-3.1-flash-image",
+          "targetModel": "GOOGLE_NANO_BANANA_2",
+          "aspectRatioHint": "2048x1152",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "MIDJOURNEY_V8_2": {
+        "targetModel": "MIDJOURNEY_V8_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, Eu segurando o handheld acima da cabeça com uma mão., compelling hero presentation with clean silhouette and immediate readability at 120px mobile thumbnail scale, natural composed human expression with closed mouth, motivated directional physical key light with soft shadow falloff, 35mm lens perspective, authentic tactile textures, generous negative space\n\n--ar 16:9 --v 8.2",
+        "outputMetadata": {
+          "modelId": "v8.2",
+          "targetModel": "MIDJOURNEY_V8_2",
+          "aspectRatioHint": "--ar 16:9",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "FLUX_2_MAX": {
+        "targetModel": "FLUX_2_MAX",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE INSTRUCTION:\nPhotographic YouTube thumbnail, Eu segurando o handheld acima da cabeça com uma mão.. Subject presented with bold silhouette and clear optical separation optimized for 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth.\n\nPOSITIVE VISUAL ATTRIBUTES:\n- Natural skin texture with realistic pores, authentic tonal variation, and zero plastic smoothing.\n- Physically motivated illumination with clean directional key light and soft natural shadow falloff.\n- Restrained believable human expression appropriate to the scene with closed mouth.\n- Controlled optical separation with a readable background and generous negative space.\n- Anatomically plausible hands with natural grip and correct visible finger count according to pose.\n- 35mm digital camera perspective (16:9 widescreen format) with tactile physical materials. Maximum photographic detail and strict instruction following.\n\nPRESERVATION CONSTRAINTS:\nZero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic room clutter (no clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "flux-2-max",
+          "targetModel": "FLUX_2_MAX",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "high",
+            "max"
+          ]
+        }
+      }
+    }
+  },
+  "case_5_object_replacement": {
+    "id": "case_5_object_replacement",
+    "name": "5. Object replacement",
+    "input": {
+      "videoTitle": "Novo Console",
+      "ideaDescription": "Troque o console da primeira foto pelo da segunda.",
+      "references": [
+        {
+          "id": "ref-base",
+          "name": "Foto Base",
+          "role": "IMAGEM_ALVO",
+          "url": "https://example.com/base.jpg",
+          "isTarget": true
+        },
+        {
+          "id": "ref-prod",
+          "name": "Controle Pro",
+          "role": "PRODUTO",
+          "url": "https://example.com/controller.jpg"
+        }
+      ]
+    },
+    "models": {
+      "GERAL": {
+        "targetModel": "GERAL",
+        "taskType": "REPLACE_OBJECT",
+        "environmentOwner": "TARGET",
+        "productOwner": "PRODUCT_REF",
+        "poseOwner": "TARGET",
+        "hairOwner": "TARGET",
+        "beardOwner": "TARGET",
+        "provenanceMap": {
+          "product": "PRODUCT_REFERENCE",
+          "hands": "NECESSARY_ADAPTATION",
+          "person": "TARGET_IMAGE",
+          "environment": "TARGET_IMAGE",
+          "lighting": "TARGET_IMAGE"
+        },
+        "change": [
+          "Replace target object/device with exact hardware geometry, buttons, ports, and silhouette of (Controle Pro).",
+          "Adapt hand grip naturally around the new hardware with anatomically plausible fingers and natural occlusion."
+        ],
+        "preserve": [
+          "Preserve person facial identity, expression, gaze, body pose, and clothing from (Foto Base).",
+          "Preserve background setting, camera angle, framing, and scene lighting from (Foto Base)."
+        ],
+        "finalPrompt": "Photographic YouTube thumbnail, 16:9 widescreen format. Directed visual storytelling, authentic and grounded.\nSCENE: Troque o console da primeira foto pelo da segunda..\nTASK: REPLACE_OBJECT (SURGICAL OBJECT REPLACEMENT).\n\nMASTER STRUCTURE TO PRESERVE (Foto Base):\n1. Person facial identity, true age, expression, gaze direction, and body posture from master photo.\n2. Camera framing, 16:9 composition, depth of field, and original background setting.\n3. Scene lighting direction and ambient shadow falloff.\n\nCHANGE:\nReplace original held object with exact physical hardware geometry, chassis proportions, ports, buttons, screen ratio, and tactile materials from the product reference (Controle Pro).\n\nADAPT:\nHand grip and fingers around the new hardware: anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact.\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nNEGATIVE / STRICTLY AVOID:\nregenerating the entire scene, changing person facial identity, changing clothing, deformed hardware geometry, fictional buttons, rubbery chassis, unmotivated rim light, generic AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip, impossible arm pose, body proportion drift."
+      },
+      "OPENAI_GPT_IMAGE_2_5_SUNBURST": {
+        "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+        "taskType": "REPLACE_OBJECT",
+        "environmentOwner": "TARGET",
+        "productOwner": "PRODUCT_REF",
+        "poseOwner": "TARGET",
+        "hairOwner": "TARGET",
+        "beardOwner": "TARGET",
+        "provenanceMap": {
+          "product": "PRODUCT_REFERENCE",
+          "hands": "NECESSARY_ADAPTATION",
+          "person": "TARGET_IMAGE",
+          "environment": "TARGET_IMAGE",
+          "lighting": "TARGET_IMAGE"
+        },
+        "change": [
+          "Replace target object/device with exact hardware geometry, buttons, ports, and silhouette of (Controle Pro).",
+          "Adapt hand grip naturally around the new hardware with anatomically plausible fingers and natural occlusion."
+        ],
+        "preserve": [
+          "Preserve person facial identity, expression, gaze, body pose, and clothing from (Foto Base).",
+          "Preserve background setting, camera angle, framing, and scene lighting from (Foto Base)."
+        ],
+        "finalPrompt": "GOAL:\nSurgically replace the held object with the referenced physical hardware with exact industrial geometry, chassis proportions, matte tactile finish, and natural hand grip contact.\n\nREFERENCE ROLES:\n- TARGET IMAGE / MASTER: \"Foto Base\"\n- PRODUCT / HARDWARE: \"Controle Pro\"\n\nTARGET IMAGE:\nMaster photo (\"Foto Base\"): Master photographic anchor. Preserves camera perspective, subject framing, scene lighting direction, and all original elements not explicitly marked for replacement in CHANGE.\n\nCHANGE:\nReplace original held object with exact physical hardware geometry, chassis proportions, ports, button seams, screen ratio, and tactile matte materials from product reference (\"Controle Pro\").\n\nADAPT:\nHand grip and fingers naturally interacting with the new hardware: anatomically plausible hands, natural grip around the device, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting chassis surfaces.\n\nPRESERVE:\n1. Exact subject facial identity, true age, expression, and gaze direction from master photo.\n2. Subject clothing, body posture, and camera distance.\n3. Scene background, ambient lighting direction, and 16:9 framing.\n\nENVIRONMENT:\nExact background environment preserved from master photo (\"Foto Base\").\n\nCOMPOSITION:\n16:9 widescreen photographic framing (16:9 widescreen format). Clean figure-ground separation with bold subject silhouette optimized for instant readability at 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth. Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nLIGHTING:\nPhysically motivated illumination with clean directional key light, subtle natural fill, and soft realistic shadow falloff. Directional coherence across all elements. Zero unmotivated neon rim lights, laser glows, or synthetic halos.\n\nAVOID:\nface swap, face paste, flat frontal face pasted on angled head, distorted skull geometry, plastic waxy skin, beauty filter jaw slimming, open mouth screaming shock face, deformed hands, extra fingers, duplicated digits, intersecting hardware, floating embers, flying sparks, neon blue-purple wash, unmotivated rim light, domestic clutter (sofas, bedroom lamps, desks unless requested), generic AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip.",
+        "outputMetadata": {
+          "modelId": "gpt-image-2.5-sunburst",
+          "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      },
+      "GOOGLE_NANO_BANANA_2": {
+        "targetModel": "GOOGLE_NANO_BANANA_2",
+        "taskType": "REPLACE_OBJECT",
+        "environmentOwner": "TARGET",
+        "productOwner": "PRODUCT_REF",
+        "poseOwner": "TARGET",
+        "hairOwner": "TARGET",
+        "beardOwner": "TARGET",
+        "provenanceMap": {
+          "product": "PRODUCT_REFERENCE",
+          "hands": "NECESSARY_ADAPTATION",
+          "person": "TARGET_IMAGE",
+          "environment": "TARGET_IMAGE",
+          "lighting": "TARGET_IMAGE"
+        },
+        "change": [
+          "Replace target object/device with exact hardware geometry, buttons, ports, and silhouette of (Controle Pro).",
+          "Adapt hand grip naturally around the new hardware with anatomically plausible fingers and natural occlusion."
+        ],
+        "preserve": [
+          "Preserve person facial identity, expression, gaze, body pose, and clothing from (Foto Base).",
+          "Preserve background setting, camera angle, framing, and scene lighting from (Foto Base)."
+        ],
+        "finalPrompt": "SCENE:\nTroque o console da primeira foto pelo da segunda.\n\nREFERENCE ROLES:\nImage 1 = [Role: IMAGEM_ALVO] \"Foto Base\"\nImage 2 = [Role: PRODUTO] \"Controle Pro\"\n\nWHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE:\n- Subject & Background: Image 1 (\"Foto Base\") controls person identity, posture, expression, framing, and environment.\n- Hardware / Product: Image 2 (\"Controle Pro\") controls exact hardware geometry, chassis, ports, buttons, and matte materials.\n\nWHAT CHANGES:\nReplace the original held object with the exact physical hardware geometry, chassis proportions, ports, button seams, and tactile materials from Image 2 (\"Controle Pro\"). Adapt hand grip naturally around the device.\n\nWHAT REMAINS:\n1. Person facial identity, expression, gaze direction, and body posture from master photo.\n2. Person clothing and camera distance.\n3. Original background setting and ambient lighting direction.\n\nPHOTOGRAPHIC DIRECTIVES:\n16:9 widescreen format (16:9 widescreen format). 35mm lens perspective preserving authentic spatial depth. Directed visual storytelling with bold subject silhouette optimized for 120px mobile thumbnail scale. Motivated physical lighting with natural directional key light and soft shadow falloff. Zero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic clutter (no bedrooms, sofas, desks, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "gemini-3.1-flash-image",
+          "targetModel": "GOOGLE_NANO_BANANA_2",
+          "aspectRatioHint": "2048x1152",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "MIDJOURNEY_V8_2": {
+        "targetModel": "MIDJOURNEY_V8_2",
+        "taskType": "REPLACE_OBJECT",
+        "environmentOwner": "TARGET",
+        "productOwner": "PRODUCT_REF",
+        "poseOwner": "TARGET",
+        "hairOwner": "TARGET",
+        "beardOwner": "TARGET",
+        "provenanceMap": {
+          "product": "PRODUCT_REFERENCE",
+          "hands": "NECESSARY_ADAPTATION",
+          "person": "TARGET_IMAGE",
+          "environment": "TARGET_IMAGE",
+          "lighting": "TARGET_IMAGE"
+        },
+        "change": [
+          "Replace target object/device with exact hardware geometry, buttons, ports, and silhouette of (Controle Pro).",
+          "Adapt hand grip naturally around the new hardware with anatomically plausible fingers and natural occlusion."
+        ],
+        "preserve": [
+          "Preserve person facial identity, expression, gaze, body pose, and clothing from (Foto Base).",
+          "Preserve background setting, camera angle, framing, and scene lighting from (Foto Base)."
+        ],
+        "finalPrompt": "Photographic YouTube thumbnail, Troque o console da primeira foto pelo da segunda., featuring the creator holding the physical hardware device from \"Controle Pro\" with natural plausible hand grip, authentic chassis seams, ports, and buttons, natural composed facial expression, motivated lighting matching the scene, 35mm lens perspective, tactile matte materials\n\n--ar 16:9 --v 8.2",
+        "outputMetadata": {
+          "modelId": "v8.2",
+          "targetModel": "MIDJOURNEY_V8_2",
+          "aspectRatioHint": "--ar 16:9",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "FLUX_2_MAX": {
+        "targetModel": "FLUX_2_MAX",
+        "taskType": "REPLACE_OBJECT",
+        "environmentOwner": "TARGET",
+        "productOwner": "PRODUCT_REF",
+        "poseOwner": "TARGET",
+        "hairOwner": "TARGET",
+        "beardOwner": "TARGET",
+        "provenanceMap": {
+          "product": "PRODUCT_REFERENCE",
+          "hands": "NECESSARY_ADAPTATION",
+          "person": "TARGET_IMAGE",
+          "environment": "TARGET_IMAGE",
+          "lighting": "TARGET_IMAGE"
+        },
+        "change": [
+          "Replace target object/device with exact hardware geometry, buttons, ports, and silhouette of (Controle Pro).",
+          "Adapt hand grip naturally around the new hardware with anatomically plausible fingers and natural occlusion."
+        ],
+        "preserve": [
+          "Preserve person facial identity, expression, gaze, body pose, and clothing from (Foto Base).",
+          "Preserve background setting, camera angle, framing, and scene lighting from (Foto Base)."
+        ],
+        "finalPrompt": "SCENE INSTRUCTION:\nUse Image 1 (\"Foto Base\") as master anchor for person facial identity, expression, pose, and background environment. Use Image 2 (\"Controle Pro\") for the exact physical hardware geometry, chassis proportions, ports, buttons, and matte textures. Adapt hand grip naturally around the new hardware with correct visible finger count.\n\nPOSITIVE VISUAL ATTRIBUTES:\n- Natural skin texture with realistic pores, authentic tonal variation, and zero plastic smoothing.\n- Physically motivated illumination with clean directional key light and soft natural shadow falloff.\n- Restrained believable human expression appropriate to the scene with closed mouth.\n- Controlled optical separation with a readable background and generous negative space.\n- Anatomically plausible hands with natural grip and correct visible finger count according to pose.\n- 35mm digital camera perspective (16:9 widescreen format) with tactile physical materials. Maximum photographic detail and strict instruction following.\n\nPRESERVATION CONSTRAINTS:\nDo not alter person facial identity, clothing, background environment, or scene lighting. Zero deformed hardware geometry.\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "flux-2-max",
+          "targetModel": "FLUX_2_MAX",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "high",
+            "max"
+          ]
+        }
+      }
+    }
+  },
+  "case_6_explicit_cenario_reference": {
+    "id": "case_6_explicit_cenario_reference",
+    "name": "6. Explicit CENÁRIO reference",
+    "input": {
+      "videoTitle": "Gravação na Floresta",
+      "ideaDescription": "Eu explicando o projeto no cenário da foto.",
+      "references": [
+        {
+          "id": "ref-env",
+          "name": "Floresta Tropical",
+          "role": "CENÁRIO",
+          "url": "https://example.com/forest.jpg"
+        }
+      ]
+    },
+    "models": {
+      "GERAL": {
+        "targetModel": "GERAL",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "SCENARIO_REF",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "SCENARIO_REFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, 16:9 widescreen format. Directed visual storytelling, authentic and grounded.\nSCENE: Eu explicando o projeto no cenário da foto..\nSUBJECT & FRAMING: A person presenting the primary subject with genuine ease and natural composed posture. Eye-level conversational angle, crisp separation of subject from background through natural optical perspective.\nHUMAN EXPRESSION: Direct engaging look toward the viewer with a subtle, confident smirk conveying genuine satisfaction without shouting.\nLIGHTING: Physically motivated illumination matching the authentic sources of the referenced location, with natural shadow falloff. Light sources are physically motivated and grounded in the scene.\nENVIRONMENT & OPTICS: Authentic physical location from the reference photo (Floresta Tropical), preserving spatial structure and recognizable real-world environmental features. natural photographic depth of field with organic optical falloff, softly defocusing the background to prioritize subject readability, tangible materials with matte finishes.\nTYPOGRAPHY: Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nPRESERVATION LOCKS:\nMY ENVIRONMENT / REAL LOCATION (Floresta Tropical): Preserve spatial layout where visible, major furniture placement, windows, doors, walls, desk, sofa, shelves, lighting fixtures, and recognizable environmental features. Do NOT copy people who might appear in this photo, do NOT copy irrelevant stray objects, and do NOT copy photographic filters/treatment. Do not invent: generic gaming room, RGB streamer setup, or futuristic studio if they do not exist.\n\nNEGATIVE / STRICTLY AVOID:\ngeneric AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip, impossible arm pose, body proportion drift, wrong geometry, incorrect buttons, incorrect analog sticks, wrong ports, invented vents, wrong screen ratio, incorrect thickness, warped logo, unrecognizable silhouette, deformed hardware geometry, unmotivated rim light, orange/teal lighting by default, purple/blue gaming neon by default, glowing edges, impossible reflections, multiple incompatible light directions, volumetric light without source, too many focal points, everything equally sharp, everything equally saturated, everything equally contrasted, background competing with subject, generic centered stock-photo composition, random floating elements, too many visual metaphors, tiny important story elements, composition failing at thumbnail size, overprocessed HDR, excessive sharpening, fake bokeh, extreme color grading, excessive contrast, artificial clarity, uniform micro-detail, over-saturated skin, random red arrows, random circles, floating emojis, floating logos, lightning, sparks, fire, particles, giant text, generic shocked creator, fake UI, random VS, generic before/after division, no malformed typography, no pseudo-text, no random letters, no inconsistent glyphs, no melted letterforms, no distorted baseline, no incorrect spelling, no unnecessary 3D extrusion, no fake metallic type by default."
+      },
+      "OPENAI_GPT_IMAGE_2_5_SUNBURST": {
+        "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "SCENARIO_REF",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "SCENARIO_REFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "GOAL:\nGenerate an authentic, high-impact photographic YouTube thumbnail for \"Eu explicando o projeto no cenário da foto.\". Maximize click-through readability at small mobile feed scale (120px) through clean figure-ground separation and tactile physical realism.\n\nREFERENCE ROLES:\n- SCENARIO / EXACT ENVIRONMENT: \"Floresta Tropical\"\n\nTARGET IMAGE:\nNone (original photographic composition established from scratch).\n\nCHANGE:\nEstablish complete photographic composition and hero subject based on: \"Eu explicando o projeto no cenário da foto.\".\n\nADAPT:\nAnatomically plausible hands with natural grip, correct visible finger count according to pose and natural occlusion. Balanced optical falloff between subject and background.\n\nPRESERVE:\n1. Natural human facial asymmetry, closed-mouth composed expression, and natural skin texture without plastic smoothing.\n2. Authentic physical materials and tactile textures.\n3. Grounded real-world scale and camera perspective.\n\nENVIRONMENT:\nAuthentic environment integrated from scenario reference (\"Floresta Tropical\"), preserving real-world spatial architecture, perspective, and atmospheric depth.\n\nCOMPOSITION:\n16:9 widescreen photographic framing (16:9 widescreen format). Clean figure-ground separation with bold subject silhouette optimized for instant readability at 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth. Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nLIGHTING:\nPhysically motivated illumination with clean directional key light, subtle natural fill, and soft realistic shadow falloff. Directional coherence across all elements. Zero unmotivated neon rim lights, laser glows, or synthetic halos.\n\nAVOID:\nface swap, face paste, flat frontal face pasted on angled head, distorted skull geometry, plastic waxy skin, beauty filter jaw slimming, open mouth screaming shock face, deformed hands, extra fingers, duplicated digits, intersecting hardware, floating embers, flying sparks, neon blue-purple wash, unmotivated rim light, domestic clutter (sofas, bedroom lamps, desks unless requested), generic AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip.",
+        "outputMetadata": {
+          "modelId": "gpt-image-2.5-sunburst",
+          "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      },
+      "GOOGLE_NANO_BANANA_2": {
+        "targetModel": "GOOGLE_NANO_BANANA_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "SCENARIO_REF",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "SCENARIO_REFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE:\nEu explicando o projeto no cenário da foto.\n\nREFERENCE ROLES:\nImage 1 = [Role: CENÁRIO] \"Floresta Tropical\"\n\nWHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE:\n- Visual Elements: Controlled by provided references as primary visual anchors.\n\nWHAT CHANGES:\nEstablish complete photographic thumbnail composition based on: \"Eu explicando o projeto no cenário da foto.\".\n\nWHAT REMAINS:\n1. Composed human expression with closed mouth and natural skin texture without plastic smoothing.\n2. Grounded real-world scale and authentic physical materials.\n3. Clean optical separation with generous negative space.\n\nPHOTOGRAPHIC DIRECTIVES:\n16:9 widescreen format (16:9 widescreen format). 35mm lens perspective preserving authentic spatial depth. Directed visual storytelling with bold subject silhouette optimized for 120px mobile thumbnail scale. Motivated physical lighting with natural directional key light and soft shadow falloff. Zero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic clutter (no bedrooms, sofas, desks, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "gemini-3.1-flash-image",
+          "targetModel": "GOOGLE_NANO_BANANA_2",
+          "aspectRatioHint": "2048x1152",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "MIDJOURNEY_V8_2": {
+        "targetModel": "MIDJOURNEY_V8_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "SCENARIO_REF",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "SCENARIO_REFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, Eu explicando o projeto no cenário da foto., compelling hero presentation with clean silhouette and immediate readability at 120px mobile thumbnail scale, natural composed human expression with closed mouth, motivated directional physical key light with soft shadow falloff, 35mm lens perspective, authentic tactile textures, generous negative space\n\n--ar 16:9 --v 8.2",
+        "outputMetadata": {
+          "modelId": "v8.2",
+          "targetModel": "MIDJOURNEY_V8_2",
+          "aspectRatioHint": "--ar 16:9",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "FLUX_2_MAX": {
+        "targetModel": "FLUX_2_MAX",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "SCENARIO_REF",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "SCENARIO_REFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE INSTRUCTION:\nPhotographic YouTube thumbnail, Eu explicando o projeto no cenário da foto.. Subject presented with bold silhouette and clear optical separation optimized for 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth.\n\nPOSITIVE VISUAL ATTRIBUTES:\n- Natural skin texture with realistic pores, authentic tonal variation, and zero plastic smoothing.\n- Physically motivated illumination with clean directional key light and soft natural shadow falloff.\n- Restrained believable human expression appropriate to the scene with closed mouth.\n- Controlled optical separation with a readable background and generous negative space.\n- Anatomically plausible hands with natural grip and correct visible finger count according to pose.\n- 35mm digital camera perspective (16:9 widescreen format) with tactile physical materials. Maximum photographic detail and strict instruction following.\n\nPRESERVATION CONSTRAINTS:\nZero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic room clutter (no bedrooms, living rooms, sofas, desks, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "flux-2-max",
+          "targetModel": "FLUX_2_MAX",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "high",
+            "max"
+          ]
+        }
+      }
+    }
+  },
+  "case_7_generic_creation_no_references": {
+    "id": "case_7_generic_creation_no_references",
+    "name": "7. Generic creation with no references",
+    "input": {
+      "videoTitle": "Dicas de Produtividade",
+      "ideaDescription": "Criador olhando para a câmera com expressão confiante e minimalista.",
+      "references": []
+    },
+    "models": {
+      "GERAL": {
+        "targetModel": "GERAL",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, 16:9 widescreen format. Directed visual storytelling, authentic and grounded.\nSCENE: Criador olhando para a câmera com expressão confiante e minimalista..\nSUBJECT & FRAMING: A person presenting the primary subject with genuine ease and natural composed posture. Eye-level conversational angle, crisp separation of subject from background through natural optical perspective.\nHUMAN EXPRESSION: Direct engaging look toward the viewer with a subtle, confident smirk conveying genuine satisfaction without shouting.\nLIGHTING: Clean motivated key illumination with soft natural shadow falloff, emphasizing genuine physical textures and form without artificial glare. Light sources are physically motivated and grounded in the scene.\nENVIRONMENT & OPTICS: Clean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on the primary subject without domestic clutter. natural photographic depth of field with organic optical falloff, softly defocusing the background to prioritize subject readability, tangible materials with matte finishes.\nTYPOGRAPHY: Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nNEGATIVE / STRICTLY AVOID:\ngeneric AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip, impossible arm pose, body proportion drift, wrong geometry, incorrect buttons, incorrect analog sticks, wrong ports, invented vents, wrong screen ratio, incorrect thickness, warped logo, unrecognizable silhouette, deformed hardware geometry, unmotivated rim light, orange/teal lighting by default, purple/blue gaming neon by default, glowing edges, impossible reflections, multiple incompatible light directions, volumetric light without source, too many focal points, everything equally sharp, everything equally saturated, everything equally contrasted, background competing with subject, generic centered stock-photo composition, random floating elements, too many visual metaphors, tiny important story elements, composition failing at thumbnail size, overprocessed HDR, excessive sharpening, fake bokeh, extreme color grading, excessive contrast, artificial clarity, uniform micro-detail, over-saturated skin, random red arrows, random circles, floating emojis, floating logos, lightning, sparks, fire, particles, giant text, generic shocked creator, fake UI, random VS, generic before/after division, no malformed typography, no pseudo-text, no random letters, no inconsistent glyphs, no melted letterforms, no distorted baseline, no incorrect spelling, no unnecessary 3D extrusion, no fake metallic type by default."
+      },
+      "OPENAI_GPT_IMAGE_2_5_SUNBURST": {
+        "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "GOAL:\nGenerate an authentic, high-impact photographic YouTube thumbnail for \"Criador olhando para a câmera com expressão confiante e minimalista.\". Maximize click-through readability at small mobile feed scale (120px) through clean figure-ground separation and tactile physical realism.\n\nREFERENCE ROLES:\nNo external image references. Ground all elements from explicit concept description.\n\nTARGET IMAGE:\nNone (original photographic composition established from scratch).\n\nCHANGE:\nEstablish complete photographic composition and hero subject based on: \"Criador olhando para a câmera com expressão confiante e minimalista.\".\n\nADAPT:\nAnatomically plausible hands with natural grip, correct visible finger count according to pose and natural occlusion. Balanced optical falloff between subject and background.\n\nPRESERVE:\n1. Natural human facial asymmetry, closed-mouth composed expression, and natural skin texture without plastic smoothing.\n2. Authentic physical materials and tactile textures.\n3. Grounded real-world scale and camera perspective.\n\nENVIRONMENT:\nClean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on primary subject without domestic clutter (no unrequested clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces or lamps).\n\nCOMPOSITION:\n16:9 widescreen photographic framing (16:9 widescreen format). Clean figure-ground separation with bold subject silhouette optimized for instant readability at 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth. Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nLIGHTING:\nPhysically motivated illumination with clean directional key light, subtle natural fill, and soft realistic shadow falloff. Directional coherence across all elements. Zero unmotivated neon rim lights, laser glows, or synthetic halos.\n\nAVOID:\nface swap, face paste, flat frontal face pasted on angled head, distorted skull geometry, plastic waxy skin, beauty filter jaw slimming, open mouth screaming shock face, deformed hands, extra fingers, duplicated digits, intersecting hardware, floating embers, flying sparks, neon blue-purple wash, unmotivated rim light, domestic clutter (clean neutral background with generous negative spaces, clean neutral background with generous negative space lamps, clean neutral background with generous negative spaces unless requested), generic AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip.",
+        "outputMetadata": {
+          "modelId": "gpt-image-2.5-sunburst",
+          "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      },
+      "GOOGLE_NANO_BANANA_2": {
+        "targetModel": "GOOGLE_NANO_BANANA_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE:\nCriador olhando para a câmera com expressão confiante e minimalista.\n\nREFERENCE ROLES:\nNone (standalone visual composition generated from scratch).\n\nWHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE:\n- Visual Elements: Harmonious natural composition generated with realistic physical fidelity.\n\nWHAT CHANGES:\nEstablish complete photographic thumbnail composition based on: \"Criador olhando para a câmera com expressão confiante e minimalista.\".\n\nWHAT REMAINS:\n1. Composed human expression with closed mouth and natural skin texture without plastic smoothing.\n2. Grounded real-world scale and authentic physical materials.\n3. Clean optical separation with generous negative space.\n\nPHOTOGRAPHIC DIRECTIVES:\n16:9 widescreen format (16:9 widescreen format). 35mm lens perspective preserving authentic spatial depth. Directed visual storytelling with bold subject silhouette optimized for 120px mobile thumbnail scale. Motivated physical lighting with natural directional key light and soft shadow falloff. Zero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic clutter (no clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "gemini-3.1-flash-image",
+          "targetModel": "GOOGLE_NANO_BANANA_2",
+          "aspectRatioHint": "2048x1152",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "MIDJOURNEY_V8_2": {
+        "targetModel": "MIDJOURNEY_V8_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, Criador olhando para a câmera com expressão confiante e minimalista., compelling hero presentation with clean silhouette and immediate readability at 120px mobile thumbnail scale, natural composed human expression with closed mouth, motivated directional physical key light with soft shadow falloff, 35mm lens perspective, authentic tactile textures, generous negative space\n\n--ar 16:9 --v 8.2",
+        "outputMetadata": {
+          "modelId": "v8.2",
+          "targetModel": "MIDJOURNEY_V8_2",
+          "aspectRatioHint": "--ar 16:9",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "FLUX_2_MAX": {
+        "targetModel": "FLUX_2_MAX",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE INSTRUCTION:\nPhotographic YouTube thumbnail, Criador olhando para a câmera com expressão confiante e minimalista.. Subject presented with bold silhouette and clear optical separation optimized for 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth.\n\nPOSITIVE VISUAL ATTRIBUTES:\n- Natural skin texture with realistic pores, authentic tonal variation, and zero plastic smoothing.\n- Physically motivated illumination with clean directional key light and soft natural shadow falloff.\n- Restrained believable human expression appropriate to the scene with closed mouth.\n- Controlled optical separation with a readable background and generous negative space.\n- Anatomically plausible hands with natural grip and correct visible finger count according to pose.\n- 35mm digital camera perspective (16:9 widescreen format) with tactile physical materials. Maximum photographic detail and strict instruction following.\n\nPRESERVATION CONSTRAINTS:\nZero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic room clutter (no clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "flux-2-max",
+          "targetModel": "FLUX_2_MAX",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "high",
+            "max"
+          ]
+        }
+      }
+    }
+  },
+  "case_8a_anti_slop_gaming_no_room": {
+    "id": "case_8a_anti_slop_gaming_no_room",
+    "name": "8a. Anti-slop gaming portable without domestic room cliches",
+    "input": {
+      "videoTitle": "O Futuro dos Portáteis",
+      "ideaDescription": "Criador segurando console portátil focado na tela.",
+      "references": []
+    },
+    "models": {
+      "GERAL": {
+        "targetModel": "GERAL",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "USER",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, 16:9 widescreen format. Directed visual storytelling, authentic and grounded.\nSCENE: Criador segurando console portátil focado na tela..\nSUBJECT & FRAMING: The creator holding the handheld device naturally toward the camera with anatomically plausible hands, natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact. Engaging eye-level medium framing with crisp figure-ground separation and clean negative space.\nHUMAN EXPRESSION: Composed authentic engagement with calm curiosity and natural focus, closed mouth.\nLIGHTING: Clean motivated directional key lighting with soft natural shadow falloff, emphasizing true matte chassis textures and screen content without artificial glare or unmotivated RGB neon. Light sources are physically motivated and grounded in the scene.\nENVIRONMENT & OPTICS: Minimal neutral background with soft optical falloff, keeping undivided focus on the device and creator without domestic clutter. natural photographic depth of field with organic optical falloff, softly defocusing the background to prioritize subject readability, tangible materials with matte finishes.\nTYPOGRAPHY: Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nPRESERVATION LOCKS:\nHARDWARE & PRODUCT FIDELITY (MANDATORY): Strictly preserve authentic industrial geometry, chassis proportions, exact physical buttons, analog sticks, ports, screen, tactile materials, and instantly recognizable silhouette. Do NOT automatically copy background setting, composition, or style from the reference photo. Zero AI melting or rubbery deformation.\nHAND & OBJECT INTERACTION: Anatomically plausible hands with natural grip around the object, correct visible finger count according to pose and natural occlusion, no duplicated or fused fingers, no fingers intersecting the product, and physically believable hand-to-object contact. Thumbs positioned naturally on controls without chassis melting.\n\nNEGATIVE / STRICTLY AVOID:\ngeneric AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip, impossible arm pose, body proportion drift, wrong geometry, incorrect buttons, incorrect analog sticks, wrong ports, invented vents, wrong screen ratio, incorrect thickness, warped logo, unrecognizable silhouette, deformed hardware geometry, unmotivated rim light, orange/teal lighting by default, purple/blue gaming neon by default, glowing edges, impossible reflections, multiple incompatible light directions, volumetric light without source, too many focal points, everything equally sharp, everything equally saturated, everything equally contrasted, background competing with subject, generic centered stock-photo composition, random floating elements, too many visual metaphors, tiny important story elements, composition failing at thumbnail size, overprocessed HDR, excessive sharpening, fake bokeh, extreme color grading, excessive contrast, artificial clarity, uniform micro-detail, over-saturated skin, random red arrows, random circles, floating emojis, floating logos, lightning, sparks, fire, particles, giant text, generic shocked creator, fake UI, random VS, generic before/after division, no malformed typography, no pseudo-text, no random letters, no inconsistent glyphs, no melted letterforms, no distorted baseline, no incorrect spelling, no unnecessary 3D extrusion, no fake metallic type by default."
+      },
+      "OPENAI_GPT_IMAGE_2_5_SUNBURST": {
+        "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "USER",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "GOAL:\nGenerate an authentic, high-impact photographic YouTube thumbnail for \"Criador segurando console portátil focado na tela.\". Maximize click-through readability at small mobile feed scale (120px) through clean figure-ground separation and tactile physical realism.\n\nREFERENCE ROLES:\nNo external image references. Ground all elements from explicit concept description.\n\nTARGET IMAGE:\nNone (original photographic composition established from scratch).\n\nCHANGE:\nEstablish complete photographic composition and hero subject based on: \"Criador segurando console portátil focado na tela.\".\n\nADAPT:\nAnatomically plausible hands with natural grip, correct visible finger count according to pose and natural occlusion. Balanced optical falloff between subject and background.\n\nPRESERVE:\n1. Natural human facial asymmetry, closed-mouth composed expression, and natural skin texture without plastic smoothing.\n2. Authentic physical materials and tactile textures.\n3. Grounded real-world scale and camera perspective.\n\nENVIRONMENT:\nClean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on primary subject without domestic clutter (no unrequested clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces or lamps).\n\nCOMPOSITION:\n16:9 widescreen photographic framing (16:9 widescreen format). Clean figure-ground separation with bold subject silhouette optimized for instant readability at 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth. Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nLIGHTING:\nPhysically motivated illumination with clean directional key light, subtle natural fill, and soft realistic shadow falloff. Directional coherence across all elements. Zero unmotivated neon rim lights, laser glows, or synthetic halos.\n\nAVOID:\nface swap, face paste, flat frontal face pasted on angled head, distorted skull geometry, plastic waxy skin, beauty filter jaw slimming, open mouth screaming shock face, deformed hands, extra fingers, duplicated digits, intersecting hardware, floating embers, flying sparks, neon blue-purple wash, unmotivated rim light, domestic clutter (clean neutral background with generous negative spaces, clean neutral background with generous negative space lamps, clean neutral background with generous negative spaces unless requested), generic AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip.",
+        "outputMetadata": {
+          "modelId": "gpt-image-2.5-sunburst",
+          "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      },
+      "GOOGLE_NANO_BANANA_2": {
+        "targetModel": "GOOGLE_NANO_BANANA_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "USER",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE:\nCriador segurando console portátil focado na tela.\n\nREFERENCE ROLES:\nNone (standalone visual composition generated from scratch).\n\nWHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE:\n- Visual Elements: Harmonious natural composition generated with realistic physical fidelity.\n\nWHAT CHANGES:\nEstablish complete photographic thumbnail composition based on: \"Criador segurando console portátil focado na tela.\".\n\nWHAT REMAINS:\n1. Composed human expression with closed mouth and natural skin texture without plastic smoothing.\n2. Grounded real-world scale and authentic physical materials.\n3. Clean optical separation with generous negative space.\n\nPHOTOGRAPHIC DIRECTIVES:\n16:9 widescreen format (16:9 widescreen format). 35mm lens perspective preserving authentic spatial depth. Directed visual storytelling with bold subject silhouette optimized for 120px mobile thumbnail scale. Motivated physical lighting with natural directional key light and soft shadow falloff. Zero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic clutter (no clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "gemini-3.1-flash-image",
+          "targetModel": "GOOGLE_NANO_BANANA_2",
+          "aspectRatioHint": "2048x1152",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "MIDJOURNEY_V8_2": {
+        "targetModel": "MIDJOURNEY_V8_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "USER",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, Criador segurando console portátil focado na tela., compelling hero presentation with clean silhouette and immediate readability at 120px mobile thumbnail scale, natural composed human expression with closed mouth, motivated directional physical key light with soft shadow falloff, 35mm lens perspective, authentic tactile textures, generous negative space\n\n--ar 16:9 --v 8.2",
+        "outputMetadata": {
+          "modelId": "v8.2",
+          "targetModel": "MIDJOURNEY_V8_2",
+          "aspectRatioHint": "--ar 16:9",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "FLUX_2_MAX": {
+        "targetModel": "FLUX_2_MAX",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "USER",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE INSTRUCTION:\nPhotographic YouTube thumbnail, Criador segurando console portátil focado na tela.. Subject presented with bold silhouette and clear optical separation optimized for 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth.\n\nPOSITIVE VISUAL ATTRIBUTES:\n- Natural skin texture with realistic pores, authentic tonal variation, and zero plastic smoothing.\n- Physically motivated illumination with clean directional key light and soft natural shadow falloff.\n- Restrained believable human expression appropriate to the scene with closed mouth.\n- Controlled optical separation with a readable background and generous negative space.\n- Anatomically plausible hands with natural grip and correct visible finger count according to pose.\n- 35mm digital camera perspective (16:9 widescreen format) with tactile physical materials. Maximum photographic detail and strict instruction following.\n\nPRESERVATION CONSTRAINTS:\nZero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic room clutter (no clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "flux-2-max",
+          "targetModel": "FLUX_2_MAX",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "high",
+            "max"
+          ]
+        }
+      }
+    }
+  },
+  "case_8b_anti_slop_natural_portrait": {
+    "id": "case_8b_anti_slop_natural_portrait",
+    "name": "8b. Anti-slop natural portrait without beauty filter or neon",
+    "input": {
+      "videoTitle": "Entrevista Exclusiva",
+      "ideaDescription": "Retrato autêntico de um especialista falando, sem filtros artificiais.",
+      "references": []
+    },
+    "models": {
+      "GERAL": {
+        "targetModel": "GERAL",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, 16:9 widescreen format. Directed visual storytelling, authentic and grounded.\nSCENE: Retrato autêntico de um especialista falando, sem filtros artificiais..\nSUBJECT & FRAMING: Atmospheric scene of the weathered structure with tactile cracked concrete, creeping moss, decaying foliage, and authentic environmental aging. Intentional 16:9 framing guiding the eye directly to the shadowy central opening with generous negative space.\nLIGHTING: Subdued natural daylight filtering through the trees, creating deep realistic shadows without fake digital mist. Light sources are physically motivated and grounded in the scene.\nENVIRONMENT & OPTICS: Grounded real-world outdoor location with authentic atmospheric depth, honest moss texture, and organic shadows. natural photographic depth of field with organic optical falloff, softly defocusing the background to prioritize subject readability, tangible materials with matte finishes.\nTYPOGRAPHY: Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nNEGATIVE / STRICTLY AVOID:\ngeneric AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip, impossible arm pose, body proportion drift, wrong geometry, incorrect buttons, incorrect analog sticks, wrong ports, invented vents, wrong screen ratio, incorrect thickness, warped logo, unrecognizable silhouette, deformed hardware geometry, unmotivated rim light, orange/teal lighting by default, purple/blue gaming neon by default, glowing edges, impossible reflections, multiple incompatible light directions, volumetric light without source, too many focal points, everything equally sharp, everything equally saturated, everything equally contrasted, background competing with subject, generic centered stock-photo composition, random floating elements, too many visual metaphors, tiny important story elements, composition failing at thumbnail size, overprocessed HDR, excessive sharpening, fake bokeh, extreme color grading, excessive contrast, artificial clarity, uniform micro-detail, over-saturated skin, random red arrows, random circles, floating emojis, floating logos, lightning, sparks, fire, particles, giant text, generic shocked creator, fake UI, random VS, generic before/after division, no malformed typography, no pseudo-text, no random letters, no inconsistent glyphs, no melted letterforms, no distorted baseline, no incorrect spelling, no unnecessary 3D extrusion, no fake metallic type by default."
+      },
+      "OPENAI_GPT_IMAGE_2_5_SUNBURST": {
+        "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "GOAL:\nGenerate an authentic, high-impact photographic YouTube thumbnail for \"Retrato autêntico de um especialista falando, sem filtros artificiais.\". Maximize click-through readability at small mobile feed scale (120px) through clean figure-ground separation and tactile physical realism.\n\nREFERENCE ROLES:\nNo external image references. Ground all elements from explicit concept description.\n\nTARGET IMAGE:\nNone (original photographic composition established from scratch).\n\nCHANGE:\nEstablish complete photographic composition and hero subject based on: \"Retrato autêntico de um especialista falando, sem filtros artificiais.\".\n\nADAPT:\nAnatomically plausible hands with natural grip, correct visible finger count according to pose and natural occlusion. Balanced optical falloff between subject and background.\n\nPRESERVE:\n1. Natural human facial asymmetry, closed-mouth composed expression, and natural skin texture without plastic smoothing.\n2. Authentic physical materials and tactile textures.\n3. Grounded real-world scale and camera perspective.\n\nENVIRONMENT:\nClean minimalist background with soft optical falloff and generous negative space, keeping total visual priority on primary subject without domestic clutter (no unrequested clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces or lamps).\n\nCOMPOSITION:\n16:9 widescreen photographic framing (16:9 widescreen format). Clean figure-ground separation with bold subject silhouette optimized for instant readability at 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth. Do not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.\n\nLIGHTING:\nPhysically motivated illumination with clean directional key light, subtle natural fill, and soft realistic shadow falloff. Directional coherence across all elements. Zero unmotivated neon rim lights, laser glows, or synthetic halos.\n\nAVOID:\nface swap, face paste, flat frontal face pasted on angled head, distorted skull geometry, plastic waxy skin, beauty filter jaw slimming, open mouth screaming shock face, deformed hands, extra fingers, duplicated digits, intersecting hardware, floating embers, flying sparks, neon blue-purple wash, unmotivated rim light, domestic clutter (clean neutral background with generous negative spaces, clean neutral background with generous negative space lamps, clean neutral background with generous negative spaces unless requested), generic AI beauty face, same-face syndrome, perfect facial symmetry, plastic skin, waxy skin texture, excessive beauty filter, oversized eyes, unnatural teeth, generic shocked expression, unnecessary mouth-open reaction, identity drift from reference, age change, hair change, beard change, artificial beauty filter jaw slimming, no duplicated or fused fingers, no fingers intersecting the product, no unnatural hand grip.",
+        "outputMetadata": {
+          "modelId": "gpt-image-2.5-sunburst",
+          "targetModel": "OPENAI_GPT_IMAGE_2_5_SUNBURST",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max"
+          ]
+        }
+      },
+      "GOOGLE_NANO_BANANA_2": {
+        "targetModel": "GOOGLE_NANO_BANANA_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE:\nRetrato autêntico de um especialista falando, sem filtros artificiais.\n\nREFERENCE ROLES:\nNone (standalone visual composition generated from scratch).\n\nWHICH IMAGE CONTROLS EACH VISUAL ATTRIBUTE:\n- Visual Elements: Harmonious natural composition generated with realistic physical fidelity.\n\nWHAT CHANGES:\nEstablish complete photographic thumbnail composition based on: \"Retrato autêntico de um especialista falando, sem filtros artificiais.\".\n\nWHAT REMAINS:\n1. Composed human expression with closed mouth and natural skin texture without plastic smoothing.\n2. Grounded real-world scale and authentic physical materials.\n3. Clean optical separation with generous negative space.\n\nPHOTOGRAPHIC DIRECTIVES:\n16:9 widescreen format (16:9 widescreen format). 35mm lens perspective preserving authentic spatial depth. Directed visual storytelling with bold subject silhouette optimized for 120px mobile thumbnail scale. Motivated physical lighting with natural directional key light and soft shadow falloff. Zero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic clutter (no clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "gemini-3.1-flash-image",
+          "targetModel": "GOOGLE_NANO_BANANA_2",
+          "aspectRatioHint": "2048x1152",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "MIDJOURNEY_V8_2": {
+        "targetModel": "MIDJOURNEY_V8_2",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "Photographic YouTube thumbnail, Retrato autêntico de um especialista falando, sem filtros artificiais., compelling hero presentation with clean silhouette and immediate readability at 120px mobile thumbnail scale, natural composed human expression with closed mouth, motivated directional physical key light with soft shadow falloff, 35mm lens perspective, authentic tactile textures, generous negative space\n\n--ar 16:9 --v 8.2",
+        "outputMetadata": {
+          "modelId": "v8.2",
+          "targetModel": "MIDJOURNEY_V8_2",
+          "aspectRatioHint": "--ar 16:9",
+          "quality": "auto",
+          "supportedQualities": [
+            "auto",
+            "high"
+          ]
+        }
+      },
+      "FLUX_2_MAX": {
+        "targetModel": "FLUX_2_MAX",
+        "taskType": "CREATE_NEW_SCENE",
+        "environmentOwner": "NONE",
+        "productOwner": "NONE",
+        "poseOwner": "INFERRED",
+        "hairOwner": "USER",
+        "beardOwner": "USER",
+        "provenanceMap": {
+          "concept": "USER_EXPLICIT",
+          "environment": "JUSTIFIED_INFERENCE"
+        },
+        "change": [],
+        "preserve": [],
+        "finalPrompt": "SCENE INSTRUCTION:\nPhotographic YouTube thumbnail, Retrato autêntico de um especialista falando, sem filtros artificiais.. Subject presented with bold silhouette and clear optical separation optimized for 120px mobile thumbnail scale. 35mm lens perspective preserving authentic spatial depth.\n\nPOSITIVE VISUAL ATTRIBUTES:\n- Natural skin texture with realistic pores, authentic tonal variation, and zero plastic smoothing.\n- Physically motivated illumination with clean directional key light and soft natural shadow falloff.\n- Restrained believable human expression appropriate to the scene with closed mouth.\n- Controlled optical separation with a readable background and generous negative space.\n- Anatomically plausible hands with natural grip and correct visible finger count according to pose.\n- 35mm digital camera perspective (16:9 widescreen format) with tactile physical materials. Maximum photographic detail and strict instruction following.\n\nPRESERVATION CONSTRAINTS:\nZero synthetic AI gloss, waxy smoothing, neon rim lights, or unrequested domestic room clutter (no clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, clean neutral background with generous negative spaces, or lamps).\n\nTYPOGRAPHY:\nDo not generate any text, letters, logos or pseudo-typography. Reserve clean negative space for later typography.",
+        "outputMetadata": {
+          "modelId": "flux-2-max",
+          "targetModel": "FLUX_2_MAX",
+          "aspectRatioHint": "3840x2160",
+          "quality": "high",
+          "supportedQualities": [
+            "auto",
+            "high",
+            "max"
+          ]
+        }
+      }
+    }
+  }
+}
