@@ -128,6 +128,7 @@ export async function POST(req: NextRequest) {
         ...reconciledPlan,
         unsupportedDetailsRemoved: allPurged
       },
+      outputMetadata: builderResult.outputMetadata,
       // Development debug data (Section 31)
       ...(process.env.NODE_ENV !== 'production'
         ? {

@@ -1667,4 +1667,96 @@ console.log('\n24. Testando Modernização de Modelos Alvo 2026: Google Nano Ban
   console.log('  ✓ TEST 24.6: Consistência semântica de autoridade (Crimson Desert) idêntica em todos os 5 provedores com estilo adaptado.');
 }
 
+// 25. Testando Consolidação da Arquitetura de Modelos Alvo, Catálogo Dinâmico e TEST_MODEL...
+console.log('\n25. Testando Consolidação da Arquitetura de Modelos Alvo, Catálogo Dinâmico e TEST_MODEL...');
+{
+  const typesSimple = await import('../src/types/simple.ts');
+  const engine = await import('../src/lib/simpleEngine/engine.ts');
+
+  // TEST 25.1: Única Fonte da Verdade (Single Source of Truth) e Re-exportação
+  assert.equal(
+    engine.TARGET_MODEL_CONFIGS,
+    typesSimple.TARGET_MODEL_CONFIGS,
+    'TARGET_MODEL_CONFIGS re-exportado pelo engine deve ser a mesma referência de types/simple'
+  );
+  assert.equal(
+    engine.normalizeTargetModel,
+    typesSimple.normalizeTargetModel,
+    'normalizeTargetModel re-exportado pelo engine deve ser a mesma função de types/simple'
+  );
+  assert.equal(
+    engine.getSelectableTargetModels,
+    typesSimple.getSelectableTargetModels,
+    'getSelectableTargetModels re-exportado pelo engine deve ser a mesma função de types/simple'
+  );
+  console.log('  ✓ TEST 25.1: Fonte única da verdade comprovada — engine re-exporta diretamente de types/simple sem duplicação.');
+
+  // TEST 25.2: Catálogo Dinâmico getSelectableTargetModels()
+  const groups = engine.getSelectableTargetModels();
+  assert.ok(Array.isArray(groups), 'getSelectableTargetModels deve retornar um array de grupos');
+  assert.ok(groups.length >= 5, 'Deve conter ao menos 5 grupos de provedores');
+
+  const groupLabels = groups.map(g => g.groupLabel);
+  assert.ok(groupLabels.includes('GERAL'), 'Contém grupo GERAL');
+  assert.ok(groupLabels.includes('OPENAI'), 'Contém grupo OPENAI');
+  assert.ok(groupLabels.includes('GOOGLE'), 'Contém grupo GOOGLE');
+  assert.ok(groupLabels.includes('MIDJOURNEY'), 'Contém grupo MIDJOURNEY');
+  assert.ok(groupLabels.includes('BLACK FOREST LABS'), 'Contém grupo BLACK FOREST LABS');
+  assert.ok(groupLabels.includes('TEST'), 'Contém grupo TEST');
+
+  const allSelectableIds = groups.flatMap(g => g.models.map(m => m.id));
+  const legacyIds = ['OPENAI', 'GEMINI', 'GOOGLE_IMAGEN', 'MIDJOURNEY', 'FLUX'];
+  for (const leg of legacyIds) {
+    assert.ok(!allSelectableIds.includes(leg), `Catálogo selecionável NÃO deve conter ID legado "${leg}"`);
+  }
+  assert.ok(allSelectableIds.includes('TEST_MODEL'), 'Catálogo selecionável deve conter TEST_MODEL');
+  assert.ok(allSelectableIds.includes('OPENAI_GPT_IMAGE_2_5_SUNBURST'), 'Catálogo deve conter SUNBURST');
+  assert.ok(allSelectableIds.includes('GOOGLE_NANO_BANANA_2'), 'Catálogo deve conter NANO_BANANA_2');
+  console.log('  ✓ TEST 25.2: getSelectableTargetModels() agrupa modelos dinamicamente e exclui apelidos legados.');
+
+  // TEST 25.3: Modelo Temporário TEST_MODEL de Ponta a Ponta
+  assert.equal(engine.normalizeTargetModel('TEST_MODEL'), 'TEST_MODEL', 'Normaliza TEST_MODEL exato');
+  assert.equal(engine.normalizeTargetModel('test_model'), 'TEST_MODEL', 'Normaliza test_model em minúsculas');
+  assert.equal(engine.TARGET_MODEL_CONFIGS.TEST_MODEL.promptStyle, 'neutral', 'TEST_MODEL tem promptStyle neutral');
+  assert.equal(engine.TARGET_MODEL_CONFIGS.TEST_MODEL.modelId, 'test-model', 'TEST_MODEL tem modelId test-model');
+
+  const testModelResult = engine.generateSimpleThumbnail({
+    videoTitle: 'Validação da Arquitetura Unificada',
+    ideaDescription: 'Testando fluxo de ponta a ponta com TEST_MODEL',
+    references: [],
+    targetModel: 'TEST_MODEL',
+    aspectRatio: '16:9',
+    stylePreset: 'Natural',
+    realismLevel: 'Alto'
+  });
+
+  assert.ok(testModelResult.finalPrompt.includes('Photographic YouTube thumbnail'), 'TEST_MODEL gera prompt neutro com cabeçalho padrão');
+  assert.equal(testModelResult.outputMetadata?.modelId, 'test-model', 'Metadados de saída de TEST_MODEL resolvidos corretamente');
+  assert.equal(testModelResult.outputMetadata?.targetModel, 'TEST_MODEL', 'targetModel correto nos metadados');
+  console.log('  ✓ TEST 25.3: TEST_MODEL validado de ponta a ponta com despacho por promptStyle neutral e metadados.');
+
+  // TEST 25.4: Preservação de outputMetadata em Todos os Modelos Modernos
+  const metadataChecks = [
+    { model: 'OPENAI_GPT_IMAGE_2_5_SUNBURST', expectedId: 'gpt-image-2.5-sunburst' },
+    { model: 'OPENAI_GPT_IMAGE_2_5_FLARE', expectedId: 'gpt-image-2.5-flare' },
+    { model: 'GOOGLE_NANO_BANANA_2', expectedId: 'gemini-3.1-flash-image' },
+    { model: 'GOOGLE_NANO_BANANA_PRO', expectedId: 'gemini-3-pro-image' },
+    { model: 'MIDJOURNEY_V8_2', expectedId: 'v8.2' },
+    { model: 'MIDJOURNEY_NIJI_7', expectedId: 'niji-7' },
+    { model: 'FLUX_2_MAX', expectedId: 'flux-2-max' },
+    { model: 'FLUX_2_PRO', expectedId: 'flux-2-pro' },
+    { model: 'FLUX_2_FLEX', expectedId: 'flux-2-flex' },
+    { model: 'FLUX_2_KLEIN', expectedId: 'flux-2-klein' },
+    { model: 'TEST_MODEL', expectedId: 'test-model' }
+  ];
+
+  for (const { model, expectedId } of metadataChecks) {
+    const meta = engine.resolveOutputMetadata(model, '16:9');
+    assert.ok(meta, `Metadata deve existir para ${model}`);
+    assert.equal(meta.modelId, expectedId, `ModelId correto para ${model}`);
+    assert.equal(meta.targetModel, model, `TargetModel correto para ${model}`);
+  }
+  console.log('  ✓ TEST 25.4: Preservação de outputMetadata consistente em todos os 11 modelos modernos.');
+}
+
 console.log('\n✅ TODOS OS TESTES PASSARAM COM SUCESSO! VALIDAÇÃO CONCLUÍDA.');

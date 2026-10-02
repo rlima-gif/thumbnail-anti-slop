@@ -31,6 +31,7 @@ export type TargetModel =
   | 'FLUX_2_PRO'
   | 'FLUX_2_FLEX'
   | 'FLUX_2_KLEIN'
+  | 'TEST_MODEL'
   | 'OPENAI'
   | 'GEMINI'
   | 'GOOGLE_IMAGEN'
@@ -69,33 +70,6 @@ export interface TargetModelConfig {
   aspectRatio9_16Hint?: string;
   supportedQualities?: OpenAIImageQuality[];
   defaultQuality?: OpenAIImageQuality;
-}
-
-export function normalizeTargetModel(model?: string | null): TargetModel {
-  if (!model) return 'GERAL';
-  const m = model.trim().toUpperCase();
-  if (m === 'OPENAI') return 'OPENAI_GPT_IMAGE_2_5_SUNBURST';
-  if (m === 'GEMINI' || m === 'GOOGLE_IMAGEN' || m === 'GOOGLE GEMINI IMAGE' || m === 'GOOGLE GEMINI IMAGEN') {
-    return 'GOOGLE_NANO_BANANA_2';
-  }
-  if (m === 'MIDJOURNEY') return 'MIDJOURNEY_V8_2';
-  if (m === 'FLUX' || m === 'FLUX (ULTRA-DETALHES FOTO)' || m === 'FLUX_ULTRA') return 'FLUX_2_MAX';
-
-  const valid: TargetModel[] = [
-    'GERAL',
-    'OPENAI_GPT_IMAGE_2_5_SUNBURST',
-    'OPENAI_GPT_IMAGE_2_5_FLARE',
-    'GOOGLE_NANO_BANANA_2',
-    'GOOGLE_NANO_BANANA_PRO',
-    'MIDJOURNEY_V8_2',
-    'MIDJOURNEY_NIJI_7',
-    'FLUX_2_MAX',
-    'FLUX_2_PRO',
-    'FLUX_2_FLEX',
-    'FLUX_2_KLEIN'
-  ];
-  if (valid.includes(model as TargetModel)) return model as TargetModel;
-  return 'GERAL';
 }
 
 export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
@@ -315,6 +289,24 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     supportedQualities: ['auto', 'low', 'medium'],
     defaultQuality: 'auto'
   },
+  TEST_MODEL: {
+    id: 'TEST_MODEL',
+    provider: 'GENERAL',
+    providerGroup: 'TEST',
+    displayName: 'Test Model (Validação)',
+    family: 'Test',
+    apiModelId: 'test-model',
+    modelId: 'test-model',
+    description: 'Modelo temporário para validação de ponta a ponta da arquitetura.',
+    promptStyle: 'neutral',
+    supportsEditing: true,
+    supportsReferences: true,
+    supportsMultipleReferences: true,
+    supportsTypography: true,
+    negativePromptMode: 'standard',
+    aspectRatio16_9Hint: '16:9',
+    aspectRatio9_16Hint: '9:16'
+  },
   OPENAI: {
     id: 'OPENAI',
     provider: 'OPENAI',
@@ -408,6 +400,113 @@ export const TARGET_MODEL_CONFIGS: Record<TargetModel, TargetModelConfig> = {
     aspectRatio9_16Hint: '2160x3840'
   }
 };
+
+const TARGET_MODEL_ALIASES: Record<string, TargetModel> = {
+  // OpenAI
+  'OPENAI': 'OPENAI_GPT_IMAGE_2_5_SUNBURST',
+  'DALL-E 3': 'OPENAI_GPT_IMAGE_2_5_SUNBURST',
+  'DALLE3': 'OPENAI_GPT_IMAGE_2_5_SUNBURST',
+  'GPT-4O': 'OPENAI_GPT_IMAGE_2_5_SUNBURST',
+  'GPT-IMAGE-2.5-SUNBURST': 'OPENAI_GPT_IMAGE_2_5_SUNBURST',
+  'SUNBURST': 'OPENAI_GPT_IMAGE_2_5_SUNBURST',
+  'GPT-IMAGE-2.5-FLARE': 'OPENAI_GPT_IMAGE_2_5_FLARE',
+  'FLARE': 'OPENAI_GPT_IMAGE_2_5_FLARE',
+
+  // Google
+  'GEMINI': 'GOOGLE_NANO_BANANA_2',
+  'GOOGLE_IMAGEN': 'GOOGLE_NANO_BANANA_2',
+  'IMAGEN': 'GOOGLE_NANO_BANANA_2',
+  'GOOGLE': 'GOOGLE_NANO_BANANA_2',
+  'GOOGLE GEMINI IMAGE': 'GOOGLE_NANO_BANANA_2',
+  'GOOGLE GEMINI IMAGEN': 'GOOGLE_NANO_BANANA_2',
+  'NANO_BANANA_2': 'GOOGLE_NANO_BANANA_2',
+  'GEMINI-3.1-FLASH-IMAGE': 'GOOGLE_NANO_BANANA_2',
+  'NANO BANANA 2': 'GOOGLE_NANO_BANANA_2',
+  'NANO_BANANA_PRO': 'GOOGLE_NANO_BANANA_PRO',
+  'GEMINI-3-PRO-IMAGE': 'GOOGLE_NANO_BANANA_PRO',
+  'NANO BANANA PRO': 'GOOGLE_NANO_BANANA_PRO',
+
+  // Midjourney
+  'MIDJOURNEY': 'MIDJOURNEY_V8_2',
+  'V8.2': 'MIDJOURNEY_V8_2',
+  'V8_2': 'MIDJOURNEY_V8_2',
+  'MIDJOURNEY_V8': 'MIDJOURNEY_V8_2',
+  'NIJI_7': 'MIDJOURNEY_NIJI_7',
+  'NIJI 7': 'MIDJOURNEY_NIJI_7',
+  'NIJI': 'MIDJOURNEY_NIJI_7',
+
+  // FLUX
+  'FLUX': 'FLUX_2_MAX',
+  'FLUX (ULTRA-DETALHES FOTO)': 'FLUX_2_MAX',
+  'FLUX_ULTRA': 'FLUX_2_MAX',
+  'FLUX ULTRA': 'FLUX_2_MAX',
+  'FLUX-2-MAX': 'FLUX_2_MAX',
+  'FLUX 2 MAX': 'FLUX_2_MAX',
+  'FLUX-2-PRO': 'FLUX_2_PRO',
+  'FLUX 2 PRO': 'FLUX_2_PRO',
+  'FLUX-2-FLEX': 'FLUX_2_FLEX',
+  'FLUX 2 FLEX': 'FLUX_2_FLEX',
+  'FLUX-2-KLEIN': 'FLUX_2_KLEIN',
+  'FLUX 2 KLEIN': 'FLUX_2_KLEIN'
+};
+
+export function normalizeTargetModel(model?: string | null): TargetModel {
+  if (!model) return 'GERAL';
+  const m = model.trim().toUpperCase();
+
+  if (m in TARGET_MODEL_ALIASES) {
+    return TARGET_MODEL_ALIASES[m];
+  }
+
+  if (m in TARGET_MODEL_CONFIGS) {
+    return m as TargetModel;
+  }
+
+  return 'GERAL';
+}
+
+export interface TargetModelOption {
+  id: TargetModel;
+  displayName: string;
+  description: string;
+}
+
+export interface TargetModelGroup {
+  groupLabel: string;
+  models: TargetModelOption[];
+}
+
+const LEGACY_MODEL_IDS = new Set<TargetModel>([
+  'OPENAI',
+  'GEMINI',
+  'GOOGLE_IMAGEN',
+  'MIDJOURNEY',
+  'FLUX'
+]);
+
+export function getSelectableTargetModels(): TargetModelGroup[] {
+  const groupsMap = new Map<string, TargetModelOption[]>();
+
+  for (const [key, cfg] of Object.entries(TARGET_MODEL_CONFIGS)) {
+    const modelId = key as TargetModel;
+    if (LEGACY_MODEL_IDS.has(modelId)) continue;
+
+    const group = cfg.providerGroup || 'GERAL';
+    if (!groupsMap.has(group)) {
+      groupsMap.set(group, []);
+    }
+    groupsMap.get(group)!.push({
+      id: cfg.id,
+      displayName: cfg.displayName,
+      description: cfg.description
+    });
+  }
+
+  return Array.from(groupsMap.entries()).map(([groupLabel, models]) => ({
+    groupLabel,
+    models
+  }));
+}
 
 export type TextTreatment = 'AUTO' | 'USAR_REFERENCIA' | 'RENDER_IN_IMAGE' | 'SEM_TEXTO';
 export type ReservedSpacePosition = 'ESQUERDA' | 'DIREITA' | 'SUPERIOR' | 'INFERIOR';

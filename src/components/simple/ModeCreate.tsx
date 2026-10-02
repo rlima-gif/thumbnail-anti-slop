@@ -23,7 +23,8 @@ import {
   ReservedSpacePosition,
   CreateThumbnailResult,
   normalizeTargetModel,
-  TARGET_MODEL_CONFIGS
+  TARGET_MODEL_CONFIGS,
+  getSelectableTargetModels
 } from '@/types/simple';
 import { generateSimpleThumbnail } from '@/lib/simpleEngine/engine';
 import { saveSimpleHistoryItem } from '@/lib/simpleEngine/history';
@@ -83,6 +84,8 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<CreateThumbnailResult | null>(null);
   const [copied, setCopied] = useState(false);
+
+  const selectableTargetModels = useMemo(() => getSelectableTargetModels(), []);
   const [approachCount, setApproachCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -255,7 +258,8 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
           finalPrompt: data.finalPrompt,
           approachTitle: data.approachTitle || 'Direção Visual Gerada',
           approachIndex: currentApproach,
-          typographyPlan: data.typographyPlan
+          typographyPlan: data.typographyPlan,
+          outputMetadata: data.outputMetadata
         };
       } else {
         genResult = generateSimpleThumbnail(payload);
@@ -613,27 +617,15 @@ export function ModeCreate({ onNotify, onRefreshHistoryCount }: ModeCreateProps)
                 onChange={e => setTargetModel(normalizeTargetModel(e.target.value as TargetModel))}
                 className="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3 py-2 text-xs text-zinc-200 focus:outline-none focus:border-amber-500 font-mono"
               >
-                <optgroup label="GERAL">
-                  <option value="GERAL">Geral — Compatível com todos</option>
-                </optgroup>
-                <optgroup label="OPENAI">
-                  <option value="OPENAI_GPT_IMAGE_2_5_SUNBURST">OpenAI — GPT Image 2.5 Sunburst</option>
-                  <option value="OPENAI_GPT_IMAGE_2_5_FLARE">OpenAI — GPT Image 2.5 Flare</option>
-                </optgroup>
-                <optgroup label="GOOGLE">
-                  <option value="GOOGLE_NANO_BANANA_2">Google — Nano Banana 2</option>
-                  <option value="GOOGLE_NANO_BANANA_PRO">Google — Nano Banana Pro</option>
-                </optgroup>
-                <optgroup label="MIDJOURNEY">
-                  <option value="MIDJOURNEY_V8_2">Midjourney — V8.2</option>
-                  <option value="MIDJOURNEY_NIJI_7">Midjourney — Niji 7</option>
-                </optgroup>
-                <optgroup label="BLACK FOREST LABS">
-                  <option value="FLUX_2_MAX">FLUX.2 Max</option>
-                  <option value="FLUX_2_PRO">FLUX.2 Pro</option>
-                  <option value="FLUX_2_FLEX">FLUX.2 Flex</option>
-                  <option value="FLUX_2_KLEIN">FLUX.2 Klein</option>
-                </optgroup>
+                {selectableTargetModels.map(group => (
+                  <optgroup key={group.groupLabel} label={group.groupLabel}>
+                    {group.models.map(m => (
+                      <option key={m.id} value={m.id}>
+                        {m.displayName}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
             </div>
 
